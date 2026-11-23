@@ -108,7 +108,8 @@ function cmdNew(args) {
   console.log(`Created ${dir}
 
 Next:
-  1. Edit ${join(name, 'talk.md')} (it explains the format as it goes)
+  1. Edit ${join(name, 'talk.md')} (it explains the format as it goes),
+     or ask your AI agent to: ${join(name, 'AGENTS.md')} tells it how
   2. quorum rehearse ${name}    try it with a simulated audience
   3. quorum live ${name}        give it`);
 }
