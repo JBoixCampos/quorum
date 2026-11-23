@@ -1,4 +1,4 @@
-# Proposal: Quorum Studio, a deck people and agents build together
+# Proposal: Quorum Studio, a canvas, PowerPoint and layout exploration
 
 Status: proposal. Nothing here is implemented yet.
 
@@ -6,122 +6,101 @@ Status: proposal. Nothing here is implemented yet.
 
 Quorum can now make a talk that looks designed, and an agent can write, check and look at it on its own. Four things still keep it from being the place where a team makes its decks:
 
-1. **One author at a time.** A talk is a file on one laptop. Two people, or one person with two agents, editing it at once overwrite each other.
+1. **Teams work in parallel.** Several people, each with their own agents, change the same deck. Today nothing helps them see what changed or merge it cleanly.
 2. **No PowerPoint.** Decks get sent, reviewed, reused and archived as `.pptx`. A talk that only exists as a web page does not survive the email after the meeting.
 3. **No hands-on editing.** Moving a picture, swapping two cards or reordering slides means editing Markdown. That is right for agents and wrong for the person who just wants to nudge something.
 4. **One answer per request.** An agent writes one version of a slide. Design is choosing between options, and agents are good at producing many of them in parallel.
 
-This proposal groups the four into one feature, **Quorum Studio**, because they share the same foundation: a deck that can be changed by several hands through one edit model, and rendered by one engine.
-
 ## Principles
 
-These are the rules Quorum already follows, and they shape every choice below.
-
-- **The Markdown stays the source of truth.** Every edit, from a drag on the canvas to an agent's rewrite, ends up as a change to `talk.md`. No second format, no database. An agent can always open the file and understand the deck.
-- **Local first.** Studio runs on one person's laptop, like `quorum live`, and is shared through the same tunnel. No accounts and no cloud service.
-- **No dependencies.** Zip writing, text merging and the agent protocol are small enough to write ourselves. Playwright stays optional.
-- **Agents propose, people decide.** An agent's change arrives as a proposal the person it works for can accept, unless they chose to let it write directly.
-- **The audience stays anonymous.** Collaborators have names; the audience never does, and nothing in Studio reaches phones.
+- **The Markdown stays the source of truth.** Every edit, from a drag on the canvas to an agent's rewrite, ends up as a change to the talk's files. No second format, no database.
+- **Git is the collaboration layer.** Quorum does not run a shared editing service. People and agents work in a repository, on branches, and push. Quorum's job is to make that workflow pleasant: files that merge well, checks that run on every push, and a way to see what a change looks like.
+- **Local first.** Everything runs on a laptop or in CI. No accounts and no cloud service.
+- **No dependencies.** Zip writing and slide merging are small enough to write ourselves. Playwright stays optional.
+- **The audience stays anonymous.** Nothing here touches phones.
 
 ## The foundation
 
-Three pieces, built first, used by all four features.
+Two pieces, built first, used by everything below.
 
 ### A. Slides that know where they come from
 
-Today the parser knows the first line of each slide. Studio needs more:
+- **Slide ids.** Every slide gets an id from its title (`how-bread-rises`), made unique if needed. An explicit `{#id}` on the title wins. Ids are how commands, variants, diffs and the canvas name a slide, instead of a number that changes when a slide is added before it.
+- **Element source maps.** Every heading, paragraph, list item, image and block in the HTML carries `data-src="12-14"`, the lines and file it came from. The canvas uses this to turn a click on the slide into a place in the text, and `quorum check` can point at a line instead of a slide.
 
-- **Stable slide ids.** A slide keeps its id when it moves, when its title changes or when a slide is added before it. The Studio server assigns ids and tracks them across edits by aligning the old and new list of slides (same text, then same title, then same position). Nothing is written into the Markdown. An explicit `{#id}` on the title still wins.
-- **Element source maps.** Every heading, paragraph, list item, image and block in the HTML carries `data-src="12-14"`, the lines it came from. The canvas uses this to turn a click on the slide into a place in the text, and `quorum check` can point at a line instead of a slide.
-
-### B. One edit model
-
-Every change, from any client, is one of a few operations on the Markdown:
-
-| Operation | What it does |
-| --- | --- |
-| `replace-slide` | New text for one slide |
-| `insert-slide`, `delete-slide`, `move-slide` | The order of the deck |
-| `replace-lines` | New text for a range of lines inside a slide (what the canvas and inline editing send) |
-| `set-attr` | Set or remove `{key=value}` or a class on an element, or a front matter key |
-| `add-asset` | Store an image in `assets/` and return its path |
-
-Each operation names the revision of the slide it was based on. The server applies it, saves `talk.md`, records it in the history and broadcasts it. If the slide changed in between, the server merges the two edits line by line (a small three-way merge) and only reports a conflict when both touched the same lines.
-
-The history lives in `.quorum/history/` (not committed): every operation with who made it and when. It gives undo, a timeline per slide and a way back to any earlier version of the deck.
-
-Edits made outside Studio are not lost: when `talk.md` changes on disk (a person in their editor, an agent with file access, `git pull`), the server reads it, diffs it against the last version it wrote and records the difference as an operation by "the file".
-
-### C. One render engine
+### B. One render engine
 
 `src/cli/visual.js` already opens the talk in a headless browser to measure and photograph slides. It becomes a small service with three outputs:
 
-- a **picture** of a slide (for agents, variant grids, thumbnails),
-- the **measured layout** of a slide: every element's box, font, size and colour, read from the browser (for PowerPoint export and overflow checks),
+- a **picture** of a slide (for agents, diffs, variant grids, thumbnails),
+- the **measured layout** of a slide: every element's box, font, size and colour (for PowerPoint export and overflow checks),
 - the **checks** that exist today.
 
-It keeps one browser and several pages open, so rendering twenty variants takes seconds, not minutes.
+It keeps one browser and several pages open, so rendering twenty slides takes seconds, not minutes.
 
-## 1. Collaborative deck: people and their agents
+## 1. Working together through a repository
 
-### How it looks
+A talk is already a folder of plain text. Teams put it in a git repository; each person and each agent works on a branch and pushes; changes come back through pull requests (or plain merges). Quorum adds what makes this work well for decks.
 
-```bash
-quorum studio my-talk
-```
+### Files that merge well
+
+One `talk.md` merges fine when two people edit different slides, but adding, removing or reordering slides on two branches conflicts. So a talk can be split into one file per slide:
 
 ```text
-Studio for "How bread rises" at https://bright-otter.trycloudflare.com/studio
-
-  Edit link for others:   .../studio#e=7Hq2...   (anyone with it can edit)
-  Your agent's key:       quorum studio key --seat you
+my-talk/
+  talk.md              # front matter and the order of the slides
+  slides/
+    title.md
+    why-bread-rises.md
+    yeast-poll.md
+    ...
 ```
 
-Each person opens the edit link, types their name and gets a **seat**. A seat is a person plus the agents working for them. On the canvas, everyone sees:
+```markdown
+---
+title: How bread rises
+theme: paper
+slides: slides/
+---
+```
 
-- who is on which slide (a coloured dot on the thumbnail and a cursor on the slide),
-- which slides an agent is working on ("Ana's agent is rewriting slide 7"), with a soft lock so two agents do not rewrite the same slide at once,
-- proposals waiting on each slide, shown as a badge.
-
-### Agents in a seat
-
-Each seat can connect as many agents as it wants. An agent works through one of two doors:
-
-- **`quorum mcp`**, a Model Context Protocol server over stdin and stdout, so Claude Code, Claude Desktop and other agents can use Studio as a set of tools. No dependency: the protocol is JSON lines.
-- **The command line**, for agents that prefer shell commands:
+With `slides: slides/`, Quorum reads the files in the order listed in an optional `order:` key, or alphabetically (`010-title.md`, `020-why.md`, numbered with gaps so a slide can be added between two without renaming). Two agents writing two slides never touch the same file. A single `talk.md` keeps working for everyone who does not need this.
 
 ```bash
-quorum slides                       # id, title, layout, revision, who is on it
-quorum slide get s7                 # the Markdown of one slide
-quorum slide propose s7 < new.md    # a proposal, attributed to your seat
-quorum slide put s7 < new.md        # a direct edit, if your seat allows it
-quorum slide render s7              # a picture, for agents that can see
-quorum comments --mine              # tasks people left for your seat
+quorum split my-talk     # turn talk.md into slides/, one file per slide
+quorum join my-talk      # and back
 ```
 
-The tools an agent gets through MCP are the same: `list_slides`, `get_slide`, `propose_slide`, `put_slide`, `render_slide`, `check`, `schema`, `comments`, `claim_slide`.
+For teams that keep one `talk.md`, Quorum ships a **merge driver** that merges slide by slide: slides added on both sides are both kept, a slide moved on one side and edited on the other gets both changes, and only the same slide edited on both sides falls back to git's line merge. `quorum new` sets it up with one line in `.gitattributes`.
 
-Every agent key belongs to one seat, so every change is attributed: "Ana's agent (Claude)" in the history, in proposals and in presence.
+### Check on every push
 
-### Proposals and comments
+`quorum new --repo` adds `.github/workflows/quorum.yml` (easy to adapt to other CI):
 
-- An agent's change to a slide arrives as a **proposal**: the slide as it would look next to the slide as it is, with the text diff underneath. The seat's person accepts, rejects or edits it. Anyone can see it; by default only the seat that owns the agent accepts it, and the deck owner can accept anything.
-- A seat can switch its agents to **direct edits** when it trusts them, for example during a first draft.
-- **Comments** pin to a slide or an element. A comment that starts with `@agent` (or `@ana-agent`) becomes a task for that seat's agents, which they pick up with `comments`. "@agent make this a chart" on a table is the most natural way to ask for a change on the canvas.
+- `quorum check --json`, failing the build on warnings,
+- `quorum check --visual` and `quorum snapshot` when the runner has Playwright,
+- `quorum build`, uploaded as an artifact, so anyone can click through the branch's version of the talk with the simulated audience,
+- optionally `quorum export --pptx`, so every merge to `main` leaves a fresh PowerPoint.
 
-### Roles
+### See what a change looks like
 
-| Role | Can |
-| --- | --- |
-| Owner (the laptop running Studio) | Everything, including components, settings, presenting and closing Studio |
-| Editor (edit link) | Edit `talk.md`, upload images, comment, accept proposals for their seat |
-| Viewer (view link) | See the deck and comment |
+```bash
+quorum diff main            # the slides that changed since main, before and after
+quorum diff main --json     # the same, for agents
+```
 
-Editors cannot write JavaScript: components run in the browser of whoever presents, so only the owner and agents on the owner's laptop add or change them. The edit key is separate from the presenter key, and neither works for the other.
+`quorum diff` reads the talk at another git revision, matches slides by id, and lists what was added, removed, moved and changed. With Playwright it renders each changed slide before and after into one picture (`.quorum-snapshots/diff.png`). In CI, the workflow attaches it to the pull request, so reviewing an agent's work is looking at pictures of the slides it changed, not reading Markdown.
 
-### Why not a real-time text editor (CRDT)
+### Conventions for agents
 
-Character-by-character co-editing (as in Google Docs) needs a CRDT library, which breaks the no-dependency rule, and it is the wrong unit for this tool: agents write whole slides, people move whole elements, and a deck is naturally split into slides. Slide-level operations with a line merge and soft locks cover how teams and agents actually work, with a fraction of the code.
+The starter `AGENTS.md` and the skill gain a short section on working in a repository:
+
+- One branch per task, named after it (`agent/yeast-chart`), small commits that say which slides changed.
+- Pull before starting, run `quorum check` before pushing, never push to `main` directly unless told to.
+- In a split talk, touch only the slide files the task is about; adding a slide means a new file and a line in `order:`.
+- After pushing, look at `quorum diff main` and fix anything that looks wrong.
+
+The preview server already reloads when files change on disk, so `git pull` while `quorum preview` runs shows teammates' and agents' work immediately.
 
 ## 2. PowerPoint export
 
@@ -176,7 +155,11 @@ A `.pptx` is a zip of XML files. Quorum writes both itself (Node's `zlib` does t
 
 ## 3. A minimal canvas
 
-Studio's page is the canvas. It is small on purpose:
+```bash
+quorum studio my-talk
+```
+
+opens a local editor, for one person on their own laptop. It is small on purpose:
 
 ```text
 +--------+---------------------------------------------+-----------+
@@ -187,18 +170,20 @@ Studio's page is the canvas. It is small on purpose:
 |  [4]   |                                             |  notes    |
 |   +    |                                             |           |
 +--------+---------------------------------------------+-----------+
-|  / commands     ask an agent about this...        source  history |
+|  / commands                                   source   explore   |
 +------------------------------------------------------------------+
 ```
 
-- **Slide rail.** Drag thumbnails to reorder (`move-slide`), drop between them to add, right click to duplicate, delete or explore variants.
-- **The slide is the real slide**, rendered by the same code that presents it, not a separate editor view. What you see is what the room sees.
-- **Click to select, double click to edit text in place.** The selection maps to source lines through the source maps; the edit is a `replace-lines`.
+- **Slide rail.** Drag thumbnails to reorder, drop between them to add, right click to duplicate, delete or explore variants.
+- **The slide is the real slide**, rendered by the same code that presents it, not a separate editor view.
+- **Click to select, double click to edit text in place.** The selection maps to source lines through the source maps.
 - **Drag to rearrange.** Within a slide, elements move in the flow: drag a card before another, move a picture from the left of a split to the right, drag a list item up. Each drop is a small text change that keeps the Markdown clean.
-- **Drop files.** An image from the desktop goes to `assets/` and into the slide, with an alt text field that `quorum check` will ask about anyway.
+- **Drop files.** An image from the desktop goes to `assets/` and into the slide, with an alt text field.
 - **The inspector** shows only what the registry knows: the layouts that suit this slide (as small thumbnails with the real content), theme tokens, classes as chips, the result look for interactive slides, notes. Everything is a choice from a list, never a free CSS box.
-- **Source view.** One key splits the screen with the slide's Markdown, edited live. People who prefer text never have to leave the canvas.
-- **Command bar.** `/` for commands (add slide, change layout, export), and a box to ask the seat's agent about the current selection.
+- **Source view.** One key splits the screen with the slide's Markdown, edited live.
+- **Command bar.** `/` for commands: add slide, change layout, explore, export.
+
+Every change is written straight to the talk's files, so it shows up in `git diff` like any other edit. The canvas and agents can work at the same time on the same folder: when a file changes on disk (an agent, an editor, `git pull`), the canvas reloads that slide. If the person was editing that same slide, the canvas shows both versions and lets them pick, instead of overwriting either. There is no undo history of its own: git is the history, and `quorum studio` can commit with a message when asked.
 
 ### Free positioning, kept tidy
 
@@ -217,10 +202,10 @@ Positions are percentages of the 16:9 stage, so they scale. Dragging snaps to a 
 ## 4. Parallel layout exploration
 
 ```bash
-quorum explore my-talk --slide 7
+quorum explore my-talk --slide yeast-poll
 ```
 
-shows a grid of alternatives for one slide, rendered for real, scored, and ready to pick. Picking one is a `replace-slide`. The grid also lives in Studio: right click a slide, "Explore".
+shows a grid of alternatives for one slide, rendered for real, scored, and ready to pick. Picking one writes it into the slide. The grid also lives in the canvas: right click a slide, "Explore".
 
 ### Where variants come from
 
@@ -237,7 +222,7 @@ shows a grid of alternatives for one slide, rendered for real, scored, and ready
 
 It is free, fast and deterministic, and it gives agents and people a baseline to beat.
 
-**Agents in parallel.** For real alternatives, the skill teaches agents to fan out: start several sub-agents, each with a different direction ("data first", "one image and one sentence", "playful", "minimal"), each writing a variant with `quorum variant add s7 < v.md`. Variants are stored in `.quorum/variants/<slide-id>/`, with who made them and from which direction.
+**Agents in parallel.** For real alternatives, the skill teaches agents to fan out: start several sub-agents, each with a different direction ("data first", "one image and one sentence", "playful", "minimal"), each writing a variant with `quorum variant add yeast-poll < v.md`. Variants are files in `variants/<slide-id>/` with a line of front matter saying who made them and from which direction. They are plain files, so they can be committed and pushed: an agent can push a branch with five variants, and the person picks one from `quorum explore` on their laptop.
 
 **Whole deck directions.** `quorum explore --theme` renders the first slides of the deck in three or four presets, or in theme files the agent drafted from the brief, so the team picks a direction before polishing slides.
 
@@ -249,7 +234,7 @@ Every variant gets the checks Quorum already has (overflow measured in the brows
 - **Fit with the deck:** the same fonts, colours and spacing as its neighbours.
 - **Variety:** different from the slides just before and after.
 
-The grid sorts by score and shows why ("text too small for the room", "same layout as slide 6"). A score is a filter, not taste: anything with a warning sinks, and among the rest the person chooses. An agent working alone can pick the best scoring variant and say it did.
+The grid sorts by score and shows why ("text too small for the room", "same layout as slide 6"). A score is a filter, not taste: anything with a warning sinks, and among the rest the person chooses. An agent working alone can pick the best scoring variant with `quorum variant pick yeast-poll --best` and say it did.
 
 ## Plan
 
@@ -257,26 +242,25 @@ Each phase is useful on its own and ships with tests and docs.
 
 | Phase | What | Why this order |
 | --- | --- | --- |
-| 1 | Foundation: slide ids, element source maps, the edit model with history and merge, the render service | Everything else uses it |
+| 1 | Foundation: slide ids, element source maps, the render service | Everything else uses it |
 | 2 | PowerPoint and PDF export | Independent, and the most asked for by businesses |
-| 3 | Explore: remix, `quorum variant`, the grid, scoring | Uses the render service; works for one agent before Studio exists |
-| 4 | Studio for one person: the canvas, inspector, source view, proposals from local agents, `quorum mcp` | The editing surface, before adding more people |
-| 5 | Studio for teams: edit links, seats, presence, soft locks, comments as agent tasks, roles | The hardest part, on top of everything that already works |
+| 3 | Repository workflow: split talks, the merge driver, `quorum diff`, the CI workflow, agent conventions | Small, and it makes parallel agents safe before giving them more to do |
+| 4 | Explore: remix, `quorum variant`, the grid, scoring | Uses the render service and the repository workflow |
+| 5 | The canvas: rail, inline editing, drag, inspector, source view, free positioning | The largest piece of new UI, on top of everything else |
 
 ## Risks and trade-offs
 
-- **Scope.** This is bigger than the design system. Phases 1 and 2 are well understood; phase 5 is the one to keep small (slide-level locks, no character-level co-editing).
 - **PowerPoint fidelity.** Some CSS has no PowerPoint equivalent (blurs, blend modes, nested layouts). Those elements become pictures, and the export summary says which ones, so nothing degrades silently. Fonts depend on the machine that opens the file.
-- **Edit links on a public tunnel.** Anyone with the link can change the deck and upload images. Mitigations: long random keys, an expiry, the owner can revoke a seat, uploads limited to image types and size, paths confined to the talk folder, no JavaScript from editors, and the full history to undo anything.
-- **Merges.** Line-level merges can produce a slide that parses but reads oddly. Conflicts are shown, never auto-resolved by picking a side, and every merge is in the history.
+- **Two formats for a talk.** A split talk and a single `talk.md` must behave the same everywhere (preview, build, export, check, the canvas). `quorum split` and `quorum join` round-trip exactly, and tests run the example talks in both forms.
+- **Merge driver.** Git only uses it once configured, and a bug in it could lose a slide. It falls back to git's own merge whenever it is unsure, and is tested on a set of conflicting histories.
+- **Canvas and agents on the same files.** Without a server coordinating edits, the canvas can only notice changes, not prevent them. Showing both versions on a clash keeps work from being lost; git keeps everything else.
 - **Free positioning.** It can make slides that look bad on other screens or confuse agents. It stays an explicit layout with its own checks, and the docs steer agents to flow layouts.
 - **Scoring.** Automatic design scores can feel authoritative. They are presented as checks and reasons, and the person picks.
 
 ## Questions to decide
 
-1. **Hosting.** Studio runs on one laptop and is shared through a tunnel (recommended, consistent with `quorum live`), or Quorum also offers a self-hostable server for teams that want a deck always online?
-2. **Agent changes.** Proposals by default with a per-seat switch to direct edits (recommended), or direct edits by default?
+1. **Split talks.** Add `slides/` with one file per slide (recommended), or keep one `talk.md` and rely on the merge driver only?
+2. **CI.** Ship a GitHub Actions workflow in `quorum new --repo` (recommended), or only document the commands?
 3. **PowerPoint charts.** Native, editable charts (recommended: needs a small embedded spreadsheet per chart, more code) or vector drawings that look right but cannot be edited as charts?
-4. **Free positioning.** Add `layout: canvas` (recommended, with its checks), or keep Quorum flow-only and let the canvas only reorder?
-5. **MCP.** Ship `quorum mcp` (recommended: it is the natural door for Claude and other agents) or only the command line?
-6. **First phase to build.** Foundation plus PowerPoint first (recommended), or foundation plus explore, if agent design quality matters more right now than Office?
+4. **Free positioning.** Add `layout=canvas` (recommended, with its checks), or keep Quorum flow-only and let the canvas only reorder?
+5. **Variants in the repository.** Keep variants as committed files in `variants/` (recommended, so agents can push them), or in the ignored `.quorum/` folder?
