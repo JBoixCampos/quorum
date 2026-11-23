@@ -132,19 +132,19 @@ export default {
           <h2>Your agent writes it. You give it.</h2>
           <p class="intro">A talk is a Markdown file and a few small JavaScript files, so an AI agent can write it, check it and build new interactions for it, the way it edits code. You watch it take shape in <code>quorum preview</code>, ask for changes, and give it to a real room.</p>
           <ul class="checklist">
+            <li><strong>Set up once.</strong> Install Quorum where the agent works, then <code>quorum skill</code> teaches Claude Code the format in every folder (<code>--to</code> for other agents).</li>
             <li><strong>A talk folder knows the rules.</strong> <code>quorum new</code> adds an <code>AGENTS.md</code> that tells an agent the format, the commands and what not to touch.</li>
             <li><strong>The docs fit in one file.</strong> Point any agent at <a href="llms-full.txt">llms-full.txt</a>, or at the short index in <a href="llms.txt">llms.txt</a>.</li>
             <li><strong>It can check its own work.</strong> <code>quorum check --json</code> lists every problem with its slide, and fails until there are none.</li>
-            <li><strong>A ready-made skill</strong> in <a href="https://github.com/JBoixCampos/quorum/blob/main/agents/quorum/SKILL.md">agents/quorum/SKILL.md</a> teaches an agent to write and check a talk and build components for it.</li>
           </ul>
-          <p style="margin-top:24px"><a href="docs/agents/">How to work with an agent</a></p>
+          <p style="margin-top:24px"><a href="docs/agents/">Set up your agent, step by step</a></p>
         </div>
         <div>
           <div class="prompt">
             <p id="agent-prompt">Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll, an estimate with a reveal, a word cloud and a questions slide. Run quorum check --json until it reports no warnings.</p>
             <button type="button" class="button" data-copy="#agent-prompt">Copy the prompt</button>
           </div>
-          <p class="intro" style="margin:0;font-size:16px">Paste it into Claude Code or any coding agent, in a folder where Quorum is installed. Change the topic and the blocks to suit your talk.</p>
+          <p class="intro" style="margin:0;font-size:16px">Paste it into Claude Code or any coding agent once Quorum is installed. Change the topic, the blocks and the brand to suit your talk.</p>
         </div>
       </div>
     </section>
@@ -162,10 +162,22 @@ export default {
             <p>No names, no sign-up, no app. Each phone gets a random id so it votes once. Your notes and the right answers never reach the phones before you reveal them.</p>
           </div>
           <div>
-            <h3>A panel just for you</h3>
-            <p>Your notes, the next slides, how many people are in, the questions waiting for approval, and how you are doing on time. Before the day, <code>quorum preview</code> fills the room with simulated people.</p>
+            <h3>Ready for any room</h3>
+            <p>No public link? People on the same wifi still join. Nobody can join at all? <code>quorum export</code> gives you the same talk without the audience slides.</p>
           </div>
         </div>
+      </div>
+    </section>
+    <section id="start">
+      <div class="wrap">
+        <h2>Start in three commands</h2>
+        <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer. Then, in a terminal:</p>
+<pre><span class="k">npm install -g github:JBoixCampos/quorum</span>
+
+quorum new my-talk        <span class="c"># a starter talk that shows every feature</span>
+quorum preview my-talk    <span class="c"># see it with a simulated audience while you edit talk.md</span>
+quorum live my-talk       <span class="c"># give it: public link, QR code, your panel</span></pre>
+        <p style="margin-top:24px"><a href="docs/">Read the docs</a> &middot; <a href="docs/giving-a-talk/">Giving a talk</a> &middot; <a href="docs/agents/">Built for agents</a></p>
       </div>
     </section>
   </main>

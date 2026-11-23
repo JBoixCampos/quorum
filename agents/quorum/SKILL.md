@@ -18,6 +18,7 @@ Quorum turns `talk.md` into a presentation where people vote, guess and ask from
 Plan first: how long the talk is (`duration:` in the front matter, in minutes), its sections, and where the audience takes part. Count 30 to 60 seconds for each vote.
 
 - One idea per slide, few words. Titles short.
+- If the user gives a brand (colours, logo, fonts), put it in the front matter: `accent`, `primary`, `secondary`, `background`, `text`, `logo`, `font`, `text-font`, `footer`, `style`. See "Your brand" in the reference.
 - Start with a title slide that has `::: join`, then a quick warm-up `::: poll` so everyone has answered once.
 - One interaction per slide, each with a unique `{#id}`.
 - An `::: estimate` with a reveal must use a well-known, verifiable fact, with its source in the reveal text. Never invent numbers.

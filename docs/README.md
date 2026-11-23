@@ -36,10 +36,10 @@ Every block works the same way: you write it in `talk.md`, phones get the right 
 
 ## The guides
 
-- [The talk format](format.md): every block, with examples.
+- [The talk format](format.md): every block with examples, and [your brand](format.md#your-brand): colours, logo, fonts, footer, backgrounds.
 - [Components](components.md): build your own slide pieces in JavaScript, including one that uses a local language model.
-- [Giving a talk](giving-a-talk.md): the day itself, on stage or on a call.
-- [Built for agents](agents.md): ask an AI agent to write, check and extend your talk.
+- [Giving a talk](giving-a-talk.md): the day itself, with screenshots of the three views (the shared screen, your panel, a phone), and what to do if people cannot join.
+- [Built for agents](agents.md): install Quorum where your agent works, teach it the format, and ask it to write, check and extend your talk.
 
 ## Commands
 

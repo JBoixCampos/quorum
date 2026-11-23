@@ -412,7 +412,7 @@ function buildLlms() {
 
 > Quorum is an open-source toolkit for presentations where the audience takes part. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components. People answer from their phones through a QR code, and everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
 
-To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
+Install with \`npm install -g github:JBoixCampos/quorum\` (Node.js 18 or newer). To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
 
 ## Docs
 
@@ -424,6 +424,7 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
 - [Demo talk source](${BLOB}examples/demo/talk.md): seven slides, one feature each
 - [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
+- [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
 ## Optional
 
@@ -436,6 +437,7 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
     'examples/components/word-cloud.js',
     'templates/starter/components/counter.js',
     'templates/starter/talk.md',
+    'examples/brand/talk.md',
   ].map((f) => `${'='.repeat(72)}\nFile: ${f}\n${'='.repeat(72)}\n\n${read(f).trim()}\n`);
   const full = `# Quorum: the full reference
 
