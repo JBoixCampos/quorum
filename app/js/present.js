@@ -6,7 +6,14 @@
 //   /present?key=...&view=panel the preview inside the panel
 //   /present?key=...&view=still&slide=3   a thumbnail: one slide, all steps done
 //   /present?rehearse=1         rehearsal: everything runs here, nothing is sent
+//
+// A static build (`quorum build`) always rehearses. It also accepts:
+//
+//   ?slide=3                    start on that slide (counted from 0)
+//   ?playground=1               wait for Markdown from the page that embeds
+//                               it (same origin only) and render that instead
 
+import { parseTalk } from '../shared/markdown.js';
 import { Session } from '../shared/session.js';
 import { mountError, loadComponent } from './components.js';
 import { connect, esc, send } from './net.js';
@@ -21,6 +28,7 @@ const VIEW = params.get('view') || '';
 const STILL = VIEW === 'still';
 const IN_PANEL = VIEW === 'panel';
 const REHEARSE = !!STATIC || params.get('rehearse') === '1' || !KEY;
+const PLAYGROUND = !!STATIC && params.get('playground') === '1';
 
 const stage = document.querySelector('[data-stage]');
 const slideEl = document.querySelector('[data-slide]');
@@ -351,7 +359,52 @@ function showError(message) {
   slideEl.innerHTML = `<div class="q-content q-center"><h2>Quorum</h2><p>${esc(message)}</p></div>`;
 }
 
+// --- playground: Markdown sent by the page around this one -------------------
+
+const EMPTY = '<!-- layout: center -->\n\nWrite some Markdown to see a slide here.';
+
+function loadSource(markdown) {
+  let talk = parseTalk(String(markdown || ''));
+  // Only front matter, or nothing at all: show a hint instead of no slide.
+  if (!talk.slides.length) talk = parseTalk(`${markdown || ''}\n\n${EMPTY}`);
+  talk.version = (state.talk ? state.talk.version || 0 : 0) + 1;
+  state.talk = talk;
+  applyTheme(talk.meta);
+  // Keep the votes of interactions that are still there.
+  session = new Session(talk, session ? session.toJSON() : null, { moderation: false });
+  if (simulator) simulator.session = session;
+  else simulator = new Simulator(session, () => refreshLocalView());
+  state.index = Math.min(state.index, talk.slides.length - 1);
+  return talk;
+}
+
+function listenToPlayground() {
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || e.source !== window.parent) return;
+    const data = e.data || {};
+    if (data.type !== 'quorum:source') return;
+    const talk = loadSource(data.markdown);
+    refreshLocalView();
+    const target = Number.isInteger(data.slide) ? Math.max(0, Math.min(data.slide, talk.slides.length - 1)) : state.index;
+    if (target !== state.index) go(target, 0);
+    window.parent.postMessage({
+      type: 'quorum:parsed',
+      slides: talk.slides.length,
+      slide: state.index,
+      warnings: talk.warnings,
+    }, location.origin);
+  });
+  window.parent.postMessage({ type: 'quorum:ready' }, location.origin);
+}
+
 async function start() {
+  if (PLAYGROUND) {
+    document.documentElement.classList.add('playground');
+    loadSource('');
+    refreshLocalView();
+    listenToPlayground();
+    return;
+  }
   let talk;
   try {
     talk = await loadTalk();
@@ -372,6 +425,11 @@ async function start() {
     if (!STATIC) session.apply({ type: 'url', url: location.origin }, { presenter: true });
     simulator = new Simulator(session, () => refreshLocalView());
     refreshLocalView();
+    // A static build can be opened on a given slide: ?slide=3
+    if (STATIC && !STILL && params.has('slide')) {
+      const n = Number(params.get('slide'));
+      if (Number.isInteger(n)) go(Math.max(0, Math.min(n, talk.slides.length - 1)), 0);
+    }
     return;
   }
 
