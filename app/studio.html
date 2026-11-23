@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quorum Studio</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/studio.css">
+</head>
+<body class="studio">
+  <header class="bar">
+    <div class="bar-left">
+      <img class="logo" src="favicon.svg" alt="">
+      <div class="doc">
+        <strong data-title>Studio</strong>
+        <span class="saved" data-status>Loading</span>
+      </div>
+    </div>
+    <div class="bar-mid">
+      <button type="button" class="ib" data-act="undo" data-tip="Undo  Ctrl+Z" disabled></button>
+      <button type="button" class="ib" data-act="redo" data-tip="Redo  Ctrl+Shift+Z" disabled></button>
+      <span class="sep"></span>
+      <button type="button" class="ghost" data-act="palette" data-tip="Everything you can do  Ctrl+K"></button>
+    </div>
+    <div class="bar-right">
+      <div class="live" data-live hidden></div>
+      <button type="button" class="ghost" data-act="problems"></button>
+      <button type="button" class="ghost" data-act="rehearse" data-tip="The talk with a simulated audience"></button>
+      <button type="button" class="ghost" data-act="export" data-tip="PowerPoint or PDF"></button>
+      <button type="button" class="primary" data-act="present"></button>
+    </div>
+  </header>
+
+  <aside class="rail" aria-label="Slides">
+    <div class="rail-head"><span>Slides</span><span class="count" data-count></span><button type="button" class="ib sm" data-act="add" data-tip="Add a slide"></button></div>
+    <div class="rail-list" data-rail></div>
+  </aside>
+
+  <main class="stage">
+    <div class="stage-scroll" data-wrap>
+      <div class="canvas" data-canvas>
+        <iframe data-frame title="The slide"></iframe>
+        <div class="drop" data-drop hidden><span>Drop to add the picture</span></div>
+      </div>
+    </div>
+    <div class="float" data-float hidden></div>
+    <footer class="stage-foot">
+      <span class="muted" data-where></span>
+      <span class="grow"></span>
+      <button type="button" class="ghost sm" data-act="source" aria-pressed="false" data-tip="The Markdown of this slide"></button>
+      <span class="sep"></span>
+      <button type="button" class="ib sm" data-act="zoom-out" data-tip="Zoom out"></button>
+      <button type="button" class="ghost sm zoom" data-act="zoom-fit" data-tip="Fit to the window" data-zoom>Fit</button>
+      <button type="button" class="ib sm" data-act="zoom-in" data-tip="Zoom in"></button>
+    </footer>
+    <section class="source" data-source hidden>
+      <div class="source-head"><b>Markdown</b><span class="muted" data-source-note></span><span class="grow"></span><span class="muted">Saved as you type</span></div>
+      <textarea data-source-text spellcheck="false" aria-label="Markdown of this slide"></textarea>
+    </section>
+  </main>
+
+  <aside class="side">
+    <nav class="tabs" role="tablist" data-tabs></nav>
+    <div class="side-body" data-side></div>
+  </aside>
+
+  <div class="pop" data-editor hidden>
+    <div class="pop-head"><b>Markdown</b><span class="muted">Ctrl+Enter saves, Esc cancels</span></div>
+    <textarea data-editor-text spellcheck="false" aria-label="Markdown of the selected element"></textarea>
+    <div class="pop-foot"><span class="grow"></span><button type="button" class="ghost" data-editor-cancel>Cancel</button><button type="button" class="primary" data-editor-save>Save</button></div>
+  </div>
+
+  <div class="overlay" data-modal hidden>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header><strong data-modal-title></strong><span class="grow"></span><button type="button" class="ib" data-modal-close aria-label="Close"></button></header>
+      <div class="dialog-body" data-modal-body></div>
+    </div>
+  </div>
+
+  <div class="overlay palette-wrap" data-palette hidden>
+    <div class="palette">
+      <input type="text" data-palette-input placeholder="Type a command or a slide" aria-label="Command">
+      <div class="palette-list" data-palette-list role="listbox"></div>
+    </div>
+  </div>
+
+  <div class="tip" data-tip-box hidden></div>
+  <div class="toasts" data-toasts aria-live="polite"></div>
+
+  <script type="module" src="js/studio.js"></script>
+</body>
+</html>

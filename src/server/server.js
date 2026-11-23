@@ -10,11 +10,12 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, watch, writeFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
+import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseTalk } from '../shared/markdown.js';
+import { readTalk, themeFile } from '../cli/load.js';
 import { Session, isDevice } from '../shared/session.js';
+import { createStudio } from './studio.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP = join(ROOT, 'app');
@@ -68,6 +69,7 @@ export function startServer({
   publicUrl = '',
   moderation = true,
   preview = false,
+  studio: withStudio = false,
   log = console.log,
 } = {}) {
   const dir = resolve(talkDir);
@@ -78,7 +80,7 @@ export function startServer({
   const stateFile = join(dataDir, 'state.json');
   const KEY = key || readKey(join(dataDir, 'key.txt'));
 
-  let talk = parseTalk(readFileSync(talkFile, 'utf8'));
+  let talk = readTalk(dir, file);
   talk.warnings.forEach((w) => log(`  Warning: ${w}`));
   let talkVersion = 1;
   let saved = null;
@@ -229,6 +231,14 @@ export function startServer({
   // everything; phones only what they need to look right (title, colours).
   function talkJson(req, res, url) {
     if (isPresenter(req, url) || preview) {
+      // The studio asks for a source map, or for one slide replaced by an option.
+      if (studio && url.searchParams.get('override')) {
+        const other = studio.overrideTalk(url.searchParams.get('override'));
+        if (other) return send(res, 200, { ...other, version: talkVersion });
+      }
+      if (studio && url.searchParams.get('map')) {
+        return send(res, 200, { ...studio.workspace.talk(), version: talkVersion });
+      }
       return send(res, 200, { ...talk, version: talkVersion });
     }
     // Branding too, so phones look like the talk (not its stylesheet).
@@ -256,6 +266,11 @@ export function startServer({
     return undefined;
   }
 
+  let reloadNow = () => {};
+  const studio = withStudio && preview ? createStudio({
+    dir, file, key: KEY, send, reload: () => reloadNow(),
+  }) : null;
+
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const path = decodeURIComponent(url.pathname);
@@ -265,6 +280,7 @@ export function startServer({
       "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https:; "
       + "font-src 'self' data:; connect-src 'self' http: https:; frame-src 'self' https:");
     try {
+      if (studio && await studio.handle(req, res, url, path)) return;
       if (path === '/api/health') {
         send(res, 200, { ok: true, connected: connected() }, { 'Access-Control-Allow-Origin': '*' });
       } else if (path === '/api/wait' && req.method === 'GET') {
@@ -275,8 +291,8 @@ export function startServer({
         talkJson(req, res, url);
       } else if (req.method !== 'GET') {
         send(res, 405, { ok: false, error: 'Method not allowed.' });
-      } else if (PAGES[path]) {
-        await serveFile(res, APP, PAGES[path]);
+      } else if (PAGES[path] || (studio && path === '/studio')) {
+        await serveFile(res, APP, PAGES[path] || 'studio.html');
       } else if (path.startsWith('/shared/')) {
         await serveFile(res, SHARED, path.slice('/shared/'.length));
       } else if (path.startsWith('/talk/')) {
@@ -297,24 +313,71 @@ export function startServer({
   });
 
   // Edit talk.md and the slides update on their own, keeping every vote.
+  // The theme file too, when the talk uses one (themes/acme.yaml).
   let reloadTimer = null;
-  const watcher = watch(dir, (event, name) => {
-    if (name !== file) return;
+  const reload = () => {
+    try {
+      const next = readTalk(dir, file);
+      talk = next;
+      talkVersion += 1;
+      session = new Session(talk, session.toJSON(), { moderation });
+      log(`  ${file} reloaded (${talk.slides.length} slides).`);
+      talk.warnings.forEach((w) => log(`  Warning: ${w}`));
+      broadcast();
+      if (studio) studio.notify();
+    } catch (error) {
+      log(`  Could not reload ${file}: ${error.message}`);
+    }
+    watchAll();
+  };
+  reloadNow = reload;
+  const onChange = () => {
     clearTimeout(reloadTimer);
-    reloadTimer = setTimeout(() => {
-      try {
-        const next = parseTalk(readFileSync(talkFile, 'utf8'));
-        talk = next;
-        talkVersion += 1;
-        session = new Session(talk, session.toJSON(), { moderation });
-        log(`  ${file} reloaded (${talk.slides.length} slides).`);
-        talk.warnings.forEach((w) => log(`  Warning: ${w}`));
-        broadcast();
-      } catch (error) {
-        log(`  Could not reload ${file}: ${error.message}`);
+    reloadTimer = setTimeout(reload, 150);
+  };
+  // One watcher per folder that holds a watched file (talk.md, the theme).
+  const watchers = new Map();
+  function watchAll() {
+    let theme = null;
+    try {
+      theme = themeFile(readFileSync(talkFile, 'utf8'));
+    } catch {
+      theme = null;
+    }
+    const files = [file, theme].filter(Boolean).map((f) => join(dir, f));
+    const folders = new Map();
+    files.forEach((f) => {
+      const folder = dirname(f);
+      if (!folders.has(folder)) folders.set(folder, new Set());
+      folders.get(folder).add(basename(f));
+    });
+    // A split talk: every Markdown file in its slides folder.
+    if (talk.split && talk.folder) {
+      const slidesFolder = join(dir, talk.folder);
+      if (!folders.has(slidesFolder)) folders.set(slidesFolder, new Set());
+      folders.get(slidesFolder).add('*.md');
+    }
+    watchers.forEach((w, folder) => {
+      if (!folders.has(folder)) {
+        w.close();
+        watchers.delete(folder);
       }
-    }, 150);
-  });
+    });
+    folders.forEach((names, folder) => {
+      const current = watchers.get(folder);
+      if (current) {
+        current.names = names;
+        return;
+      }
+      if (!existsSync(folder)) return;
+      const w = watch(folder, (event, name) => {
+        if (name && (w.names.has(String(name)) || (w.names.has('*.md') && String(name).endsWith('.md')))) onChange();
+      });
+      w.names = names;
+      watchers.set(folder, w);
+    });
+  }
+  watchAll();
 
   // If someone leaves, the "connected" count updates.
   let lastCount = 0;
@@ -339,18 +402,25 @@ export function startServer({
           present: `${base}/present?key=${KEY}`,
           panel: `${base}/panel?key=${KEY}`,
           preview: `${base}/present?preview=1`,
+          studio: `${base}/studio?key=${KEY}`,
         },
         talk: () => talk,
+        connected,
         setPublicUrl(u) {
           session.apply({ type: 'url', url: u }, { presenter: true });
           save();
           broadcast();
         },
-        close() {
+        async close() {
+          if (studio) await studio.close();
           clearInterval(counter);
-          watcher.close();
+          watchers.forEach((w) => w.close());
           waiting.forEach((w) => w.res.end());
-          return new Promise((r) => server.close(() => r()));
+          const closed = new Promise((r) => server.close(() => r()));
+          // Open pages poll again at once; drop their connections so
+          // closing does not wait for them (Node 18.2 and newer).
+          if (server.closeAllConnections) server.closeAllConnections();
+          return closed;
         },
       });
     });

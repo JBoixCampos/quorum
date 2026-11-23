@@ -2,11 +2,12 @@
 // buttons. The right arrow runs each kind's next action (open, close,
 // reveal...) before moving on to the next slide.
 
+import { chartHtml } from '../shared/charts.js';
 import { KINDS, sentenceOptions } from '../shared/kinds.js';
+import { animateNumber } from './motion.js';
+import { morph } from './morph.js';
 import { esc } from './net.js';
 import { qrSvg } from './qr.js';
-
-const pct = (n, total) => (total ? `${Math.round((n / total) * 100)}%` : '0%');
 
 export function formatNumber(v, { year = false, digits = 0 } = {}) {
   if (v === null || v === undefined || !Number.isFinite(v)) return '';
@@ -22,27 +23,33 @@ function controls(list) {
   return `<div class="q-controls">${list.map(([name, text, main]) => `<button type="button" class="q-btn${main ? ' main' : ''}" data-do="${name}">${esc(text)}</button>`).join('')}</div>`;
 }
 
-// Bars that keep their DOM between updates (so widths animate).
-function barsHtml(options, { clickable = false } = {}) {
-  return `<div class="q-bars${options.length > 5 ? ' many' : ''}">${options.map((o) => `
-    <div class="q-bar${clickable ? ' clickable' : ''}" data-option="${esc(o)}">
-      <span class="q-bar-label">${esc(o)}</span>
-      <span class="q-bar-track"><span class="q-bar-fill"></span></span>
-      <span class="q-bar-value"></span>
-    </div>`).join('')}</div>`;
+// How results are drawn: {chart=...} on the block, else the talk's
+// "charts:" setting, else bars.
+function lookOf(spec, ctx, fallback = 'bars') {
+  if (spec.chart) return spec.chart;
+  const meta = ctx.talk && ctx.talk.meta;
+  const look = meta && meta.tokens && meta.tokens.charts;
+  return look && ['poll', 'multi', 'rounds'].includes(spec.kind) ? look : fallback;
 }
 
-function setBars(root, options, counts, total, { show = true, correct = null, highlight = true } = {}) {
+function revealOf(spec, ctx) {
+  const meta = ctx.talk && ctx.talk.meta;
+  return spec.revealStyle || (meta && meta.tokens && meta.tokens.reveal) || 'highlight';
+}
+
+// Draws results into `host`, patching the DOM in place so that bars grow,
+// columns rise and slices turn instead of jumping.
+function drawResults(host, look, options, counts, total, ctx, { show = true, correct = null, highlight = true, clickable = false } = {}) {
   const max = Math.max(0, ...options.map((o) => counts[o] || 0));
-  root.querySelectorAll('.q-bar').forEach((row) => {
-    const o = row.dataset.option;
+  const rows = options.map((o) => {
     const n = counts[o] || 0;
-    row.querySelector('.q-bar-fill').style.width = show && total ? `${(n / total) * 100}%` : '0';
-    row.querySelector('.q-bar-value').textContent = show ? pct(n, total) : '';
     const isCorrect = correct !== null && (Array.isArray(correct) ? correct.includes(o) : correct === o);
-    row.classList.toggle('correct', isCorrect);
-    row.classList.toggle('dim', correct !== null ? !isCorrect : (highlight && show && total > 0 && n < max));
+    const dim = correct !== null ? !isCorrect : (highlight && show && total > 0 && n < max);
+    return { label: o, value: n, state: isCorrect ? 'correct' : (dim ? 'dim' : '') };
   });
+  const meta = ctx.talk && ctx.talk.meta;
+  const series = !!(meta && meta.series) || ['donut', 'bubbles'].includes(look);
+  morph(host, chartHtml(look, rows, { total, show, series, clickable }));
 }
 
 const instructions = (open, how) => (open ? how : 'Get your phone ready.');
@@ -109,7 +116,7 @@ function phased(el, spec, ctx) {
               </div>
               <div data-strip></div>
             </div>
-          </div>` : barsHtml(spec.options)}
+          </div>` : '<div class="q-bars-host" data-results></div>'}
           <div class="q-reveal" data-reveal hidden>${spec.reveal || ''}</div>
         </div>
         <div class="q-int-side" data-ring></div>
@@ -120,6 +127,11 @@ function phased(el, spec, ctx) {
   let c = ctx;
   const st = () => (c.view.interaction && c.view.interaction.id === spec.id ? c.view.interaction : { phase: 0, total: 0, counts: {}, mean: null, values: [] });
   const max = kind.maxPhase(spec);
+  const look = lookOf(spec, ctx, isEstimate ? 'strip' : 'bars');
+  const reveal = revealOf(spec, ctx);
+  const box = el.querySelector('.q-int');
+  box.classList.add(`look-${look}`, `reveal-${reveal}`);
+  let meanShown = false;
   const phase = phaseControl(spec, () => c, st);
   onButtons(el, {
     open: () => phase.set(1),
@@ -141,15 +153,19 @@ function phased(el, spec, ctx) {
       el.querySelector('[data-after]').hidden = !has;
       if (has) {
         const digits = spec.year ? 0 : (Math.abs(s.mean) < 10 ? 2 : 0);
-        el.querySelector('[data-mean]').textContent = formatNumber(s.mean, { year: spec.year, digits });
+        const meanEl = el.querySelector('[data-mean]');
+        meanEl.textContent = formatNumber(s.mean, { year: spec.year, digits });
+        if (!meanShown && c.where !== 'thumbnail') animateNumber(meanEl, s.mean, { ms: 900 });
+        meanShown = true;
         el.querySelector('[data-median]').textContent = `Median: ${formatNumber(s.median, { year: spec.year, digits })}`;
         el.querySelector('[data-answer]').hidden = p < 3;
         el.querySelector('[data-answer-value]').textContent = spec.answerLabel || `${formatNumber(spec.answer, { year: spec.year, digits: 2 })}${spec.unit ? ` ${spec.unit}` : ''}`;
-        el.querySelector('[data-strip]').innerHTML = strip(spec, s, p >= 3);
-      }
+        el.querySelector('[data-strip]').innerHTML = (ESTIMATE_LOOKS[look] || strip)(spec, s, p >= 3);
+      } else meanShown = false;
     } else {
-      setBars(el, spec.options, s.counts || {}, s.total, { show: p >= 1, correct: p >= 3 && spec.answer !== undefined ? spec.answer : null });
+      drawResults(el.querySelector('[data-results]'), look, spec.options, s.counts || {}, s.total, c, { show: p >= 1, correct: p >= 3 && spec.answer !== undefined ? spec.answer : null });
     }
+    box.classList.toggle('revealed', p >= 3);
     el.querySelector('[data-reveal]').hidden = p < 3 || !spec.reveal;
     el.querySelector('[data-ring]').innerHTML = ring(s.total, c.view.connected, s.total === 1 ? 'answer' : 'answers');
     const show = (name, yes) => { el.querySelector(`[data-do="${name}"]`).hidden = !yes; };
@@ -207,6 +223,95 @@ function strip(spec, s, revealed) {
   </svg>`;
 }
 
+// The horizontal scale shared by the estimate looks.
+function axis(spec, s, revealed, W = 1500, M = 60) {
+  const values = s.values || [];
+  const all = [...values, s.mean, revealed ? spec.answer : null].filter((v) => Number.isFinite(v));
+  const ticks = [];
+  let x;
+  let lo;
+  let hi;
+  if (spec.scale === 'log') {
+    const pos = all.filter((v) => v > 0);
+    lo = Math.log10(Math.max(0.5, Math.min(...pos) / 2));
+    hi = Math.log10(Math.max(...pos) * 2);
+    x = (v) => M + ((Math.log10(Math.max(v, 10 ** lo)) - lo) / (hi - lo || 1)) * (W - 2 * M);
+    for (let k = Math.ceil(lo); k <= Math.floor(hi); k += 1) ticks.push(10 ** k);
+    return { x, ticks, inv: (px) => 10 ** (lo + ((px - M) / (W - 2 * M)) * (hi - lo)) };
+  }
+  const a = Math.min(...all);
+  const b = Math.max(...all);
+  const pad = (b - a) * 0.08 || 1;
+  lo = a - pad;
+  hi = b + pad;
+  x = (v) => M + ((v - lo) / (hi - lo)) * (W - 2 * M);
+  const stepSize = (hi - lo) / 6;
+  const mag = 10 ** Math.floor(Math.log10(stepSize || 1));
+  const nice = [1, 2, 5, 10].map((m) => m * mag).find((m) => m >= stepSize) || mag * 10;
+  for (let v = Math.ceil(lo / nice) * nice; v <= hi; v += nice) ticks.push(v);
+  return { x, ticks, inv: (px) => lo + ((px - M) / (W - 2 * M)) * (hi - lo) };
+}
+
+const tickMarks = (spec, a, y) => a.ticks.map((t) => `<text x="${a.x(t)}" y="${y}" text-anchor="middle" class="tick-label">${formatNumber(t, { year: spec.year, digits: 2 })}</text>`).join('');
+
+// Guesses in bins, as columns.
+function histogram(spec, s, revealed) {
+  const values = s.values || [];
+  if (!values.length) return '';
+  const W = 1500;
+  const H = 300;
+  const a = axis(spec, s, revealed, W);
+  const BINS = 16;
+  const width = (W - 120) / BINS;
+  const counts = new Array(BINS).fill(0);
+  values.forEach((v) => {
+    const k = Math.max(0, Math.min(BINS - 1, Math.floor((a.x(v) - 60) / width)));
+    counts[k] += 1;
+  });
+  const top = Math.max(...counts, 1);
+  const bars = counts.map((n, k) => {
+    const h = (n / top) * (H - 70);
+    return `<rect x="${60 + k * width + 4}" y="${H - 40 - h}" width="${width - 8}" height="${h}" rx="6"/>`;
+  }).join('');
+  const answer = revealed ? `<line x1="${a.x(spec.answer)}" x2="${a.x(spec.answer)}" y1="10" y2="${H - 40}" class="answer"/><text x="${a.x(spec.answer) + 12}" y="30" class="answer-label">Actual</text>` : '';
+  return `<svg class="q-strip q-hist" viewBox="0 0 ${W} ${H + 10}" aria-hidden="true">${bars}${answer}${tickMarks(spec, a, H)}</svg>`;
+}
+
+// Every guess as a dot, stacked so none hides another.
+function beeswarm(spec, s, revealed) {
+  const values = s.values || [];
+  if (!values.length) return '';
+  const W = 1500;
+  const R = 11;
+  const a = axis(spec, s, revealed, W);
+  const columns = new Map();
+  const dots = [...values].sort((p, q) => p - q).map((v) => {
+    const col = Math.round(a.x(v) / (R * 2));
+    const n = columns.get(col) || 0;
+    columns.set(col, n + 1);
+    const lift = Math.ceil(n / 2) * (R * 2 + 2) * (n % 2 ? -1 : 1);
+    return `<circle class="dot" cx="${col * R * 2}" cy="${100 + Math.max(-80, Math.min(80, lift))}" r="${R}"/>`;
+  }).join('');
+  const marker = (v, cls, label) => `<line x1="${a.x(v)}" x2="${a.x(v)}" y1="0" y2="190" class="${cls}"/><text x="${a.x(v) + 10}" y="18" class="${cls}-label">${label}</text>`;
+  return `<svg class="q-strip q-swarm" viewBox="0 0 ${W} 230" aria-hidden="true">${dots}
+    ${s.mean !== null ? marker(s.mean, 'mean', 'Average') : ''}${revealed ? marker(spec.answer, 'answer', 'Actual') : ''}${tickMarks(spec, a, 222)}</svg>`;
+}
+
+// The average as a level in a tube, with the answer as a mark.
+function thermometer(spec, s, revealed) {
+  if (!(s.values || []).length) return '';
+  const W = 1500;
+  const a = axis(spec, s, revealed, W);
+  const level = Math.max(0, a.x(s.mean) - 60);
+  const answer = revealed ? `<line x1="${a.x(spec.answer)}" x2="${a.x(spec.answer)}" y1="20" y2="150" class="mark"/><text x="${a.x(spec.answer) + 12}" y="30" class="answer-label">Actual</text>` : '';
+  return `<svg class="q-strip q-thermo" viewBox="0 0 ${W} 220" aria-hidden="true">
+    <rect class="tube" x="60" y="60" width="${W - 120}" height="60" rx="30"/>
+    <rect class="mercury" x="60" y="60" width="${level}" height="60" rx="30"/>
+    ${answer}${tickMarks(spec, a, 190)}</svg>`;
+}
+
+const ESTIMATE_LOOKS = { histogram, beeswarm, thermometer };
+
 // --- rounds: the same question over several items ----------------------------
 
 function rounds(el, spec, ctx) {
@@ -218,7 +323,7 @@ function rounds(el, spec, ctx) {
         <div class="q-int-main">
           <p class="q-small" data-counter></p>
           <p class="q-item" data-item></p>
-          ${barsHtml(spec.options)}
+          <div class="q-bars-host" data-results></div>
         </div>
         <div class="q-int-side" data-ring></div>
       </div>
@@ -227,6 +332,7 @@ function rounds(el, spec, ctx) {
   let c = ctx;
   const st = () => (c.view.interaction && c.view.interaction.id === spec.id ? c.view.interaction : { index: 0, open: false, done: false, total: 0, counts: {}, rounds: spec.items.length, item: spec.items[0] });
   const act = (action) => c.act({ type: 'control', id: spec.id, action });
+  const look = lookOf(spec, ctx);
   const names = ['open', 'close', 'next', 'previous', 'reset'];
   onButtons(el, Object.fromEntries(names.map((name) => [name, () => act(name)])));
   const paint = () => {
@@ -234,7 +340,7 @@ function rounds(el, spec, ctx) {
     el.querySelector('[data-counter]').textContent = `Round ${s.index + 1} of ${s.rounds}`;
     el.querySelector('[data-item]').textContent = s.item;
     el.querySelector('[data-hint]').textContent = s.done ? `${plural(s.total, 'vote')}.` : instructions(s.open, 'Vote on your phone.');
-    setBars(el, spec.options, s.counts, s.total, { show: s.open || s.done });
+    drawResults(el.querySelector('[data-results]'), look, spec.options, s.counts, s.total, c, { show: s.open || s.done });
     el.querySelector('[data-ring]').innerHTML = ring(s.total, c.view.connected, s.total === 1 ? 'vote' : 'votes');
     const show = (name, yes) => { el.querySelector(`[data-do="${name}"]`).hidden = !yes; };
     show('open', !s.open);
@@ -264,6 +370,7 @@ function sentence(el, spec, ctx) {
   el.innerHTML = `
     <div class="q-int q-sentence">
       <p class="q-sentence-text" data-text></p>
+      ${lookOf(spec, ctx) === 'tree' ? '<div class="q-tree" data-tree></div>' : ''}
       <p class="q-hint" data-hint></p>
       <div class="q-int-body">
         <div class="q-int-main" data-bars></div>
@@ -296,9 +403,13 @@ function sentence(el, spec, ctx) {
     const key = s.options.join('|');
     if (key !== shownOptions) {
       shownOptions = key;
-      el.querySelector('[data-bars]').innerHTML = s.options.length ? barsHtml(s.options, { clickable: true }) : '<p class="q-small">The sentence is finished.</p>';
+      el.querySelector('[data-bars]').innerHTML = s.options.length ? '<div class="q-bars-host" data-results></div>' : '<p class="q-small">The sentence is finished.</p>';
     }
-    if (s.options.length) setBars(el, s.options, s.counts, s.total, { show: s.open || s.total > 0 });
+    if (s.options.length) drawResults(el.querySelector('[data-results]'), 'bars', s.options, s.counts, s.total, c, { show: s.open || s.total > 0, clickable: true });
+    const tree = el.querySelector('[data-tree]');
+    if (tree) {
+      tree.innerHTML = s.words.map((w) => `<div class="q-tree-step"><span class="q-tree-word">${esc(w.text)}</span>${(w.alts || []).map((a) => `<span class="q-tree-alt">${esc(a)}</span>`).join('')}</div>`).join('');
+    }
     el.querySelector('[data-hint]').textContent = s.finished ? '' : instructions(s.open, 'Vote for the next word on your phone.');
     el.querySelector('[data-ring]').innerHTML = s.finished ? '' : ring(s.total, c.view.connected, s.total === 1 ? 'vote' : 'votes');
     const show = (name, yes) => { el.querySelector(`[data-do="${name}"]`).hidden = !yes; };
@@ -331,6 +442,8 @@ function questions(el, spec, ctx) {
       <div class="q-questions" data-list></div>
     </div>`;
   let c = ctx;
+  const look = lookOf(spec, ctx, 'list');
+  if (look === 'wall') el.querySelector('[data-list]').classList.add('wall');
   el.addEventListener('click', (e) => {
     const hide = e.target.closest('[data-hide]');
     if (hide) {
@@ -348,10 +461,20 @@ function questions(el, spec, ctx) {
     const v = c.view;
     let list = (v.questions || []).filter((q) => !q.answered);
     if (spec.mode === 'latest') list = [...list].sort((a, b) => b.created - a.created);
-    list = list.slice(0, 6);
+    if (look === 'spotlight') {
+      const on = list.find((q) => q.id === v.questionOnScreen) || list[0];
+      list = on ? [on, ...list.filter((q) => q !== on)] : list;
+    }
+    list = list.slice(0, look === 'wall' ? 9 : 6);
     const pending = v.pendingQuestions || 0;
     const total = (v.questions || []).length + pending;
     el.querySelector('[data-hint]').textContent = `Ask from your phone, anonymously${spec.mode === 'top' ? ', and vote for the ones you want answered' : ''}.${total ? ` ${total} received${pending ? `, ${pending} waiting` : ''}.` : ''}`;
+    if (look === 'spotlight' && list.length) {
+      const [top, ...others] = list;
+      el.querySelector('[data-list]').innerHTML = `<div data-question="${esc(top.id)}"><p class="q-spotlight">${esc(top.text)}</p><p class="q-spotlight-meta">${spec.mode === 'top' ? `${plural(top.votes, 'vote')} · ` : ''}${others.length} more waiting</p></div>
+        ${others.slice(0, 3).map((q) => `<div class="q-question-row" data-question="${esc(q.id)}"><span class="q-question-text">${esc(q.text)}</span>${spec.mode === 'top' ? `<span class="q-votes">${q.votes}</span>` : ''}<button type="button" class="q-hide" data-hide="${esc(q.id)}" aria-label="Hide this question">×</button></div>`).join('')}`;
+      return;
+    }
     el.querySelector('[data-list]').innerHTML = list.length ? list.map((q) => `
       <div class="q-question-row${v.questionOnScreen === q.id ? ' on' : ''}" data-question="${esc(q.id)}">
         <span class="q-question-text">${esc(q.text)}</span>

@@ -83,7 +83,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   watch(page, 'landing');
   await page.goto(base);
-  const frame = page.frameLocator('#write iframe');
+  const frame = page.frameLocator('#try iframe');
   const slideText = () => frame.locator('.q-slide').textContent();
 
   check('the landing playground renders the Markdown', await until(async () => (await slideText()).includes('Where should we go for lunch?')));
@@ -92,22 +92,24 @@ try {
     return text.includes('simulated people') && !/Slide \d+ of/.test(text);
   }));
 
-  const hero = page.frameLocator('.stage iframe');
-  check('the hero shows a live slide from the demo', await until(async () => (await hero.locator('.q-slide').textContent()).includes('Pineapple on pizza?')));
-  check('the agent session in the hero plays to the end', await until(async () => (await page.$$('.terminal [data-line]:not(.shown)')).length === 0));
+  check('the hero shows Studio and the way to start', await page.isVisible('.hero .window img') && (await page.getAttribute('.hero .button.primary', 'href')).includes('quorum-talk/generate'));
+  check('the four steps are there', (await page.locator('.steps li').count()) === 4);
+  await page.locator('[data-terminal]').scrollIntoViewIfNeeded();
+  check('the agent session plays to the end once it is seen', await until(async () => (await page.locator('.terminal [data-line]:not(.shown)').count()) === 0, 10000));
+  await page.locator('#try').scrollIntoViewIfNeeded();
 
   await page.click('[data-chip="estimate"]');
   check('a chip adds a slide and the preview follows it', await until(async () => (await slideText()).includes('How many keys does a piano have?')));
-  check('the editor has the new block', (await page.inputValue('#write textarea')).includes('::: estimate {#keys}'));
+  check('the editor has the new block', (await page.inputValue('#try textarea')).includes('::: estimate {#keys}'));
 
   await page.click('[data-chip="estimate"]');
-  check('adding the same block twice gives it a new id', await until(async () => (await page.inputValue('#write textarea')).includes('{#keys-2}')));
+  check('adding the same block twice gives it a new id', await until(async () => (await page.inputValue('#try textarea')).includes('{#keys-2}')));
 
-  await page.fill('#write textarea', '::: poll {#solo} Only one option\n- A\n:::\n');
+  await page.fill('#try textarea', '::: poll {#solo} Only one option\n- A\n:::\n');
   check('typing updates the slide', await until(async () => (await slideText()).includes('Only one option')));
   check('warnings from the parser are shown', await until(async () => (await page.textContent('[data-pg-status]')).includes('at least two options')));
 
-  await page.fill('#write textarea', '::: poll {#pick} Pick one\n- Red\n- Blue\n:::\n');
+  await page.fill('#try textarea', '::: poll {#pick} Pick one\n- Red\n- Blue\n:::\n');
   await until(async () => (await slideText()).includes('Pick one'));
   await frame.locator('[data-do="open"]').click();
   check('the simulated audience votes in the preview', await until(async () => Number(await frame.locator('.q-ring b').textContent()) > 2, 10000));
@@ -149,7 +151,7 @@ try {
   // Every page loads, with the same header.
   for (const path of ['docs/', 'docs/components/', 'docs/giving-a-talk/', 'docs/agents/', 'examples/']) {
     await docs.goto(base + path);
-    check(`${path} has the site navigation`, (await docs.$$('nav.links a')).length === 5);
+    check(`${path} has the site navigation`, (await docs.$$('nav.links a')).length === 6);
   }
   // Every example component runs live on the examples page.
   await docs.goto(`${base}examples/`);

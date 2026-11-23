@@ -29,7 +29,9 @@ test('check --json reports a clean talk and exits 0', () => {
   try {
     const { status, result } = runJson(dir);
     assert.equal(status, 0);
-    assert.deepEqual(Object.keys(result).sort(), ['interactions', 'ok', 'slides', 'title', 'warnings']);
+    assert.deepEqual(Object.keys(result).sort(), ['interactions', 'issues', 'ok', 'slides', 'suggestions', 'theme', 'title', 'warnings']);
+    assert.equal(result.theme, 'clean');
+    assert.deepEqual(result.issues, []);
     assert.equal(result.ok, true);
     assert.equal(result.slides, 2);
     assert.deepEqual(result.interactions, [{ slide: 2, id: 'p', kind: 'poll', title: 'Pick one' }]);

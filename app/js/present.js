@@ -16,10 +16,15 @@
 //   ?playground=1               wait for Markdown from the page that embeds
 //                               it (same origin only) and render that instead
 
+import { chartHtml, formatValue } from '../shared/charts.js';
+import { iconSvg } from '../shared/icons.js';
 import { parseTalk } from '../shared/markdown.js';
 import { Session } from '../shared/session.js';
-import { applyBrand, logoHtml } from './brand.js';
+import { applyBrand, logoHtml, themeOf } from './brand.js';
 import { mountError, loadComponent } from './components.js';
+import {
+  animateNumber, captureLeaving, codeRanges, countUp, playTransition, reactionLayer,
+} from './motion.js';
 import { connect, esc, send } from './net.js';
 import { qrSvg } from './qr.js';
 import { mountInteraction, mountJoin } from './screen.js';
@@ -29,7 +34,11 @@ const params = new URLSearchParams(location.search);
 const STATIC = window.QUORUM_STATIC || null; // set by `quorum build`
 const KEY = params.get('key') || '';
 const VIEW = params.get('view') || '';
-const STILL = VIEW === 'still';
+// "studio" is the editor's canvas: one slide, every step shown, with a source map.
+const STILL = VIEW === 'still' || VIEW === 'studio';
+const STUDIO = VIEW === 'studio';
+// The editor's thumbnails and canvas: no simulated audience, no polling.
+const NOSIM = params.get('nosim') === '1';
 const IN_PANEL = VIEW === 'panel';
 const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
@@ -45,6 +54,7 @@ const corner = document.querySelector('[data-corner]');
 const logo = document.querySelector('[data-logo]');
 const notesEl = document.querySelector('[data-notes]');
 const bar = document.querySelector('[data-preview]');
+const reactions = reactionLayer(document.querySelector('[data-reactions]'));
 
 const state = {
   talk: null,
@@ -57,6 +67,9 @@ const state = {
   serverRev: -1,
   uiLocal: {},
   notes: false,
+  // The slide on screen, so the next one can animate from it.
+  shown: null,
+  theme: null,
 };
 
 let session = null;
@@ -66,8 +79,10 @@ let stillSlide = Number(params.get('slide') || 0);
 
 // --- scaling the 1920x1080 stage to the window ------------------------------
 
+let stageScale = 1;
 function fit() {
   const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  stageScale = s;
   stage.style.transform = `scale(${s})`;
   stage.style.left = `${(window.innerWidth - 1920 * s) / 2}px`;
   stage.style.top = `${(window.innerHeight - 1080 * s) / 2}px`;
@@ -78,7 +93,8 @@ fit();
 // --- loading the talk --------------------------------------------------------
 
 async function loadTalk() {
-  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'preview=1'}`;
+  const extra = ['map', 'override'].filter((k) => params.get(k)).map((k) => `&${k}=${encodeURIComponent(params.get(k))}`).join('');
+  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'preview=1'}${extra}`;
   const r = await fetch(url, { cache: 'no-store' });
   if (!r.ok) throw new Error(r.status === 403 ? 'Wrong presenter key.' : `Could not load the talk (${r.status}).`);
   return r.json();
@@ -86,6 +102,7 @@ async function loadTalk() {
 
 function applyTheme(meta) {
   applyBrand(meta, { assets: ASSETS, style: true });
+  state.theme = null;
   const html = logoHtml(meta, ASSETS);
   if (logo.innerHTML !== html) logo.innerHTML = html;
   document.title = STILL || IN_PANEL ? 'Preview' : meta.title;
@@ -99,6 +116,18 @@ function fixAssets(root) {
     if (!/^([a-z]+:|\/|#|data:)/i.test(src)) n.setAttribute('src', base + src.replace(/^\.\//, ''));
   });
 }
+
+// --- helpers for components: ctx.ui ----------------------------------------
+
+const UI = {
+  // A chart drawn like Quorum's own: ctx.ui.chart('donut', [{ label, value }], { total }).
+  chart: (type, rows, opts = {}) => chartHtml(type, rows, { series: true, ...opts }),
+  icon: (name, cls = 'q-icon') => iconSvg(name, cls),
+  // The colour of answer n (from the talk's palette), as a CSS value.
+  color: (n) => `var(--series-${(Math.abs(n) % 8) + 1})`,
+  countUp: (el, to, opts) => animateNumber(el, to, opts),
+  format: formatValue,
+};
 
 // --- shared component state (screen and preview stay identical) --------------
 
@@ -158,6 +187,12 @@ function context(extra = {}) {
     // Which copy of the slide this is: the shared screen, the panel's
     // preview, or a still thumbnail. Only "screen" should start slow work.
     where: STILL ? 'thumbnail' : (IN_PANEL ? 'preview' : 'screen'),
+    // The talk's resolved look: colours, palette, fonts, tokens.
+    get theme() {
+      if (!state.theme && state.talk) state.theme = themeOf(state.talk.meta);
+      return state.theme;
+    },
+    ui: UI,
     act,
     ...extra,
   };
@@ -173,12 +208,21 @@ function renderSlide() {
   const key = `${state.talk.version}:${state.index}`;
   if (state.mountedFor === key) return;
   state.mountedFor = key;
+  const prev = state.shown;
+  const moving = !STILL && prev && prev.version === state.talk.version && prev.index !== state.index;
+  const kind = slide.transition || (state.talk.meta.tokens || {}).transition || 'none';
+  const leaving = moving ? captureLeaving(slideEl, kind) : null;
+  state.shown = { index: state.index, version: state.talk.version };
   unmount();
   const bg = slide.background;
-  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}${bg ? ' has-bg' : ''}${bg && bg.dim ? ' bg-dim' : ''}`;
+  const options = (slide.layoutOptions || []).filter((o) => /^[a-z-]+$/.test(o)).map((o) => ` opt-${o}`).join('');
+  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}${options}${bg && (bg.color || bg.image) ? ' has-bg' : ''}${bg && bg.dim ? ' bg-dim' : ''}`;
+  slideEl.dataset.sid = slide.id;
+  if (bg && bg.gradient) slideEl.dataset.gradient = bg.gradient;
+  else delete slideEl.dataset.gradient;
   slideEl.style.backgroundColor = bg && bg.color ? bg.color : '';
   slideEl.style.backgroundImage = bg && bg.image ? `url("${ASSETS}${bg.image}")` : '';
-  slideEl.innerHTML = `<div class="q-content">${slide.html}</div>`;
+  slideEl.innerHTML = `${slide.media ? `<div class="q-media">${slide.media}</div>` : ''}<div class="q-content">${slide.html}</div>`;
   fixAssets(slideEl);
   logo.hidden = !slide.logo || !logo.innerHTML;
   stage.classList.toggle('dim', !!(bg && bg.dim));
@@ -205,6 +249,14 @@ function renderSlide() {
       entry.handle = component.mount(el, componentContext(spec)) || {};
     }).catch((error) => mountError(el, spec.name, error));
   });
+  if (leaving) {
+    const back = prev.index > state.index;
+    // Steps of the new slide must be in place before measuring it.
+    slideEl.querySelectorAll('.q-step').forEach((n) => {
+      n.classList.toggle('shown', Number(n.dataset.step) <= state.step);
+    });
+    playTransition(leaving, slideEl, { dir: back ? -1 : 1, scale: stageScale });
+  }
 }
 
 function componentContext(spec) {
@@ -236,7 +288,10 @@ function footerHtml(slide, showJoin, url) {
     n: String(state.index + 1),
     total: String(slides.length),
   };
-  const fill = (text) => text.replace(/\{(title|author|section|n|total)\}/g, (_, k) => esc(values[k]));
+  // An empty placeholder takes the separator next to it along: "Talk · {section}".
+  const fill = (text) => text.replace(/\{(title|author|section|n|total)\}/g, (_, k) => esc(values[k]))
+    .replace(/^\s*[·•|/-]\s*|\s*[·•|/-]\s*$/g, '')
+    .replace(/\s*[·•]\s*(?=\s*[·•])/g, '');
   return `<span>${fill(parts.left)}</span><span>${showJoin ? parts.right : fill(parts.right)}</span>`;
 }
 
@@ -262,6 +317,9 @@ function refresh() {
   slideEl.querySelectorAll('.q-step').forEach((n) => {
     n.classList.toggle('shown', Number(n.dataset.step) <= state.step);
   });
+  codeRanges(slideEl, state.step);
+  countUp(slideEl, { still: STILL });
+  if (!STILL && !IN_PANEL) reactions.show((state.view.reactions || {}).recent);
   state.mounted.forEach((m) => {
     if (!m.handle || !m.handle.update) return;
     m.handle.update(m.type === 'component' ? componentContext(m.spec) : context());
@@ -313,9 +371,12 @@ function go(index, step) {
     return;
   }
   state.pending += 1;
-  send({ type: 'stage', slide: state.index, step: state.step }, { key: KEY }).finally(() => {
+  send({ type: 'stage', slide: state.index, step: state.step }, { key: KEY }).then((r) => {
     state.pending -= 1;
-    if (state.pending === 0) syncFromServer();
+    // Only go back to what the server says if it refused the change: the
+    // last view it sent may still show the previous slide, and jumping
+    // back to it would replay the transition.
+    if (state.pending === 0 && !(r && r.ok)) syncFromServer();
   });
 }
 
@@ -357,6 +418,18 @@ function syncFromServer() {
 }
 
 window.quorum = {
+  // The editor changed the talk: read it again and draw the same slide.
+  async reloadTalk() {
+    const talk = await loadTalk();
+    talk.version = (state.talk ? state.talk.version || 0 : 0) + 1;
+    state.talk = talk;
+    applyTheme(talk.meta);
+    session = new Session(talk, null, { moderation: false });
+    refreshLocalView();
+    state.index = Math.min(state.index, talk.slides.length - 1);
+    window.quorum.show(state.index);
+    return talk.slides.length;
+  },
   next,
   previous,
   go: (i, step = 0) => go(i, step),
@@ -409,6 +482,10 @@ function showError(message) {
 const EMPTY = '<!-- layout: center -->\n\nWrite some Markdown to see a slide here.';
 
 function loadSource(markdown) {
+  // The website's playgrounds draw slides in its own theme when the
+  // Markdown does not choose one (?theme=midnight).
+  const theme = PLAYGROUND && /^[a-z]+$/.test(params.get('theme') || '') ? params.get('theme') : '';
+  if (theme && !/^\s*---\s*\n/.test(String(markdown || ''))) markdown = `---\ntheme: ${theme}\n---\n\n${markdown || ''}`;
   let talk = parseTalk(String(markdown || ''));
   // Only front matter, or nothing at all: show a hint instead of no slide.
   if (!talk.slides.length) talk = parseTalk(`${markdown || ''}\n\n${EMPTY}`);
@@ -460,6 +537,7 @@ async function start() {
   state.talk = talk;
   applyTheme(talk.meta);
   if (IN_PANEL) document.documentElement.classList.add('in-panel');
+  if (STUDIO) document.documentElement.classList.add('in-studio');
   if (STILL) {
     document.documentElement.classList.add('still');
     window.quorum.show(stillSlide);
@@ -468,7 +546,7 @@ async function start() {
   if (PREVIEW) {
     session = new Session(talk, null, { moderation: false });
     if (!STATIC) session.apply({ type: 'url', url: location.origin }, { presenter: true });
-    if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
+    if (AUDIENCE && !NOSIM) simulator = new Simulator(session, () => refreshLocalView());
     refreshLocalView();
     // A static build can be opened on a given slide: ?slide=3
     if (STATIC && !STILL && params.has('slide')) {

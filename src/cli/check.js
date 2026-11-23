@@ -5,7 +5,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { parseTalk } from '../shared/markdown.js';
+import { designCheck } from './design-check.js';
+import { readTalk } from './load.js';
 
 // Components that ship with Quorum (app/js/components.js).
 export const BUILT_IN_COMPONENTS = ['countdown', 'qr', 'embed'];
@@ -13,10 +14,12 @@ export const BUILT_IN_COMPONENTS = ['countdown', 'qr', 'embed'];
 export function checkTalk(dir, file = 'talk.md') {
   const path = join(dir, file);
   if (!existsSync(path)) {
-    return { ok: false, title: '', slides: 0, interactions: [], warnings: [`No ${file} in ${dir}.`] };
+    const message = `No ${file} in ${dir}.`;
+    return { ok: false, title: '', slides: 0, interactions: [], warnings: [message], issues: [{ kind: 'file', slide: null, message }], suggestions: [] };
   }
-  const talk = parseTalk(readFileSync(path, 'utf8'));
+  const talk = readTalk(dir, file);
   const warnings = [...talk.warnings];
+  const fromParser = warnings.length;
   const interactions = [];
   const missing = (rel) => !existsSync(join(dir, rel));
   const { meta } = talk;
@@ -55,11 +58,25 @@ export function checkTalk(dir, file = 'talk.md') {
       }
     });
   });
+  // Each warning with a kind and a slide number, for tools that fix them by type.
+  const slideOf = (m) => {
+    const x = m.match(/^Slide (\d+)/);
+    return x ? Number(x[1]) : null;
+  };
+  const issues = warnings.map((message, k) => ({ kind: k < fromParser ? 'format' : 'file', slide: slideOf(message), message }));
+  const design = designCheck(talk);
+  design.issues.forEach((i) => {
+    issues.push(i);
+    warnings.push(i.message);
+  });
   return {
     ok: warnings.length === 0,
     title: talk.meta.title,
     slides: talk.slides.length,
+    theme: talk.meta.preset,
     interactions,
     warnings,
+    issues,
+    suggestions: design.suggestions,
   };
 }

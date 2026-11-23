@@ -5,6 +5,7 @@
 //   examples/              a gallery of the example components
 //   playground/            Markdown next to the live slide
 //   demo/                  a playable static build of examples/demo
+//   showcase/              a playable static build of examples/showcase (themes, layouts, blocks)
 //   llms.txt, llms-full.txt   the docs for AI agents
 //
 // docs/*.md stay the single source of truth. Every link is relative, so the
@@ -30,11 +31,16 @@ const read = (...p) => readFileSync(join(ROOT, ...p), 'utf8');
 
 // The docs, in reading order. Every docs/*.md must be listed here.
 const DOCS = [
-  { file: 'README.md', slug: '', label: 'Overview' },
+  { file: 'README.md', slug: '', label: 'Get started' },
+  { file: 'agents.md', slug: 'agents', label: 'Working with an agent' },
+  { file: 'studio.md', slug: 'studio', label: 'Studio' },
+  { file: 'remix.md', slug: 'remix', label: 'Alternatives for a slide' },
+  { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Presenting' },
+  { file: 'powerpoint.md', slug: 'powerpoint', label: 'PowerPoint and PDF' },
+  { file: 'repository.md', slug: 'repository', label: 'Teams and repositories' },
   { file: 'format.md', slug: 'format', label: 'The talk format' },
+  { file: 'design.md', slug: 'design', label: 'Design and themes' },
   { file: 'components.md', slug: 'components', label: 'Components' },
-  { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Giving a talk' },
-  { file: 'agents.md', slug: 'agents', label: 'Built for agents' },
 ];
 
 // Components the playground can render: they are in the demo build.
@@ -77,16 +83,18 @@ function docLink(from) {
 // --- the shared page template -----------------------------------------------
 
 const NAV = [
+  ['How it works', '#how'],
   ['Docs', 'docs/'],
-  ['Examples', 'examples/'],
-  ['Playground', 'playground/'],
+  ['Studio', 'docs/studio/'],
   ['For agents', 'docs/agents/'],
+  ['Playground', 'playground/'],
 ];
 
 // The section of the site a page belongs to, for the current link.
 function current(path, to) {
-  if (to === 'docs/agents/') return path === to;
-  if (to === 'docs/') return path.startsWith('docs/') && path !== 'docs/agents/';
+  if (to.startsWith('#')) return false;
+  if (to === 'docs/agents/' || to === 'docs/studio/') return path === to;
+  if (to === 'docs/') return path.startsWith('docs/') && path !== 'docs/agents/' && path !== 'docs/studio/';
   return path.startsWith(to);
 }
 
@@ -114,15 +122,17 @@ function footer(path) {
       <div class="grid">
         <div>
           <a class="brand" href="${to('')}"><img src="${to('favicon.svg')}" alt="">Quorum</a>
-          <p>Presentations, but interactive. Agent ready. Open source, under the MIT license.</p>
+          <p>Your agent writes the talk, you shape it, the room takes part. Open source, under the MIT license.</p>
         </div>
         <nav aria-label="Learn">
           <h2>Learn</h2>
           <ul>
-            <li><a href="${to('docs/')}">Overview</a></li>
+            <li><a href="${to('docs/')}">Get started</a></li>
+            <li><a href="${to('docs/studio/')}">Studio</a></li>
+            <li><a href="${to('docs/giving-a-talk/')}">Presenting</a></li>
+            <li><a href="${to('docs/powerpoint/')}">PowerPoint and PDF</a></li>
+            <li><a href="${to('docs/repository/')}">Teams and repositories</a></li>
             <li><a href="${to('docs/format/')}">The talk format</a></li>
-            <li><a href="${to('docs/components/')}">Components</a></li>
-            <li><a href="${to('docs/giving-a-talk/')}">Giving a talk</a></li>
           </ul>
         </nav>
         <nav aria-label="Try">
@@ -130,13 +140,14 @@ function footer(path) {
           <ul>
             <li><a href="${to('playground/')}">Playground</a></li>
             <li><a href="${to('demo/')}">Demo talk</a></li>
+            <li><a href="${to('showcase/')}">Showcase</a></li>
             <li><a href="${to('examples/')}">Examples</a></li>
           </ul>
         </nav>
         <nav aria-label="For agents">
           <h2>For agents</h2>
           <ul>
-            <li><a href="${to('docs/agents/')}">Set up your agent</a></li>
+            <li><a href="${to('docs/agents/')}">Working with an agent</a></li>
             <li><a href="${to('llms.txt')}">llms.txt</a></li>
             <li><a href="${to('llms-full.txt')}">llms-full.txt</a></li>
             <li><a href="${BLOB}agents/quorum/SKILL.md">The skill</a></li>
@@ -407,12 +418,12 @@ const CHART_PAGE = `<!doctype html>
 <title>A page in the talk folder</title>
 <style>
   html, body { margin: 0; height: 100%; }
-  body { display: grid; place-content: center; gap: 28px; padding: 40px; background: #fbfaf8; color: #16181a; font: 400 28px/1.4 system-ui, sans-serif; }
+  body { display: grid; place-content: center; gap: 28px; padding: 40px; background: #0e0f11; color: #ececef; font: 400 28px/1.4 system-ui, sans-serif; }
   h1 { margin: 0; font-size: 44px; }
-  p { margin: 0; color: #5d6468; max-width: 32em; }
+  p { margin: 0; color: #9aa0aa; max-width: 32em; }
   .bars { display: flex; align-items: flex-end; gap: 18px; height: 220px; }
-  .bars span { width: 64px; border-radius: 10px 10px 4px 4px; background: #ff6a00; transform-origin: bottom; animation: grow 1.2s cubic-bezier(.2,.7,.2,1) both; }
-  .bars span:nth-child(2n) { background: #ffb37a; }
+  .bars span { width: 64px; border-radius: 10px 10px 4px 4px; background: #8b7bff; transform-origin: bottom; animation: grow 1.2s cubic-bezier(.2,.7,.2,1) both; }
+  .bars span:nth-child(2n) { background: #22d3ee; }
   @keyframes grow { from { transform: scaleY(0); } }
   @media (prefers-reduced-motion: reduce) { .bars span { animation: none; } }
 </style>
@@ -441,7 +452,7 @@ function buildLiveExamples(entries) {
       if (!source) throw new Error(`The example ${e.name} has no usage block to show live.`);
       return `## ${humanName(e.name)}\n\n${source}`;
     });
-    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum components\ntheme: light\n---\n\n${slides.join('\n\n---\n\n')}\n`);
+    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum components\ntheme: midnight\n---\n\n${slides.join('\n\n---\n\n')}\n`);
     execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', dir, '--out', join(OUT, 'examples', 'live')], { stdio: 'ignore' });
     return new Map(entries.map((e, i) => [e.name, i]));
   } finally {
@@ -490,6 +501,7 @@ function buildPlayground() {
   const path = 'playground/';
   const start = `---
 title: My talk
+theme: midnight
 ---
 
 <!-- layout: center -->
@@ -519,7 +531,7 @@ The queue is long for a reason.
       <p class="lede">Write Markdown on the left and the real slide appears on the right, with 24 simulated people ready to vote. Your draft stays in this browser. When you like it, copy it into <code>talk.md</code>. <a href="${href(path, 'docs/format/')}">Every block is in the format guide</a>.</p>
     </div>
     <div class="wrap" style="padding-bottom:88px">
-      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'demo/')}?playground=1">
+      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'demo/')}?playground=1&theme=midnight">
         <textarea aria-label="Markdown of the talk">${escapeHtml(start)}</textarea>
       </div>
     </div>`,
@@ -530,8 +542,8 @@ The queue is long for a reason.
 
 function buildLanding() {
   const html = read('site', 'index.html')
-    .replace('{{social}}', social('', 'Quorum: presentations, but interactive. Agent ready.',
-      'Presentations where the room takes part, written in Markdown so your AI agent can write, check and extend them. Open source, runs from your laptop.'))
+    .replace('{{social}}', social('', 'Quorum: your agent writes the talk, you shape it, the room takes part',
+      'Start from a template, let your coding agent write the talk, shape it in Studio, then present it live with the audience on their phones or export it to PowerPoint. Open source, runs from your laptop.'))
     .replace('{{header}}', header(''))
     .replace('{{footer}}', footer(''));
   writeFileSync(join(OUT, 'index.html'), html);
@@ -542,9 +554,9 @@ function buildLanding() {
 function buildLlms() {
   const index = `# Quorum
 
-> Quorum is an open-source toolkit for presentations where the audience takes part, built so AI agents can write and check them. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components. People answer from their phones through a QR code, and everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
+> Quorum is an open-source toolkit for talks that a coding agent writes, a person shapes in Quorum Studio, and the audience takes part in from their phones; they can also be exported to PowerPoint. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components, in a git repository. Everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
 
-Install with \`npm install -g github:JBoixCampos/quorum\` (Node.js 18 or newer). To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
+Start a talk with \`npx github:JBoixCampos/quorum new <folder>\` (Node.js 18 or newer), then \`npm install\` in it. To write or edit a talk: read AGENTS.md in the folder, edit talk.md, and run \`npx quorum check --json\` until it reports no warnings. To offer the person alternatives for a slide, save them with \`quorum variant add <slide>\`; they choose in Studio. Never touch the .quorum/ folder and never share the presenter key.
 
 ## Docs
 
@@ -555,6 +567,8 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
 - [Demo talk source](${BLOB}examples/demo/talk.md): seven slides, one feature each
+- [Showcase talk source](${BLOB}examples/showcase/talk.md): a theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
+- [Slide patterns](${BLOB}agents/quorum/patterns.md): proven slides to build a talk from, and how to choose a theme
 - [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
 - [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
@@ -570,11 +584,14 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
     'templates/starter/components/counter.js',
     'templates/starter/talk.md',
     'examples/brand/talk.md',
+    'examples/showcase/talk.md',
+    'agents/quorum/patterns.md',
   ].map((f) => `${'='.repeat(72)}\nFile: ${f}\n${'='.repeat(72)}\n\n${read(f).trim()}\n`);
   const full = `# Quorum: the full reference
 
 This file has the whole Quorum documentation, then an example component, the
-counter component and the starter talk that \`quorum new\` creates.
+counter component, the starter talk that \`quorum new\` creates, the branded and
+showcase talks, and the slide patterns.
 Source: ${REPO}
 
 ${[...parts, ...sources].join('\n')}`;
@@ -591,6 +608,7 @@ cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
 cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'demo'), '--out', join(OUT, 'demo')], { stdio: 'inherit' });
+execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'showcase'), '--out', join(OUT, 'showcase')], { stdio: 'inherit' });
 // The playground renders through the demo build: give it every example.
 cpSync(join(ROOT, 'templates', 'starter', 'components', 'counter.js'), join(OUT, 'demo', 'talk', 'components', 'counter.js'));
 

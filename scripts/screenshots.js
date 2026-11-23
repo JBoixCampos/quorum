@@ -1,18 +1,20 @@
 // Takes the screenshots in docs/images/: what the room sees (the shared
 // screen), what the speaker sees (the panel) and what a phone sees, all
-// during the same poll of the demo talk, and the same kind of poll in a
-// talk with a brand of its own (examples/brand). Needs Playwright:
+// during the same poll of the demo talk, the same kind of poll in a talk
+// with a brand of its own (examples/brand), and one slide of
+// examples/showcase in each theme (themes.png). Needs Playwright:
 //
 //   npm install --no-save playwright && npx playwright install chromium
 //   node scripts/screenshots.js
 
-import { cpSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { startServer } from '../src/server/server.js';
+import { PRESETS } from '../src/shared/design.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'docs', 'images');
@@ -113,6 +115,33 @@ try {
     await brand.close();
     rmSync(brandDir, { recursive: true, force: true });
   }
+  // The same slide of the showcase in every theme, as one image.
+  const THEME_SLIDE = 3; // "Four ingredients": cards with icons
+  const shots = [];
+  for (const name of Object.keys(PRESETS)) {
+    const themeDir = mkdtempSync(join(tmpdir(), 'quorum-shots-'));
+    cpSync(join(ROOT, 'examples', 'showcase'), themeDir, { recursive: true });
+    const talkFile = join(themeDir, 'talk.md');
+    writeFileSync(talkFile, readFileSync(talkFile, 'utf8').replace(/^theme: .*$/m, `theme: ${name}`));
+    const preview = await startServer({ talkDir: themeDir, port: 0, preview: true, log: () => {} });
+    try {
+      const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+      await page.goto(`http://localhost:${preview.port}/present?preview=1&slide=${THEME_SLIDE}`);
+      await page.addStyleTag({ content: '.q-preview-bar, .q-reactions { display: none !important; }' });
+      await page.waitForFunction(() => document.querySelector('.q-content'));
+      await page.evaluate((i) => window.quorum.go(i, 9), THEME_SLIDE);
+      await wait(1500);
+      shots.push({ name, data: (await page.screenshot()).toString('base64') });
+      await page.close();
+    } finally {
+      await preview.close();
+      rmSync(themeDir, { recursive: true, force: true });
+    }
+  }
+  const sheet = await browser.newPage({ viewport: { width: 1600, height: 500 } });
+  await sheet.setContent(`<style>body{margin:0;padding:12px;background:#e9e6e1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font:600 15px system-ui;color:#333}figure{margin:0}img{width:100%;display:block;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15)}figcaption{padding:6px 2px 0}</style>
+    ${shots.map((x) => `<figure><img src="data:image/png;base64,${x.data}"><figcaption>${x.name}</figcaption></figure>`).join('')}`);
+  await sheet.screenshot({ path: join(OUT, 'themes.png'), fullPage: true });
   console.log(`Screenshots saved in ${OUT}`);
 } finally {
   await browser.close();

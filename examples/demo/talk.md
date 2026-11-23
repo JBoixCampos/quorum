@@ -1,8 +1,7 @@
 ---
 title: How does an AI write?
 author: Quorum demo
-accent: "#ff6a00"
-theme: light
+theme: midnight
 duration: 5
 ---
 

@@ -1,6 +1,8 @@
 /* Quorum: the audience's phone. */
 
-body.join { min-height: 100vh; min-height: 100dvh; font-size: 18px; line-height: 1.45; padding: 0 0 96px; }
+body.join { min-height: 100vh; min-height: 100dvh; font-size: 18px; line-height: 1.45; padding: 0 0 96px; background-image: var(--texture), var(--gradient); background-size: var(--texture-size), cover; background-attachment: fixed; --r: min(calc(var(--radius) * 0.6), 22px); }
+body.join.j-has-reactions { padding-bottom: 170px; }
+body.j-photo { background-size: cover; background-position: center; }
 /* A frame in the accent colour when it's your turn. */
 body.join::before { content: ''; position: fixed; inset: 0; border: 6px solid var(--accent); opacity: 0; pointer-events: none; transition: opacity 300ms; z-index: 5; }
 body.j-your-turn::before { opacity: 1; }
@@ -14,7 +16,7 @@ body.j-your-turn::before { opacity: 1; }
 .j-status[data-state="offline"]::before { background: var(--bad); }
 
 .j-main { padding: 12px 20px 24px; max-width: 560px; margin: 0 auto; }
-.j-main h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; margin: 4px 0 18px; }
+.j-main h1 { font-family: var(--font-display); font-weight: var(--title-weight); text-transform: var(--title-case); font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; margin: 4px 0 18px; }
 .j-main h2 { font-size: 17px; font-weight: 600; margin: 24px 0 10px; }
 .j-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-text); margin: 8px 0 0; }
 .j-muted { color: var(--muted); margin: 0; }
@@ -23,8 +25,10 @@ body.j-your-turn::before { opacity: 1; }
 @keyframes j-pulse { 50% { transform: scale(1.5); opacity: 0.5; } }
 
 .j-options { display: grid; gap: 10px; margin: 0 0 14px; }
-.j-option { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 12px 18px; text-align: left; font-size: 18px; font-weight: 500; background: var(--card); border: 2px solid var(--line); border-radius: 14px; cursor: pointer; }
+.j-option { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 12px 18px; text-align: left; font-size: 18px; font-weight: 500; background: var(--card); border: 2px solid var(--line); border-radius: var(--r); cursor: pointer; }
+.series .j-option { border-left: 8px solid var(--c, var(--accent)); }
 .j-option.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.series .j-option.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 16%, var(--card)); }
 .j-box { flex: none; width: 24px; height: 24px; border: 2px solid var(--faint); border-radius: 7px; background: var(--card); }
 .j-check.on .j-box { background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 4px var(--card); }
 .j-words { grid-template-columns: 1fr 1fr; }
@@ -33,9 +37,9 @@ body.j-your-turn::before { opacity: 1; }
 .j-sentence b { color: var(--accent-text); }
 .j-blank { display: inline-block; width: 2.2em; border-bottom: 3px solid var(--accent); }
 
-.j-button { display: block; width: 100%; min-height: 54px; border: 0; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-size: 17px; font-weight: 600; cursor: pointer; }
+.j-button { display: block; width: 100%; min-height: 54px; border: 0; border-radius: var(--r); background: var(--accent); color: var(--on-accent); font-size: 17px; font-weight: 600; cursor: pointer; }
 .j-button:disabled { opacity: 0.6; }
-.j-number { display: block; width: 100%; min-height: 62px; margin: 0 0 12px; padding: 10px 16px; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; border: 2px solid var(--line); border-radius: 14px; background: var(--card); }
+.j-number { display: block; width: 100%; min-height: 62px; margin: 0 0 12px; padding: 10px 16px; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; border: 2px solid var(--line); border-radius: var(--r); background: var(--card); }
 .j-number:focus, .j-ask textarea:focus { outline: none; border-color: var(--accent); }
 .j-message { min-height: 1.4em; font-size: 15px; color: var(--good); margin: 10px 0 0; }
 .j-message.bad { color: var(--bad); }
@@ -55,3 +59,12 @@ body.j-your-turn::before { opacity: 1; }
 .j-sheet-top { display: flex; justify-content: space-between; align-items: center; }
 .j-sheet-top h2 { margin: 0 0 12px; font-size: 20px; }
 .j-close { border: 0; background: none; font-size: 30px; line-height: 1; color: var(--muted); cursor: pointer; }
+
+.j-welcome { font-size: 30px; }
+.j-welcome em { color: var(--accent-text); font-style: normal; font-family: var(--font-accent); }
+
+/* Reactions */
+.j-reactions { position: fixed; left: 0; right: 0; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 64px); z-index: 6; display: flex; justify-content: center; gap: 10px; padding: 0 16px; }
+.j-react { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--line); background: var(--card); font-size: 28px; line-height: 1; cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); touch-action: manipulation; }
+.j-react.sent { animation: j-react 420ms var(--spring); }
+@keyframes j-react { 40% { transform: scale(1.35) translateY(-8px); } }

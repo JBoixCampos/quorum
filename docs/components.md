@@ -90,6 +90,36 @@ All three are optional. `primary()` lets a component take over the right arrow, 
 | `preview` | `true` with a simulated audience: `quorum preview`, static builds, the playground. (`rehearse` is the older name, still set.) |
 | `publicUrl` | The link people use to join |
 | `assets` | Where the talk folder is served, for files in it: `ctx.assets + 'images/chart.png'` |
+| `theme` | The talk's look: `preset`, `mode`, `tokens`, `colors` (accent, primary, background, text, muted, surface...), `palette` (eight colours), `fonts` and `radius` |
+| `ui` | Helpers to look like the rest of the talk: `chart()`, `icon()`, `color()`, `countUp()`, `format()` (see below) |
+
+## Looking like the talk
+
+A component should look like it belongs to the talk, whatever its theme. Use the theme's CSS variables in your styles (`var(--accent)`, `var(--fg)`, `var(--surface)`, `var(--radius)`, `var(--font-display)`, `var(--series-1)` to `var(--series-8)`), or read the resolved values from `ctx.theme` for a canvas or an SVG you draw yourself.
+
+`ctx.ui` draws the same pieces Quorum uses:
+
+| Helper | What it does |
+| --- | --- |
+| `ui.chart(type, rows, options)` | A chart as HTML: `bars`, `columns`, `donut`, `pictogram`, `race`, `bubbles` or `line`. `rows` is `[{ label, value }]`; `options` takes `total` (to show percentages), `unit`, `max`, `icon` and `title` |
+| `ui.icon(name)` | An icon as inline SVG (`quorum schema --icons` lists them) |
+| `ui.color(n)` | The colour of answer `n`, from the palette, as a CSS value |
+| `ui.countUp(el, to)` | Counts the number in `el` up to `to` |
+| `ui.format(value, { unit })` | A number as Quorum shows it |
+
+```js
+export default {
+  mount(el, ctx) {
+    const paint = (c) => {
+      const counts = (c.answers && c.answers.counts) || {};
+      const rows = Object.entries(counts).map(([label, value]) => ({ label, value }));
+      el.innerHTML = c.ui.chart('donut', rows, { total: c.answers ? c.answers.total : 0 });
+    };
+    paint(ctx);
+    return { update: paint };
+  },
+};
+```
 
 ## Asking the audience
 

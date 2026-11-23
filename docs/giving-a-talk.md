@@ -1,20 +1,18 @@
-# Giving a talk
+# Presenting
 
 ## Before the day
 
-1. **Go through it with the preview.** `quorum preview my-talk` shows the talk with 24 simulated people who join, vote and ask questions, so every slide looks the way it will with a room. Click through it once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
-2. **Run `quorum check my-talk`.** It lists anything that looks wrong in `talk.md`.
+1. **Rehearse.** **Rehearse** in Studio (or `quorum preview my-talk`) shows the talk with 24 simulated people who join, vote and ask questions, so every slide looks the way it will with a room. Click through it once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
+2. **Look at the Checks** in Studio (or run `quorum check my-talk`). They list anything that looks wrong.
 3. **Install cloudflared** for the public link: `winget install --id Cloudflare.cloudflared` on Windows, `brew install cloudflared` on a Mac, or see [Cloudflare's downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/). ngrok works too. Without either, only people on the same network as your laptop can join.
-4. **Do a test run with a real phone**, on mobile data rather than your wifi: `quorum live my-talk`, scan the QR code, vote once, then `quorum clean my-talk`.
+4. **Do a test run with a real phone**, on mobile data rather than your wifi: **Present** in Studio, scan the QR code, vote once, stop, then `quorum clean my-talk` to delete that vote.
 5. If you will be **on a video call**, try sharing the presentation window with the tool you will use.
 
 ## On the day
 
-```bash
-quorum live my-talk
-```
+Press **Present** in Studio. For a talk with slides that ask the audience, choose a public link or only your local network, then **Start**. From a terminal, `quorum present my-talk` does the same.
 
-It opens two windows on your laptop and prints the audience link, the one in the QR code. That gives three views of the same talk, always in sync.
+Two windows open on your laptop, and Studio's top bar shows that the talk is live, its link (the one in the QR code), how many phones are connected and a **Stop** button. That gives three views of the same talk, always in sync.
 
 ### What the room sees: the presentation
 
@@ -58,8 +56,8 @@ People can ask at any time from the button on their phone. New questions wait in
 
 ## If people cannot join
 
-- **The public link stops**: the terminal says so, and the QR code switches to your laptop's address on the local network, so people on the same wifi can still join. For a new public link, press Ctrl+C and run `quorum live my-talk` again. Votes and questions are kept.
-- **No internet, but one network**: `quorum live my-talk --no-tunnel`, and everyone joins on the same wifi as your laptop.
+- **The public link stops**: Studio (or the terminal) says so, and the QR code switches to your laptop's address on the local network, so people on the same wifi can still join. For a new public link, stop and present again. Votes and questions are kept.
+- **No internet, but one network**: choose **This network only** when you press Present (or `quorum present my-talk --no-tunnel`), and everyone joins on the same wifi as your laptop.
 - **Nobody can join at all**: give the talk without the audience. `quorum export my-talk` makes a copy with only the slides nobody answers (the QR code is left out too), in `my-talk/export`. Present it from any static web server, for example `python3 -m http.server -d my-talk/export`, and open the address it prints. Make one before the day, just in case.
 
 ## After the talk

@@ -1,6 +1,6 @@
 # The talk format
 
-A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while `quorum preview` or `quorum live` is running and the slides update on their own; votes already cast are kept.
+A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while Studio, `quorum preview` or a live talk is running and the slides update on their own; votes already cast are kept.
 
 `quorum check` reads the file and lists anything that looks wrong, with the slide number.
 
@@ -10,16 +10,18 @@ A talk is one Markdown file, `talk.md`, in a folder with anything it needs (imag
 ---
 title: How does an AI write?
 author: Your name
-theme: light        # light or dark
+theme: editorial    # a look: clean, editorial, bold, midnight, paper, studio, signal, terminal (or light, dark)
 duration: 20        # minutes, for the pace clock in the panel
 ---
 ```
+
+Themes, layouts, visual blocks, charts, icons and motion have their own page: [Design and themes](design.md).
 
 Anything after ` # ` on a line is a comment.
 
 ## Your brand
 
-Colours, a logo, fonts, the footer and a stylesheet go in the same place. Every one is optional.
+Colours, a logo, fonts, the footer and a stylesheet go in the same place. Every one is optional, and each one wins over the theme. [Design and themes](design.md) has the rest: a palette, corners, spacing, textures, transitions and theme files.
 
 ```yaml
 ---
@@ -46,7 +48,7 @@ style: brand.css             # your own CSS, loaded after Quorum's
 
 ## Slides and steps
 
-A line with three dashes starts a new slide. A line with two dashes splits a slide into steps: each click shows the next part.
+A line with three dashes starts a new slide. A line with two dashes splits a slide into steps: each click shows the next part. Add an effect after the dashes to choose how it appears: `-- fly`, `-- zoom`, `-- blur`, `-- drop` or `-- highlight`.
 
 ```markdown
 ## First slide
@@ -71,11 +73,12 @@ Inside a slide, write Markdown as usual: headings, **bold**, *emphasis*, ~~strik
 HTML comments at the start of a slide change how it behaves:
 
 ```markdown
-<!-- layout: center -->         centre everything (good for titles and closing slides)
+<!-- layout: center -->         centre everything (more layouts: split, full, section, statement... in design.md)
 <!-- id: intro -->              a stable name for the slide
 <!-- section: Warm-up, 5 -->    starts a section planned for 5 minutes (shown in the panel)
 <!-- background: images/team.jpg, dim -->   a full-slide image ("dim" darkens it, text turns white)
-<!-- background: #101820 -->    or a colour
+<!-- background: #101820 -->    or a colour, or a gradient: aurora, sunset, ocean, mesh, spotlight
+<!-- transition: zoom -->       how this slide comes in: fade, slide, zoom, morph, none
 <!-- logo: off -->              hide the logo on this slide
 <!-- footer: off -->            hide the footer on this slide (or "on" to show it on the first)
 ```
@@ -118,6 +121,8 @@ Centred content inside an otherwise normal slide.
 :::
 ```
 
+There are more: `::: cards`, `::: timeline`, `::: steps`, `::: kpis`, `::: compare` and `::: chart`, plus icons, badges, highlighted code and videos. See [visual blocks](design.md#visual-blocks).
+
 ### The join block
 
 A big QR code with the link and how many people are in. Use it on your first slide.
@@ -146,6 +151,8 @@ Each interaction is driven with the right arrow (or the buttons under it): the f
 ```
 
 Mark a right answer with `[x]` and add a paragraph to explain it. Both stay hidden, on the screen and on phones, until you reveal them.
+
+Results can be drawn as bars, columns, a donut, a pictogram, a race or bubbles: `::: poll {#pizza chart=donut} Pineapple on pizza?`. See [results](design.md#results).
 
 ```markdown
 ::: poll {#capital} Which one is true?

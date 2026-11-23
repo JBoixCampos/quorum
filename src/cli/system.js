@@ -3,6 +3,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
 
 export const WINDOWS = process.platform === 'win32';
 export const MAC = process.platform === 'darwin';
@@ -106,4 +107,14 @@ export function openUrl(url) {
   const child = spawn(program, args, { detached: true, stdio: 'ignore' });
   child.on('error', () => {});
   child.unref();
+}
+
+// This computer's address on the local network, for phones on the same wifi.
+export function lanUrl(port) {
+  for (const list of Object.values(networkInterfaces())) {
+    for (const a of list || []) {
+      if (a.family === 'IPv4' && !a.internal) return `http://${a.address}:${port}`;
+    }
+  }
+  return null;
 }

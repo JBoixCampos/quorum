@@ -2,11 +2,19 @@
    presentation window, keep this one in front. */
 
 html, body.panel { height: 100%; }
-body.panel { display: flex; flex-direction: column; background: var(--surface); font-size: 15px; }
-.p-top { display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; padding: 12px 20px; background: #16181a; color: #f3f1ee; }
+/* The panel is a tool, like Studio: it keeps Studio's own quiet dark look
+   whatever the talk's theme is (the slides in it keep the theme). */
+body.panel {
+  --bg: #17181c; --surface: #0e0f11; --card: #1e2025; --fg: #ececef; --primary: #ececef; --muted: #8a8e98; --faint: #656974;
+  --line: #2a2d33; --accent: #6e5cf0; --accent-text: #8b7bff; --accent-soft: rgba(139, 123, 255, 0.14); --on-accent: #fff; --secondary: #8b7bff; --bad: #ff6b6b;
+  --font-display: 'Inter', system-ui, sans-serif; --font-body: 'Inter', system-ui, sans-serif;
+  color-scheme: dark;
+  display: flex; flex-direction: column; background: var(--surface); color: var(--fg); font-family: var(--font-body); font-size: 15px;
+}
+.p-top { display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; padding: 12px 20px; background: #131417; border-bottom: 1px solid var(--line); color: #ececef; }
 .p-clock b { font-size: 26px; font-variant-numeric: tabular-nums; }
 .p-clock span { margin-left: 10px; color: #a6acb0; }
-.p-clock span.late { color: #ffb37a; }
+.p-clock span.late { color: #f5c45b; }
 .p-status { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: #c9ced1; }
 .p-status .good { color: #8fe3b0; }
 .p-status .bad { color: #ff8a84; font-weight: 600; }
@@ -35,7 +43,7 @@ body.panel { display: flex; flex-direction: column; background: var(--surface); 
 .p-thumb figcaption { position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); padding: 2px 8px; border-radius: 6px; background: rgba(22, 24, 26, 0.85); color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-thumb.empty iframe { visibility: hidden; }
 
-button { min-height: 40px; padding: 6px 14px; font-size: 14px; font-weight: 600; background: var(--surface); border: 2px solid var(--line); border-radius: 10px; cursor: pointer; }
+button { min-height: 40px; padding: 6px 14px; font-size: 14px; font-weight: 600; background: var(--card); color: var(--fg); border: 1px solid #363a42; border-radius: 10px; cursor: pointer; }
 button.main { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .p-nav { display: flex; align-items: center; gap: 10px; flex: none; }
 .p-nav [data-go="1"] { flex: 1; min-width: 140px; }
@@ -49,7 +57,7 @@ button.main { background: var(--accent); border-color: var(--accent); color: var
 .p-notes { white-space: pre-line; line-height: 1.5; }
 .p-notes:empty::before { content: 'No notes for this slide.'; color: var(--muted); }
 .p-row { display: flex; gap: 8px; margin: 0 0 10px; }
-.p-row input { flex: 1; min-width: 0; min-height: 40px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--card); }
+.p-row input { flex: 1; min-width: 0; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
 .p-badge:not(:empty) { display: inline-block; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 13px; text-align: center; }
 .p-moderation { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .p-moderation li { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--surface); }

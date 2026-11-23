@@ -20,30 +20,6 @@ const { chromium } = require('playwright');
 const font = (file) => pathToFileURL(join(ROOT, 'app', 'fonts', file)).href;
 const logo = readFileSync(join(ROOT, 'app', 'favicon.svg'), 'utf8');
 
-// The auditorium from the landing page: seats on curved rows, most taken,
-// below the text.
-function hall() {
-  const cx = 600;
-  const cy = 900;
-  let seed = 7;
-  const random = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  const seats = [];
-  for (let row = 0; row < 7; row += 1) {
-    const r = 230 + row * 34;
-    const spread = 0.95 + row * 0.025;
-    const count = Math.round((r * spread * 2) / 25);
-    for (let i = 0; i < count; i += 1) {
-      const a = -Math.PI / 2 - spread + (2 * spread * i) / (count - 1);
-      const taken = random() < 0.72;
-      seats.push(`<circle cx="${(cx + r * Math.cos(a)).toFixed(1)}" cy="${(cy + r * Math.sin(a)).toFixed(1)}" r="8" fill="${taken ? '#ff6a00' : '#ddd6ca'}"/>`);
-    }
-  }
-  return `<svg class="hall" viewBox="0 0 1200 630" aria-hidden="true">${seats.join('')}</svg>`;
-}
-
 const html = `<!doctype html>
 <html>
 <head>
@@ -54,32 +30,22 @@ const html = `<!doctype html>
   html, body { margin: 0; }
   body {
     position: relative; width: 1200px; height: 630px; overflow: hidden;
-    background: #f7f5f0 radial-gradient(circle, #e4ded3 1.6px, transparent 2px) 0 0 / 24px 24px;
-    color: #16140f; font-family: 'Inter', sans-serif;
+    background: #0e0f11 radial-gradient(ellipse 70% 60% at 50% 0%, rgba(110, 92, 240, 0.35), transparent 70%);
+    color: #ececef; font-family: 'Inter', sans-serif;
   }
-  .hall { position: absolute; inset: 0; width: 1200px; height: 630px; }
-  .text {
-    position: absolute; left: 0; right: 0; top: 64px; text-align: center;
-  }
-  .brand { display: inline-flex; align-items: center; gap: 14px; font: 700 40px/1 'Inter Display', sans-serif; letter-spacing: -0.02em; }
-  .brand svg { width: 52px; height: 52px; }
-  h1 { margin: 34px 0 0; font: 700 96px/0.98 'Inter Display', sans-serif; letter-spacing: -0.045em; }
-  h1 span { color: #ff6a00; }
-  .ready {
-    display: inline-block; margin-top: 22px; padding: 10px 22px 12px; border-radius: 14px;
-    background: #16140f; color: #ece7dd;
-    font: 600 34px/1 ui-monospace, 'DejaVu Sans Mono', monospace; letter-spacing: -0.02em;
-    font-variant-ligatures: none;
-  }
-  .ready b { color: #7fdca4; font-weight: 600; }
+  .text { position: absolute; left: 0; right: 0; top: 92px; text-align: center; }
+  .brand { display: inline-flex; align-items: center; gap: 14px; font: 700 38px/1 'Inter Display', sans-serif; letter-spacing: -0.02em; }
+  .brand svg { width: 50px; height: 50px; }
+  h1 { margin: 44px auto 0; max-width: 1000px; font: 700 86px/1.02 'Inter Display', sans-serif; letter-spacing: -0.045em; }
+  h1 span { color: #8b7bff; }
+  p { margin: 30px 0 0; font: 500 28px/1.3 'Inter', sans-serif; color: #b5b8c0; }
 </style>
 </head>
 <body>
-  ${hall()}
   <div class="text">
     <div class="brand">${logo}Quorum</div>
-    <h1>Presentations,<br><span>but interactive.</span></h1>
-    <div class="ready"><b>&gt;</b> Agent ready</div>
+    <h1>Your agent writes the talk. <span>You shape it.</span></h1>
+    <p>Present it live, or export it to PowerPoint.</p>
   </div>
 </body>
 </html>`;
