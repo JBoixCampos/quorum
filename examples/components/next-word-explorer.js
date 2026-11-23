@@ -1,7 +1,7 @@
 // Example component: explore how a language model picks its next word,
 // with a model running on your own laptop.
 //
-// It is NOT part of Quorum: it shows how far a component can go. Copy it
+// It is not part of Quorum: it shows how far a component can go. Copy it
 // into your talk's components/ folder and use it in talk.md:
 //
 //   ::: component next-word-explorer
