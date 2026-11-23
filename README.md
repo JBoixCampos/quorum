@@ -1,8 +1,10 @@
 # Quorum
 
-**Presentations where the audience takes part.**
+**Presentations, but interactive. Agent ready.**
 
-Write your talk in Markdown. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
+Write your talk in Markdown, or ask your coding agent to. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
+
+Because a talk is a plain Markdown file and a few small JavaScript files, an agent can write it, check it with `quorum check --json` and build new interactions for it. See [Built for agents](docs/agents.md).
 
 **[Try the demo in your browser](https://jboixcampos.github.io/quorum/demo/)** (seven slides with a simulated audience), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
 
