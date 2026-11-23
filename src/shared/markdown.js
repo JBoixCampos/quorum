@@ -118,6 +118,18 @@ function brand(meta, warn) {
   };
 }
 
+// The footer: "left | right", with {title}, {author}, {section}, {n} and
+// {total}. Null when it is turned off.
+export const DEFAULT_FOOTER = '{title} | {n} / {total}';
+
+function footer(value) {
+  const v = value === undefined ? DEFAULT_FOOTER : String(value).trim();
+  if (!v || /^(off|none)$/i.test(v)) return null;
+  const bar = v.indexOf('|');
+  const [left, right] = bar < 0 ? [v, ''] : [v.slice(0, bar), v.slice(bar + 1)];
+  return { left: inline(left.trim()), right: inline(right.trim()) };
+}
+
 // A slide background: <!-- background: images/photo.jpg, dim --> or a colour.
 function slideBackground(value, warn) {
   if (!value) return null;
@@ -549,6 +561,8 @@ export function parseTalk(source) {
       layout: p.attrs.layout || '',
       background: slideBackground(p.attrs.background, (m) => warnings.push(`Slide ${index + 1}: ${m}`)),
       logo: p.attrs.logo !== 'off',
+      // "on", "off" or "" (the default: everywhere but the first slide).
+      footer: ['on', 'off'].includes(p.attrs.footer) ? p.attrs.footer : '',
       notes: p.notes.join('\n\n'),
       interaction: p.interactions[0] || null,
       components: p.components,
@@ -572,6 +586,7 @@ export function parseTalk(source) {
       lang: meta.lang || 'en',
       duration: number(meta.duration, null),
       ...brand(meta, (m) => warnings.push(m)),
+      footer: footer(meta.footer),
     },
     slides,
     warnings,

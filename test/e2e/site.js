@@ -87,7 +87,10 @@ try {
   const slideText = () => frame.locator('.q-slide').textContent();
 
   check('the landing playground renders the Markdown', await until(async () => (await slideText()).includes('Where should we go for lunch?')));
-  check('it says which slide it shows', await until(async () => (await page.textContent('[data-pg-status]')).includes('Slide 1 of 1')));
+  check('it says how to try the slide, without a slide counter', await until(async () => {
+    const text = await page.textContent('[data-pg-status]');
+    return text.includes('simulated people') && !/Slide \d+ of/.test(text);
+  }));
 
   await page.click('[data-chip="estimate"]');
   check('a chip adds a slide and the preview follows it', await until(async () => (await slideText()).includes('How many keys does a piano have?')));

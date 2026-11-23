@@ -174,8 +174,7 @@ function demoSlide(from, n) {
   return `<div class="side-by-side">
   <pre><code class="language-markdown">${escapeHtml(shown)}</code></pre>
   <figure>
-    <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${n - 1}" title="Slide ${n} of the demo talk, live" loading="lazy"></iframe></div>
-    <figcaption>Slide ${n} of the demo talk, live, with 24 simulated people.</figcaption>
+    <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${n - 1}" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
   </figure>
 </div>`;
 }

@@ -275,3 +275,11 @@ th { font-weight: 600; }
   .views { grid-template-columns: 1fr; }
   .views figure:last-child img { max-width: 280px; }
 }
+
+/* Your brand: the front matter next to the slide it makes */
+.brand-demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; margin-top: 32px; }
+.brand-demo pre { margin: 0; }
+.brand-demo img { display: block; width: 100%; height: auto; border-radius: 12px; }
+@media (max-width: 820px) {
+  .brand-demo { grid-template-columns: 1fr; }
+}

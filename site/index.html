@@ -49,7 +49,31 @@ The queue is long for a reason.
           <div><h3><code>questions</code></h3><p>Anonymous questions with upvotes. You approve them before they reach the screen.</p></div>
           <div><h3><code>component</code></h3><p>Anything else, in a JavaScript file next to your talk.</p></div>
         </div>
-        <p style="margin-top:32px">Your colours, logo and fonts on every slide and on every phone. <a href="docs/format/">Every block and setting, with examples</a></p>
+        <p style="margin-top:32px"><a href="docs/format/">Every block, with examples</a></p>
+      </div>
+    </section>
+
+    <section id="brand">
+      <div class="wrap">
+        <h2>Your slides, your brand</h2>
+        <p class="intro">Colours, logo, fonts, footer and backgrounds are a few lines at the top of <code>talk.md</code>. Phones follow the same brand, and a stylesheet of your own covers anything else.</p>
+        <div class="brand-demo">
+<pre><span class="k">---</span>
+title: Harbor Labs roadmap
+background: "#0f1b2d"
+primary: "#ffffff"
+accent: "#ffb703"
+secondary: "#8ecae6"
+logo: images/logo.svg
+font: Georgia, serif
+footer: Harbor Labs · {section} | {n} / {total}
+<span class="k">---</span>
+
+<span class="c">&lt;!-- background: images/team.jpg, dim --&gt;</span>
+<span class="c">&lt;!-- footer: off --&gt;</span></pre>
+          <img src="docs/images/brand.png" alt="The same kind of poll with the Harbor Labs brand: dark blue background, yellow bars, serif titles, a logo and a custom footer" width="1600" height="900" loading="lazy">
+        </div>
+        <p style="margin-top:24px"><a href="docs/format/#your-brand">Every brand setting</a> &middot; <a href="https://github.com/JBoixCampos/quorum/tree/main/examples/brand">The example talk</a></p>
       </div>
     </section>
 

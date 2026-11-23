@@ -179,6 +179,7 @@ function renderSlide() {
   slideEl.innerHTML = `<div class="q-content">${slide.html}</div>`;
   fixAssets(slideEl);
   logo.hidden = !slide.logo || !logo.innerHTML;
+  stage.classList.toggle('dim', !!(bg && bg.dim));
 
   if (slide.interaction) {
     const el = slideEl.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`);
@@ -216,13 +217,33 @@ function componentContext(spec) {
   });
 }
 
+// The footer of the talk ("footer:" in the front matter) with its
+// placeholders filled in. Where the audience can answer, its right side
+// says how to join, next to the corner QR code.
+function footerHtml(slide, showJoin, url) {
+  const { meta, slides } = state.talk;
+  const on = slide.footer === 'on' || (slide.footer !== 'off' && state.index > 0);
+  const parts = on && meta.footer ? { ...meta.footer } : { left: '', right: '' };
+  if (showJoin) parts.right = `Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b>`;
+  if (!parts.left && !parts.right) return '';
+  const section = slides.slice(0, state.index + 1).reverse().find((s) => s.section);
+  const values = {
+    title: meta.title,
+    author: meta.author,
+    section: section ? section.section.name : '',
+    n: String(state.index + 1),
+    total: String(slides.length),
+  };
+  const fill = (text) => text.replace(/\{(title|author|section|n|total)\}/g, (_, k) => esc(values[k]));
+  return `<span>${fill(parts.left)}</span><span>${showJoin ? parts.right : fill(parts.right)}</span>`;
+}
+
 function paintFooter() {
   const slide = state.talk.slides[state.index];
   const url = state.view.publicUrl || '';
   const votes = !!slide.interaction;
-  // Only where the audience takes part: how to join, next to the QR code.
   const showJoin = votes && !slide.join && url;
-  const html = showJoin ? `<span>Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b></span>` : '';
+  const html = footerHtml(slide, showJoin, url);
   if (footer.innerHTML !== html) footer.innerHTML = html;
   const cornerKey = showJoin ? url : '';
   if (corner.dataset.url !== cornerKey) {

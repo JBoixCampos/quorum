@@ -57,7 +57,9 @@ quorum live my-talk         # give it
 
 Plus the usual slide things: steps that appear one click at a time, columns, big numbers, callouts, images, tables, code, speaker notes, sections with a pace clock.
 
-**Your brand**: accent, primary, secondary, background and text colours, a logo on every slide and on phones, your own fonts, image or colour backgrounds per slide, and a stylesheet for anything else. See [the talk format](docs/format.md#your-brand).
+**Your brand**: accent, primary, secondary, background and text colours, a logo on every slide and on phones, your own fonts, your own footer, image or colour backgrounds per slide, and a stylesheet for anything else. See [the talk format](docs/format.md#your-brand) and the [example](examples/brand/talk.md).
+
+![A poll in a talk with its own brand: dark background, yellow bars, serif titles, a logo and a custom footer](docs/images/brand.png)
 
 **The panel** is the presenter view: a live preview you can click, the next slides, your notes, how many people are in, the questions waiting for approval, and how you are doing on time.
 

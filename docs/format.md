@@ -19,7 +19,7 @@ Anything after ` # ` on a line is a comment.
 
 ## Your brand
 
-Colours, a logo, fonts and a stylesheet go in the same place. Every one is optional.
+Colours, a logo, fonts, the footer and a stylesheet go in the same place. Every one is optional.
 
 ```yaml
 ---
@@ -32,6 +32,7 @@ text: "#1d1d1b"              # body text
 logo: images/logo.svg        # top right of every slide, and on phones
 font: fonts/Brand-Bold.woff2 # titles: a font file in the talk folder...
 text-font: Georgia, serif    # ...or any CSS font-family
+footer: Acme · {section} | {n} / {total}
 style: brand.css             # your own CSS, loaded after Quorum's
 ---
 ```
@@ -40,7 +41,8 @@ style: brand.css             # your own CSS, loaded after Quorum's
 - **A dark `background`** makes the theme dark on its own, unless you set `theme:`.
 - **Phones** use the same colours, fonts and logo, so the talk looks like one thing on the screen and in people's hands.
 - **Files** (logo, fonts, stylesheet, images) are paths inside the talk folder. `quorum check` warns when one is missing.
-- **`style:`** is for anything else. Slides are `.q-slide`, their content `.q-content`, the logo `.q-logo`. For example, `.q-content h1 { text-transform: none; }` or `.q-logo img { max-height: 48px; }`.
+- **The footer** runs along the bottom of every slide but the first. A `|` splits it into a left and a right part. It can use `{title}`, `{author}`, `{section}`, `{n}` (the slide number) and `{total}`, plus **bold**, *emphasis* and links. Without `footer:` it is `{title} | {n} / {total}`; `footer: off` removes it. On slides where the audience answers, the right part says how to join, next to the QR code.
+- **`style:`** is for anything else. Slides are `.q-slide`, their content `.q-content`, the logo `.q-logo`, the footer `.q-footer`. For example, `.q-content h1 { text-transform: none; }` or `.q-logo img { max-height: 48px; }`.
 
 ## Slides and steps
 
@@ -75,6 +77,7 @@ HTML comments at the start of a slide change how it behaves:
 <!-- background: images/team.jpg, dim -->   a full-slide image ("dim" darkens it, text turns white)
 <!-- background: #101820 -->    or a colour
 <!-- logo: off -->              hide the logo on this slide
+<!-- footer: off -->            hide the footer on this slide (or "on" to show it on the first)
 ```
 
 ## Blocks

@@ -18,6 +18,7 @@ A command line tool and a small web app for presentations where the audience tak
 | `app/js/components.js` | Component loading and the built-in components (countdown, qr, embed) |
 | `examples/demo/` | The demo talk published on the website |
 | `examples/components/` | Example components, shown on the website's Examples page |
+| `examples/brand/` | A talk with its own colours, logo, fonts and footer (the landing page's brand screenshot) |
 | `templates/starter/` | What `quorum new` copies, including its own `AGENTS.md` |
 | `docs/*.md` | The documentation. The single source of truth for the website's docs pages and `llms.txt` |
 | `docs/images/` | Screenshots used by the docs, the README and the landing page. Made by `scripts/screenshots.js` |

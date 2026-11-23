@@ -180,3 +180,16 @@ test('withoutAudience keeps only the slides nobody answers', () => {
   assert.equal(slides[0].join, false);
   assert.equal(slides[2].components[0].name, 'countdown');
 });
+
+test('the footer: default, custom, off, and per slide', () => {
+  const plain = parseTalk('# Hi\n');
+  assert.deepEqual(plain.meta.footer, { left: '{title}', right: '{n} / {total}' });
+
+  const custom = parseTalk('---\nfooter: **Acme** · {section} | {n}\n---\n<!-- footer: off -->\n# Hi\n\n---\n\n<!-- footer: on -->\n# Two\n');
+  assert.deepEqual(custom.meta.footer, { left: '<strong>Acme</strong> · {section}', right: '{n}' });
+  assert.equal(custom.slides[0].footer, 'off');
+  assert.equal(custom.slides[1].footer, 'on');
+
+  assert.equal(parseTalk('---\nfooter: off\n---\n# Hi\n').meta.footer, null);
+  assert.deepEqual(parseTalk('---\nfooter: Only on the left\n---\n# Hi\n').meta.footer, { left: 'Only on the left', right: '' });
+});

@@ -1,6 +1,7 @@
 // Takes the screenshots in docs/images/: what the room sees (the shared
 // screen), what the speaker sees (the panel) and what a phone sees, all
-// during the same poll of the demo talk. Needs Playwright:
+// during the same poll of the demo talk, and the same kind of poll in a
+// talk with a brand of its own (examples/brand). Needs Playwright:
 //
 //   npm install --no-save playwright && npx playwright install chromium
 //   node scripts/screenshots.js
@@ -81,6 +82,37 @@ try {
   await present.screenshot({ path: join(OUT, 'screen.png') });
   await panel.screenshot({ path: join(OUT, 'panel.png') });
   await mobile.screenshot({ path: join(OUT, 'phone.png') });
+  // A branded talk: examples/brand, on its poll.
+  const brandDir = mkdtempSync(join(tmpdir(), 'quorum-shots-'));
+  cpSync(join(ROOT, 'examples', 'brand'), brandDir, { recursive: true });
+  const brand = await startServer({ talkDir: brandDir, port: 0, key: 'example', log: () => {} });
+  try {
+    const brandBase = `http://localhost:${brand.port}`;
+    brand.setPublicUrl('https://your-talk.trycloudflare.com');
+    const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+    await page.goto(`${brandBase}/present?key=example`);
+    const call = (action, device) => fetch(`${brandBase}/api/action${device ? '' : '?key=example'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(device ? { device, action } : { action }),
+    });
+    await call({ type: 'stage', slide: 2, step: 0 });
+    await call({ type: 'control', id: 'next', action: 'phase', phase: 1 });
+    const brandVotes = { 'Faster search': 6, 'The mobile app': 13, 'Simpler billing': 9 };
+    let m = 0;
+    for (const [option, count] of Object.entries(brandVotes)) {
+      for (let i = 0; i < count; i += 1) {
+        m += 1;
+        await call({ type: 'vote', id: 'next', value: option }, phone(m));
+      }
+    }
+    await call({ type: 'control', id: 'next', action: 'phase', phase: 2 });
+    await wait(2000);
+    await page.screenshot({ path: join(OUT, 'brand.png') });
+  } finally {
+    await brand.close();
+    rmSync(brandDir, { recursive: true, force: true });
+  }
   console.log(`Screenshots saved in ${OUT}`);
 } finally {
   await browser.close();

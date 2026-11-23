@@ -86,8 +86,10 @@ html.in-panel body.present, html.still body.present { background: var(--bg); }
 .q-logo img { display: block; max-height: 72px; max-width: 320px; object-fit: contain; }
 
 /* Footer and corner QR */
-.q-footer { position: absolute; left: 160px; right: 200px; bottom: 50px; display: flex; justify-content: flex-end; font-size: 24px; color: var(--faint); z-index: 2; }
+.q-footer { position: absolute; left: 160px; right: 200px; bottom: 50px; display: flex; justify-content: space-between; gap: 40px; font-size: 24px; color: var(--faint); z-index: 2; }
 .q-footer b { color: var(--accent-text); font-weight: 600; }
+.q-footer a { color: inherit; }
+.q-stage.dim .q-footer { color: rgba(255, 255, 255, 0.72); }
 .q-corner-qr { position: absolute; right: 26px; bottom: 26px; width: 140px; height: 140px; z-index: 3; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 2px var(--line); }
 .q-corner-qr svg { display: block; width: 100%; height: 100%; }
 

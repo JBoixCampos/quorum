@@ -2,7 +2,7 @@
 title: My talk
 author: Your name
 accent: "#ff6a00"     # your brand: also primary, secondary, background,
-theme: light          # text, logo, font, text-font and style (see the docs)
+theme: light          # text, logo, font, text-font, footer and style (see the docs)
 duration: 20
 ---
 
