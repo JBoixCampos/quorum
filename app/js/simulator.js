@@ -1,6 +1,6 @@
-// A simulated audience for rehearsals: people join over a few seconds,
-// vote when something opens and send a question now and then. It uses the
-// same session code as the real server, so a rehearsal behaves the same.
+// A simulated audience for previews: people join over a few seconds, vote
+// when something opens and send a question now and then. It uses the same
+// session code as the real server, so a preview behaves like the talk.
 
 import { KINDS } from '../shared/kinds.js';
 
@@ -16,7 +16,7 @@ export class Simulator {
   constructor(session, onChange, { people = 24 } = {}) {
     this.session = session;
     this.onChange = onChange;
-    this.people = Array.from({ length: people }, (_, i) => `rehearsal-${String(i).padStart(4, '0')}`);
+    this.people = Array.from({ length: people }, (_, i) => `simulated-${String(i).padStart(4, '0')}`);
     this.joined = 0;
     this.paused = false;
     this.timer = setInterval(() => this.tick(), 450);

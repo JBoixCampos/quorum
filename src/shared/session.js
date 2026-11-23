@@ -1,6 +1,6 @@
 // The live session: where the talk is, every vote, every question.
-// Runs on the server (the real thing) and in the browser (rehearsal mode,
-// with a simulated audience). No dependencies.
+// Runs on the server (the real thing) and in the browser (preview, with a
+// simulated audience). No dependencies.
 
 import { KINDS, publicSpec } from './kinds.js';
 
@@ -11,6 +11,9 @@ export const LIMITS = {
 };
 
 const STATUSES = ['pending', 'approved', 'hidden'];
+
+// Each phone makes up a random id and keeps it in its browser.
+export const isDevice = (id) => typeof id === 'string' && /^[a-z0-9-]{8,64}$/i.test(id);
 const ok = (extra = {}) => ({ ok: true, ...extra });
 const fail = (error) => ({ ok: false, error });
 
@@ -33,11 +36,9 @@ export function initialState() {
     interactions: {},
     questions: [],
     questionOnScreen: null,
-    chatMode: false,
     // Shared screen state of components (so the shared window and the
     // presenter's preview always show the same thing).
     ui: {},
-    chat: { n: 0, stack: [] },
   };
 }
 
@@ -47,6 +48,9 @@ export class Session {
     this.talk = talk;
     this.moderation = moderation;
     this.d = { ...initialState(), ...(state || {}) };
+    // Saved by older versions, which had a chat mode.
+    delete this.d.chatMode;
+    delete this.d.chat;
     this.pace = new Map();
     this.specs = new Map();
     talk.slides.forEach((s) => {
@@ -67,7 +71,7 @@ export class Session {
       return PRESENTER[action.type].call(this, action, now);
     }
     if (Object.hasOwn(AUDIENCE, action.type)) {
-      if (!device || !/^[a-z0-9-]{8,64}$/i.test(device)) return fail('Device not recognised. Reload the page.');
+      if (!isDevice(device)) return fail('Device not recognised. Reload the page.');
       if (!this.withinPace(device, now)) return fail('Too fast. Wait a second.');
       const dev = this.register(device, now);
       return AUDIENCE[action.type].call(this, action, dev, device, now);
@@ -145,7 +149,6 @@ export class Session {
     return {
       stage: { slide: d.stage.slide, step: d.stage.step },
       slideKind: slide && slide.interaction ? slide.interaction.kind : null,
-      chatMode: d.chatMode,
       interaction,
       questions: visible.map((q) => ({
         id: q.id,
@@ -167,13 +170,12 @@ export class Session {
       stage: { ...d.stage },
       startedAt: d.startedAt,
       publicUrl: d.publicUrl,
-      chatMode: d.chatMode,
       interaction: spec ? this.summaryOf(spec, { withValues: true }) : null,
       questions: this.screenQuestions(),
       questionOnScreen: d.questionOnScreen,
       pendingQuestions: d.questions.filter((q) => q.status === 'pending').length,
       ui: d.ui,
-      people: Object.keys(d.devices).filter((k) => !k.startsWith('chat-')).length,
+      people: Object.keys(d.devices).length,
     };
   }
 
@@ -213,39 +215,6 @@ const PRESENTER = {
     const spec = this.specs.get(String(action.id || ''));
     if (!spec) return fail('No such interaction.');
     return KINDS[spec.kind].control(spec, this.stateOf(spec), action);
-  },
-
-  // Chat mode: the presenter types in a vote read in the chat. Each one
-  // counts as a new "chat person" and follows the same rules as a phone.
-  chatVote(action) {
-    const spec = this.current();
-    if (!spec || spec.id !== action.id) return fail('That interaction is not on screen.');
-    const st = this.stateOf(spec);
-    const kind = KINDS[spec.kind];
-    if (!kind.canVote(spec, st)) return fail('Voting is closed.');
-    const check = kind.validate(spec, action.value, st);
-    if (!check.ok) return check;
-    const device = `chat-${this.d.chat.n + 1}`;
-    this.d.chat.n += 1;
-    st.votes[device] = check.value;
-    this.d.chat.stack.push({ id: spec.id, device });
-    if (this.d.chat.stack.length > 500) this.d.chat.stack.shift();
-    return ok();
-  },
-  chatUndo() {
-    while (this.d.chat.stack.length) {
-      const { id, device } = this.d.chat.stack.pop();
-      const st = this.d.interactions[id];
-      if (st && st.votes && device in st.votes) {
-        delete st.votes[device];
-        return ok();
-      }
-    }
-    return fail('No chat votes to undo.');
-  },
-  chatMode(action) {
-    this.d.chatMode = !!action.on;
-    return ok();
   },
 
   moderate(action) {
@@ -349,5 +318,3 @@ const AUDIENCE = {
     return ok();
   },
 };
-
-export const PRESENTER_ACTIONS = Object.keys(PRESENTER);

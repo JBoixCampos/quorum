@@ -2,11 +2,10 @@
 // Quorum command line.
 //
 //   quorum new <folder>        create a talk from the starter template
-//   quorum rehearse [folder]   rehearse with a simulated audience
+//   quorum preview [folder]    see the talk with a simulated audience
 //   quorum live [folder]       give the talk: server, public link, QR, windows
-//   quorum offline [folder]    give it without a public link (votes typed from the chat)
 //   quorum check [folder]      check talk.md for mistakes (--json for tools)
-//   quorum build [folder]      a static, playable demo of the talk (rehearsal mode)
+//   quorum build [folder]      a static, playable copy of the talk
 //   quorum clean [folder]      delete votes and questions saved by a live session
 
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -29,7 +28,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) args[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'key', 'file'].includes(k)) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file'].includes(k)) {
         args[k] = argv[i + 1];
         i += 1;
       } else args[k] = true;
@@ -42,11 +41,10 @@ const HELP = `Quorum ${VERSION}: presentations where the audience takes part.
 
 Usage:
   quorum new <folder>        Create a new talk
-  quorum rehearse [folder]   Rehearse with a simulated audience
+  quorum preview [folder]    See it with a simulated audience, as you edit
   quorum live [folder]       Give the talk (server, public link, QR code, windows)
-  quorum offline [folder]    Give it without a public link: you type in votes from the chat
   quorum check [folder]      Check talk.md for mistakes
-  quorum build [folder]      Build a static, playable demo (rehearsal mode)
+  quorum build [folder]      Build a static, playable copy (simulated audience)
   quorum clean [folder]      Delete the votes and questions of the last session
 
 Options:
@@ -110,7 +108,7 @@ function cmdNew(args) {
 Next:
   1. Edit ${join(name, 'talk.md')} (it explains the format as it goes),
      or ask your AI agent to: ${join(name, 'AGENTS.md')} tells it how
-  2. quorum rehearse ${name}    try it with a simulated audience
+  2. quorum preview ${name}     see it with a simulated audience
   3. quorum live ${name}        give it`);
 }
 
@@ -146,31 +144,34 @@ function cmdClean(args) {
   console.log(`Session data deleted in ${data}.${args.key ? ' A new presenter key will be created next time.' : ''}`);
 }
 
-async function serve(args, { rehearse = false, chat = false } = {}) {
+async function startFor(args, options = {}) {
   const dir = talkDir(args);
   const file = talkFile(args);
   ensureTalk(dir, file);
   const port = Number(args.port || 8080);
-  let server;
   try {
-    server = await startServer({ talkDir: dir, file, port, moderation: !args['no-moderation'] });
+    const server = await startServer({ talkDir: dir, file, port, moderation: !args['no-moderation'], ...options });
+    printWarnings(server.talk());
+    return { dir, file, server };
   } catch (error) {
     console.error(error.code === 'EADDRINUSE' ? `Port ${port} is busy. Try --port ${port + 1}.` : error.message);
     process.exit(1);
   }
-  const talk = server.talk();
-  printWarnings(talk);
+}
 
-  if (rehearse) {
-    console.log(`\nRehearsal of "${talk.meta.title}" (${talk.slides.length} slides).
-  Open:  ${server.urls.rehearse}
+async function cmdPreview(args) {
+  const { file, server } = await startFor(args, { preview: true });
+  const talk = server.talk();
+  console.log(`\nPreview of "${talk.meta.title}" (${talk.slides.length} slides).
+  Open:  ${server.urls.preview}
   A simulated audience joins and votes. Edit ${file} and the slides update.
   Ctrl+C to stop.\n`);
-    if (!args['no-open']) openUrl(server.urls.rehearse);
-    return;
-  }
+  if (!args['no-open']) openUrl(server.urls.preview);
+}
 
-  server.setChatMode(chat);
+async function cmdLive(args) {
+  const { dir, server } = await startFor(args);
+  const talk = server.talk();
   const children = [];
   const stop = () => {
     children.forEach((c) => { try { c.kill(); } catch { /* already gone */ } });
@@ -179,10 +180,10 @@ async function serve(args, { rehearse = false, chat = false } = {}) {
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
 
-  const opened = { done: false };
+  let opened = false;
   const openWindows = () => {
-    if (opened.done || args['no-open']) return;
-    opened.done = true;
+    if (opened || args['no-open']) return;
+    opened = true;
     const browser = findChromium();
     if (browser) {
       const profile = join(dir, '.quorum', 'browser');
@@ -195,24 +196,24 @@ async function serve(args, { rehearse = false, chat = false } = {}) {
     setTimeout(() => openUrl(server.urls.panel), 1500);
   };
 
-  const summary = (publicUrl) => {
+  const summary = (audience) => {
     console.log(`
 =============== ${talk.meta.title} ===============
   Presentation (share this window): ${server.urls.present}
   Panel (only for you):             ${server.urls.panel}
-  ${chat ? 'Chat mode: no public link. Type in the votes you read in the chat by clicking the options.' : (publicUrl ? `Audience link:                    ${publicUrl}` : 'Audience link:                    none (only people on this network can join)')}
+  Audience link:                    ${audience || 'none (only this computer can join)'}
   Keep the presenter key private. Ctrl+C stops everything.
 `);
     openWindows();
   };
 
-  const wantTunnel = !chat && !args['no-tunnel'];
+  // Without a public link, people on the same network can still join.
   const local = () => {
     const url = lanUrl(server.port);
-    if (url && !chat) server.setPublicUrl(url);
-    summary(url && !chat ? `${url} (same network only)` : null);
+    if (url) server.setPublicUrl(url);
+    summary(url && `${url} (same network only)`);
   };
-  if (!wantTunnel) {
+  if (args['no-tunnel']) {
     local();
     return;
   }
@@ -222,8 +223,10 @@ async function serve(args, { rehearse = false, chat = false } = {}) {
       summary(url);
     },
     onExit: (code) => {
-      console.error(`\nThe public link stopped (code ${code}). People cannot join any more.
-Press B in the presentation (or "Switch to chat mode" in the panel) and carry on through the chat.`);
+      const url = lanUrl(server.port);
+      console.error(`\nThe public link stopped (code ${code}). New phones cannot join through it.
+${url ? `People on the same network can still join at ${url}. ` : ''}Votes are saved: restart quorum live for a new link.`);
+      if (url) server.setPublicUrl(url);
     },
   });
   if (!tunnel) {
@@ -235,7 +238,7 @@ Press B in the presentation (or "Switch to chat mode" in the panel) and carry on
   console.log('Opening a public link…');
   children.push(tunnel);
   setTimeout(() => {
-    if (!opened.done) {
+    if (!opened) {
       console.log('The public link is taking a while. Using the local network for now.');
       local();
     }
@@ -284,9 +287,9 @@ async function main() {
     case 'check': cmdCheck(args); break;
     case 'clean': cmdClean(args); break;
     case 'build': cmdBuild(args); break;
-    case 'rehearse': await serve(args, { rehearse: true }); break;
-    case 'live': await serve(args); break;
-    case 'offline': await serve(args, { chat: true }); break;
+    case 'preview':
+    case 'rehearse': await cmdPreview(args); break; // "rehearse" is the old name
+    case 'live': await cmdLive(args); break;
     default:
       console.log(HELP);
       if (cmd && cmd !== 'help') process.exit(1);

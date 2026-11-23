@@ -19,8 +19,9 @@
 // state (shared between the screen and the presenter's preview), setState(),
 // answers (what the audience answered, when the block has `audience:`),
 // step, view (live session data), act() (send a session action), talk,
-// chatMode, where ('screen', 'preview' or 'thumbnail'), rehearse (true in
-// rehearsal), publicUrl.
+// where ('screen', 'preview' or 'thumbnail'), preview (true with a
+// simulated audience), publicUrl. Older names still set: rehearse (same as
+// preview) and chatMode (always false).
 //
 // docs/components.md explains all of it with examples.
 

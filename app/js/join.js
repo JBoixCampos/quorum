@@ -42,7 +42,6 @@ async function act(action, where, success) {
 // Which screen to show. When the key changes, the screen is rebuilt;
 // otherwise it is patched in place.
 function screenKey(v) {
-  if (v.chatMode) return 'chat';
   const i = v.interaction;
   if (v.slideKind === 'questions') return 'questions';
   if (!i) return 'wait';
@@ -61,7 +60,7 @@ function screenKey(v) {
 }
 
 function needsAction(v) {
-  return !v.chatMode && !!v.interaction && v.interaction.canVote;
+  return !!v.interaction && v.interaction.canVote;
 }
 
 function format(v) {
@@ -88,9 +87,6 @@ function askForm(id = 'ask') {
 
 function build(key, v) {
   const i = v.interaction;
-  if (key === 'chat') {
-    return '<div class="j-center"><h1>We are using the chat</h1><p class="j-muted">Today you answer in the chat of the call. Keep an eye on the screen.</p></div>';
-  }
   if (key === 'ready') {
     return '<div class="j-center"><div class="j-dot"></div><h1>Get ready</h1><p class="j-muted">A question is coming. It will appear here.</p></div>';
   }
@@ -193,7 +189,7 @@ function render() {
   }
   update(key, view);
   document.body.classList.toggle('j-your-turn', needsAction(view));
-  askButton.hidden = key === 'questions' || key === 'chat';
+  askButton.hidden = key === 'questions';
 }
 
 main.addEventListener('click', async (e) => {
