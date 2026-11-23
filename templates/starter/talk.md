@@ -11,77 +11,90 @@ duration: 20
 
 # My talk
 
-A subtitle, or your name.
+Your name, or a subtitle.
 
-::: join Scan to join from your phone
+::: join Scan to join
 :::
 
 ::: notes
-These are speaker notes: press N on the presentation, or look at the panel.
-Slides are separated by a line with three dashes.
+Speaker notes: press N on the presentation, or read them in the panel.
+Three dashes on their own line start a new slide.
 :::
 
 ---
 
 ## A normal slide
 
-Write Markdown as usual: **bold**, *highlighted*, `code`, [links](https://example.com) and images.
-
-- Lists work
-- Two dashes on their own line make the next part appear on the next click
+Markdown as usual: **bold**, *emphasis*, `code`, [links](https://example.com), images.
 
 --
 
-Like this.
+Two dashes on their own line: this part appears on the next click.
 
 ---
 
 <!-- section: Interactions, 10 -->
 
-::: poll {#warmup} One option. Which one do you prefer?
+::: poll {#warmup} Coffee or tea?
 - Coffee
 - Tea
 - Neither
 :::
 
 ::: notes
-Press → to open voting, → to close it, → to move on.
+A poll. → opens voting, → closes it, → moves on.
 :::
 
 ---
 
-::: poll {#quiz} A quiz: mark the right answer with [x]
+::: poll {#quiz} Which one is true?
 - Paris is the capital of Italy
 - [x] Rome is the capital of Italy
 - Rome is the capital of France
 
-The answer appears after "Reveal".
+Marked with [x], shown after "Reveal".
+:::
+
+::: notes
+A quiz: mark the right answer with [x]. The text below the list is the explanation.
 :::
 
 ---
 
-::: multi {#have} Several options: what do you have with you?
+::: multi {#have} What do you have with you?
 - A phone
 - A laptop
 - Something to drink
 :::
 
----
-
-::: estimate {#guess} A number: how many keys does a piano have?
-answer: 88
-min: 1
-max: 1000
-
-Everyone guesses, the screen shows the average, then the real answer.
+::: notes
+"multi": people pick several options.
 :::
 
 ---
 
-::: rounds {#would} The same question, several times
+::: estimate {#guess} How many keys does a piano have?
+answer: 88
+min: 1
+max: 1000
+
+A standard piano has 88 keys.
+:::
+
+::: notes
+An estimate: every guess, then the average, then the answer.
+:::
+
+---
+
+::: rounds {#would} Would you let an AI do it?
 options: Yes | No | Maybe
-- Would you let an AI write your emails?
-- Would you let an AI pick your holiday?
+- Write your emails
+- Pick your holiday
+:::
+
+::: notes
+"rounds": the same question for each item in the list.
 :::
 
 ---
@@ -96,8 +109,8 @@ in: a | the
 :::
 
 ::: notes
-The audience writes a sentence word by word, picking from the options you prepare.
-"start:" lists the first options; "word:" the options after that word; "*:" the default.
+The room writes a sentence word by word. "start:" lists the first options,
+"word:" the options after that word, "*:" the fallback. A "." ends it.
 :::
 
 ---
@@ -117,19 +130,19 @@ Anything goes here.
 +++
 
 ### Right
-Separate columns with a line of three pluses.
+A line with three pluses starts a column.
 :::
 
 ---
 
-## Your own components
+## Your own component
 
 ::: component counter
 label: Claps
 :::
 
 ::: notes
-"counter" lives in components/counter.js next to this file. Copy it to build your own.
+components/counter.js, next to this file. Copy it to build your own.
 :::
 
 ---
@@ -140,8 +153,8 @@ label: Claps
 :::
 
 ::: notes
-People can ask at any time with the button on their phone. You approve questions in the panel.
-Click a question to highlight it; click it again to mark it as answered.
+People ask from the button on their phone. Approve questions in the panel,
+click one to highlight it, click again to mark it as answered.
 :::
 
 ---

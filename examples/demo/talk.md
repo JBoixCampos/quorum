@@ -3,26 +3,27 @@ title: How does an AI write?
 author: Quorum demo
 accent: "#ff6a00"
 theme: light
-duration: 15
+duration: 5
 ---
 
 <!-- layout: center -->
-<!-- section: Welcome, 2 -->
+<!-- section: Join, 1 -->
 
 # How does an AI write?
 
-A 15-minute talk where **you** do part of the work.
+Scan the code. You are part of this talk.
 
 ::: join Scan to join
 :::
 
 ::: notes
-Leave this slide on while people arrive. The QR code and link update on their own.
+The join block: a big QR code, the link and a live head count.
+Leave it up while people arrive. Press → when the room is in.
 :::
 
 ---
 
-<!-- section: Warm-up, 3 -->
+<!-- section: Warm-up, 1 -->
 
 ::: poll {#warmup} Pineapple on pizza?
 - Yes, always
@@ -31,12 +32,13 @@ Leave this slide on while people arrive. The QR code and link update on their ow
 :::
 
 ::: notes
-A warm-up to show how voting works. Press → to open, → to close.
+A poll. Press → to open voting, → again to close it and show the bars.
+It is a warm-up: the point is that everyone has voted once.
 :::
 
 ---
 
-## One word: how do you feel about AI?
+## One word for AI
 
 ::: component word-cloud {#feeling}
 audience: text
@@ -46,57 +48,29 @@ examples: curious | curious | curious | excited | excited | worried | sceptical 
 :::
 
 ::: notes
-A component from components/word-cloud.js. "audience: text" gives every phone a text box;
-the component draws the answers. Copy it and change it to build your own.
+A component: components/word-cloud.js. "audience: text" gives every phone a text box
+and the component draws the answers. Press → to open, → to close.
 :::
 
 ---
 
-::: multi {#uses} What have you used an AI for this month?
-- Searching for information
-- Writing or translating
-- Studying
-- Coding
-- Images or music
-- Nothing yet
-:::
-
----
-
-::: estimate {#chatgpt} In which year did ChatGPT come out?
+::: estimate {#chatgpt} When did ChatGPT come out?
 answer: 2022
 min: 1990
 max: 2030
 format: year
 
-November 30, 2022.
+November 30, 2022, in OpenAI's post "Introducing ChatGPT".
 :::
 
 ::: notes
-The screen shows the audience average first, then the actual answer.
+An estimate. → opens it, → closes it and shows every guess and the average,
+→ reveals the real answer with its source.
 :::
 
 ---
 
-<!-- section: Be the model, 5 -->
-
-## A language model does one thing
-
---
-
-It reads what has been written so far…
-
---
-
-…and picks **the next word**. Then it does it again.
-
---
-
-::: callout For the next few minutes
-**You** are the language model.
-:::
-
----
+<!-- section: Be the model, 2 -->
 
 ::: sentence {#sentence} Photosynthesis turns light
 max: 7
@@ -114,70 +88,21 @@ that: plants | feeds | keeps | .
 :::
 
 ::: notes
-Open the vote, close it, and the most voted word is added. "Draw by votes" picks at random, weighted by the votes: that is what temperature does.
+The sentence block: the room is the language model. Open the vote, close it,
+and the most voted word is added. "Draw by votes" samples a word weighted by
+the votes, which is what a model does. Keep going until the sentence ends.
 :::
 
 ---
 
-<!-- layout: center -->
-
-::: stat 0.3 Wh
-is roughly what a typical question to a chatbot uses.
-:::
-
-::: notes
-Source: Our World in Data, "How much energy do data centers and AI use?" (2026).
-:::
-
----
-
-::: estimate {#shower} One minute of electric shower uses as much energy as… how many questions to an AI?
-answer: 530
-max: 10000000
-scale: log
-label: about 530
-
-Up to about 160 Wh per minute of shower, at about 0.3 Wh per question (Our World in Data).
-:::
-
----
-
-<!-- section: Would you?, 3 -->
-
-::: rounds {#delegate} Would you hand this to an AI?
-options: Yes | No | It depends
-- Writing the first draft of an essay
-- Summarising 40 research papers
-- Deciding where to invest your savings
-:::
-
----
-
-::: columns
-### Use it
-
-- Ask, read, copy
-- Fast and easy
-- You get what it gives you
-
-+++
-
-### Understand it
-
-- Know how it picks words
-- Know when it guesses
-- Build things nobody has built yet
-:::
-
----
-
-<!-- section: Questions, 2 -->
+<!-- section: Questions, 1 -->
 
 ::: questions
 :::
 
 ::: notes
-Click a question to highlight it while you answer. Click again to mark it as answered.
+Questions arrive at any time from the button on every phone.
+Click one to highlight it, click again to mark it as answered.
 :::
 
 ---
@@ -186,8 +111,8 @@ Click a question to highlight it while you answer. Click again to mark it as ans
 
 # Thank you
 
-::: component countdown
-seconds: 60
-:::
+Made with Quorum. Write yours in Markdown.
 
-Made with Quorum.
+::: notes
+The closing slide. Press ← to go back to any slide during questions.
+:::
