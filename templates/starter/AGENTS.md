@@ -16,7 +16,7 @@ After every change, run:
 quorum check --json
 ```
 
-It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done, then work through the suggestions. With Playwright installed, `quorum check --visual --json` also measures each slide in a browser, and `quorum snapshot` saves a picture of every slide (and `contact.png` with all of them) in `.quorum-snapshots/` for you to look at. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
+It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done, then work through the suggestions. With Playwright installed, `quorum check --visual --json` also measures each slide in a browser, and `quorum snapshot` saves a picture of every slide (and `contact.png` with all of them) in `.quorum-snapshots/` for you to look at. For a PowerPoint file, run `quorum export --pptx` (needs Playwright; `--safe-fonts` for unknown computers, `--no-audience` to leave out the slides where the audience answers). The slides with a poll become a panel that points to Quorum. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
 ## The format in short
 

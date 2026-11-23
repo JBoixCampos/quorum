@@ -24,6 +24,7 @@ import { INSTALL_PLAYWRIGHT, overflowIssues, renderTalk } from '../src/cli/visua
 import { schema } from '../src/shared/design.js';
 import { ICONS } from '../src/shared/icons.js';
 import { readTalk } from '../src/cli/load.js';
+import { exportTalk } from '../src/cli/pptx/export.js';
 import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
 import { withoutAudience } from '../src/shared/markdown.js';
@@ -60,6 +61,7 @@ Usage:
   quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
   quorum build [folder]      Build a static, playable copy (simulated audience)
   quorum export [folder]     The slides without the audience parts, if nobody can join
+  quorum export --pptx       A PowerPoint file (--pdf for a PDF), with --results for the real votes
   quorum clean [folder]      Delete the votes and questions of the last session
   quorum skill               Install the agent skill (~/.claude/skills/quorum)
 
@@ -77,6 +79,10 @@ Options:
   --no-results    "snapshot" does not play the interactions
   --save <name>   "theme from" also writes themes/<name>.yaml
   --to <folder>   Where "skill" installs (default ~/.claude/skills)
+  --pptx, --pdf   "export" writes a PowerPoint or PDF file (needs Playwright; --out is the file)
+  --results       With --pptx or --pdf: show the votes of the last session, not empty questions
+  --no-audience   With --pptx or --pdf: leave out the slides where the audience answers
+  --safe-fonts    With --pptx: use fonts every Office install has
 `;
 
 function talkDir(args) {
@@ -422,6 +428,43 @@ Present it from any static web server, for example: python3 -m http.server -d ${
 
 // Copies the agent skill where Claude Code (or another agent, with --to)
 // finds it: <skills folder>/quorum/SKILL.md.
+async function cmdExportFile(args) {
+  const dir = talkDir(args);
+  const file = talkFile(args);
+  ensureTalk(dir, file);
+  const talk = readTalk(dir, file);
+  printWarnings(talk);
+  const pdf = !!args.pdf;
+  const slug = (talk.meta.title || 'talk').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'talk';
+  const out = resolve(args.out || join(dir, 'export', `${slug}${args.results ? '-results' : ''}.${pdf ? 'pdf' : 'pptx'}`));
+  const res = await exportTalk(dir, {
+    file, out, pdf, safeFonts: !!args['safe-fonts'], results: !!args.results, audience: !args['no-audience'],
+    onSlide: (n, total) => process.stdout.write(`\r  slide ${n} of ${total}  `),
+  });
+  process.stdout.write('\r                    \r');
+  if (res.available === false) {
+    console.error(`Exporting needs Playwright, which Quorum does not install itself:\n  ${INSTALL_PLAYWRIGHT}`);
+    process.exit(1);
+  }
+  if (res.error) {
+    console.error(res.error);
+    process.exit(1);
+  }
+  console.log(`Wrote ${res.file} (${res.slides} slides${res.charts ? `, ${res.charts} editable chart${res.charts === 1 ? '' : 's'}` : ''}).`);
+  if (res.problems && res.problems.length) {
+    console.log('\nThe file has structural problems, PowerPoint may ask to repair it:');
+    res.problems.forEach((p) => console.log(`  - ${p}`));
+  }
+  if (res.needsFonts && res.needsFonts.length) {
+    console.log(`\nFonts: this file uses ${res.needsFonts.join(', ')}. Computers without them show a substitute.\nInstall them (they are in app/fonts of Quorum) or export with --safe-fonts.`);
+  }
+  if (res.fallbacks && res.fallbacks.length) {
+    const unique = [...new Set(res.fallbacks)];
+    console.log(`\nSome parts became pictures, so they cannot be edited in PowerPoint:\n${unique.slice(0, 12).map((f) => `  - ${f}`).join('\n')}${unique.length > 12 ? `\n  ... and ${unique.length - 12} more` : ''}`);
+  }
+  if (pdf) console.log('The PDF has one picture per slide: text in it cannot be selected.');
+}
+
 function cmdSkill(args) {
   const to = resolve(args.to || join(homedir(), '.claude', 'skills'), 'quorum');
   mkdirSync(to, { recursive: true });
@@ -446,7 +489,10 @@ async function main() {
     case 'clean': cmdClean(args); break;
     case 'skill': cmdSkill(args); break;
     case 'build': buildStatic(args); break;
-    case 'export': buildStatic(args, { audience: false }); break;
+    case 'export':
+      if (args.pptx || args.pdf) await cmdExportFile(args);
+      else buildStatic(args, { audience: false });
+      break;
     case 'preview':
     case 'rehearse': await cmdPreview(args); break; // "rehearse" is the old name
     case 'live': await cmdLive(args); break;

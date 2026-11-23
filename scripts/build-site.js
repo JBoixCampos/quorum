@@ -35,6 +35,7 @@ const DOCS = [
   { file: 'format.md', slug: 'format', label: 'The talk format' },
   { file: 'design.md', slug: 'design', label: 'Design and themes' },
   { file: 'components.md', slug: 'components', label: 'Components' },
+  { file: 'powerpoint.md', slug: 'powerpoint', label: 'PowerPoint and PDF' },
   { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Giving a talk' },
   { file: 'agents.md', slug: 'agents', label: 'Built for agents' },
 ];

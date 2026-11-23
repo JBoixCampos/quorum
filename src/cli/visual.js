@@ -7,7 +7,8 @@
 // the functions return { available: false } and the commands say how to
 // install it.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
@@ -61,15 +62,37 @@ function pressMain() {
 // A browser looking at a talk with a simulated audience. One browser and
 // one page stay open, so showing many slides is fast. Used by the checks,
 // snapshots, the PowerPoint export, diffs and the variant grid.
-export async function openRenderer(dir, { file = 'talk.md', width = 1280 } = {}) {
+//
+// With `live`, the page shows the real votes saved in the talk's .quorum
+// folder instead of a simulated audience. It works on a copy of the talk
+// folder, so nothing in the real one changes.
+export function hasVotes(dir) {
+  const file = join(dir, '.quorum', 'state.json');
+  if (!existsSync(file)) return false;
+  try {
+    const state = JSON.parse(readFileSync(file, 'utf8'));
+    return Object.values(state.interactions || {}).some((i) => i && Object.keys(i.votes || {}).length > 0) || (state.questions || []).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export async function openRenderer(dir, { file = 'talk.md', width = 1280, scale = 1, live = false } = {}) {
   const chromium = loadPlaywright();
   if (!chromium) return null;
-  const server = await startServer({ talkDir: dir, file, port: 0, preview: true, log: () => {} });
+  let scratch = null;
+  let folder = dir;
+  if (live) {
+    scratch = mkdtempSync(join(tmpdir(), 'quorum-live-'));
+    cpSync(dir, scratch, { recursive: true, filter: (src) => !/(^|\/)(node_modules|\.git|dist|export|\.quorum-snapshots)(\/|$)/.test(src.slice(dir.length)) });
+    folder = scratch;
+  }
+  const server = await startServer({ talkDir: folder, file, port: 0, preview: !live, log: () => {} });
   const browser = await chromium.launch();
   const errors = [];
-  const page = await browser.newPage({ viewport: { width, height: Math.round((width * 9) / 16) } });
+  const page = await browser.newPage({ viewport: { width, height: Math.round((width * 9) / 16) }, deviceScaleFactor: scale });
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(`http://localhost:${server.port}/present?preview=1`);
+  await page.goto(`http://localhost:${server.port}/present?${live ? `key=${encodeURIComponent(server.key)}` : 'preview=1'}`);
   await page.addStyleTag({ content: '.q-preview-bar, .q-reactions { display: none !important; }' });
   await page.waitForFunction(() => document.querySelector('[data-slide] .q-content'), null, { timeout: 15000 });
   await wait(1500);
@@ -99,6 +122,7 @@ export async function openRenderer(dir, { file = 'talk.md', width = 1280 } = {})
     async close() {
       await browser.close();
       await server.close();
+      if (scratch) rmSync(scratch, { recursive: true, force: true });
     },
   };
 }
