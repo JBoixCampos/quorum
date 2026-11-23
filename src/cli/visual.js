@@ -44,8 +44,14 @@ const wait = (ms) => new Promise((done) => { setTimeout(done, ms); });
 function measure() {
   const content = document.querySelector('[data-slide] .q-content');
   if (!content) return { y: 0, x: 0 };
+  // Content that is pushed up past the top edge cannot be scrolled to, so
+  // scrollHeight does not show it: compare the top of what is drawn.
+  const slide = document.querySelector('[data-slide]').getBoundingClientRect();
+  const tops = [...content.children].map((c) => c.getBoundingClientRect()).filter((r) => r.height > 0);
+  const above = tops.length ? Math.max(0, slide.top - Math.min(...tops.map((r) => r.top))) : 0;
+  const scale = 1920 / slide.width;
   return {
-    y: Math.max(0, content.scrollHeight - content.clientHeight),
+    y: Math.max(0, content.scrollHeight - content.clientHeight, Math.round(above * scale)),
     x: Math.max(0, content.scrollWidth - content.clientWidth),
   };
 }

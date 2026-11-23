@@ -37,6 +37,7 @@ const DOCS = [
   { file: 'components.md', slug: 'components', label: 'Components' },
   { file: 'powerpoint.md', slug: 'powerpoint', label: 'PowerPoint and PDF' },
   { file: 'repository.md', slug: 'repository', label: 'Working in a repository' },
+  { file: 'remix.md', slug: 'remix', label: 'Remixing slides' },
   { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Giving a talk' },
   { file: 'agents.md', slug: 'agents', label: 'Built for agents' },
 ];

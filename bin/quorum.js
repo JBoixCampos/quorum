@@ -25,8 +25,15 @@ import { schema } from '../src/shared/design.js';
 import { ICONS } from '../src/shared/icons.js';
 import { readTalk } from '../src/cli/load.js';
 import { cleanup, describe, diffPictures, diffTalk } from '../src/cli/diff.js';
+import { exploreSlide, exploreThemes, optionsFor } from '../src/cli/explore.js';
 import { exportTalk } from '../src/cli/pptx/export.js';
-import { joinTalk, mergeText, mergeTalks, setupRepo, splitTalk } from '../src/cli/repo.js';
+import { remix } from '../src/cli/remix.js';
+import {
+  addVariant, clearVariants, findVariant, listVariants, removeVariant,
+} from '../src/cli/variants.js';
+import {
+  findSlide, joinTalk, mergeText, mergeTalks, replaceSlide, setupRepo, slideText, splitTalk,
+} from '../src/cli/repo.js';
 import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
 import { withoutAudience } from '../src/shared/markdown.js';
@@ -41,7 +48,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) args[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save'].includes(k)) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick'].includes(k)) {
         args[k] = argv[i + 1];
         i += 1;
       } else args[k] = true;
@@ -61,6 +68,9 @@ Usage:
   quorum schema              List themes, layouts, blocks, classes and icons
   quorum theme new <name>    Save this talk's look as themes/<name>.yaml
   quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
+  quorum remix <slide>       Other layouts for one slide, as a picture to choose from (--pick <n>)
+  quorum explore --themes    The first slides of the talk in several themes
+  quorum variant <add|list|remix|pick|clear> <slide>   Versions of one slide, kept in variants/
   quorum split [folder]      One file per slide in slides/ (merges better in git)
   quorum join [folder]       The reverse: slides/ back into one talk.md
   quorum diff [rev] [folder] Which slides changed since a branch, tag or commit (--pictures, --json)
@@ -85,6 +95,10 @@ Options:
   --no-results    "snapshot" does not play the interactions
   --save <name>   "theme from" also writes themes/<name>.yaml
   --to <folder>   Where "skill" installs (default ~/.claude/skills)
+  --pick <n>      "remix": use option n (or its name) for the slide
+  --no-remix      "remix": only the variants in variants/, not Quorum's own
+  --themes [a,b,c] "explore": the talk's first slides in these themes
+  --by, --direction, --from   "variant add": who made it, what it tries, a file to read (default stdin)
   --pictures      "diff" saves before and after pictures of the changed slides (needs Playwright)
   --repo          "new" also sets up git: merge driver, CI workflow
   --pptx, --pdf   "export" writes a PowerPoint or PDF file (needs Playwright; --out is the file)
@@ -421,7 +435,7 @@ function buildStatic(args, { audience = true } = {}) {
     filter: (src) => {
       const name = basename(src);
       return !name.startsWith('.') && resolve(src) !== out
-        && !['dist', 'export', 'node_modules'].includes(name);
+        && !['dist', 'export', 'node_modules', 'variants', '.github'].includes(name);
     },
   });
   writeFileSync(join(out, 'talk.json'), JSON.stringify({ ...talk, version: 1 }));
@@ -553,6 +567,112 @@ async function cmdDiff(args) {
   }
 }
 
+const NEEDS = `needs Playwright: ${INSTALL_PLAYWRIGHT}`;
+
+async function cmdExplore(args) {
+  const dir = talkDir(args);
+  const file = talkFile(args);
+  ensureTalk(dir, file);
+  const out = resolve(args.out || join(dir, '.quorum-snapshots', 'explore'));
+  try {
+    if (args.themes) {
+      const names = typeof args.themes === 'string' ? args.themes.split(',').map((x) => x.trim()).filter(Boolean) : null;
+      const res = await exploreThemes(dir, { file, themes: names, count: Number(args.count) || 4, out });
+      if (!res.available) { console.error(`quorum explore ${NEEDS}`); process.exit(1); }
+      if (args.json) { console.log(JSON.stringify(res, null, 2)); return; }
+      console.log('The first slides of the talk in each theme:');
+      res.themes.forEach((t) => console.log(`  ${t.theme.padEnd(10)} ${t.warnings} warnings, ${t.suggestions} suggestions`));
+      console.log(`\nPicture: ${res.grid}\nUse one: set "theme: <name>" in the front matter.`);
+      return;
+    }
+    if (!args.slide) {
+      console.error('Usage: quorum explore --slide <id or number> [folder]    (or: quorum explore --themes [a,b,c])');
+      process.exit(1);
+    }
+    if (args.pick) {
+      // Option numbers are the ones in the picture: no browser needed.
+      const { slide, list } = optionsFor(dir, file, args.slide, { remixToo: !args['no-remix'] });
+      const n = Number(args.pick);
+      const chosen = Number.isInteger(n) ? list[n - 1] : list.find((c) => c.name === args.pick);
+      if (!chosen || chosen.source === 'current') throw new Error(`There is no option "${args.pick}" to pick (1 is the slide as it is; 2 to ${list.length} are the alternatives).`);
+      const where = replaceSlide(dir, file, slide, chosen.text);
+      const stored = chosen.source === 'variant' ? findVariant(listVariants(dir, slide.id), chosen.name) : null;
+      if (stored) removeVariant(dir, slide.id, stored);
+      console.log(`${slide.id} now uses "${chosen.name}". Written to ${where}; \`git diff\` shows the change.`);
+      return;
+    }
+    const res = await exploreSlide(dir, { file, slide: args.slide, remix: !args['no-remix'], out: join(out, String(args.slide)) });
+    if (!res.available) { console.error(`quorum remix ${NEEDS}`); process.exit(1); }
+    if (args.json) { console.log(JSON.stringify(res, null, 2)); return; }
+    if (!res.candidates.length) { console.log(res.reason); return; }
+    console.log(`${res.slide.title}: ${res.candidates.length - 1} other layouts\n`);
+    res.candidates.forEach((c) => {
+      console.log(`${String(c.number).padStart(3)}  ${c.name.padEnd(16)} ${c.source === 'current' ? 'the slide as it is' : c.direction}${c.by && c.source === 'variant' ? ` (${c.by})` : ''}`);
+      c.problems.slice(0, 2).forEach((p) => console.log(`       ! ${p}`));
+    });
+    console.log(`\nLook at them: ${res.grid}\nChoose one: quorum remix ${res.slide.id} --pick <number>`);
+    res.skipped.forEach((x) => console.log(`Skipped ${x}`));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+// quorum variant add|list|remix|pick|clear <slide> [folder]
+async function cmdVariant(args) {
+  const [, sub, ref] = args._;
+  const file = talkFile(args);
+  const usage = 'Usage: quorum variant <add|list|remix|pick|clear> <slide> [folder]';
+  if (!sub || !ref) { console.error(usage); process.exit(1); }
+  const folderAt = sub === 'pick' ? 4 : 3;
+  const dir = resolve(args._[folderAt] || '.');
+  ensureTalk(dir, file);
+  try {
+    const talk = readTalk(dir, file);
+    const slide = findSlide(talk, ref);
+    if (sub === 'add') {
+      const source = args.from ? readFileSync(resolve(args.from), 'utf8') : readFileSync(0, 'utf8');
+      if (!source.trim()) throw new Error('Nothing to add: pipe the slide in, or use --from <file>.');
+      const made = addVariant(dir, slide.id, source, { by: args.by || 'unknown', direction: args.direction || '' });
+      console.log(`Saved ${made.file}\nSee it next to the others: quorum explore --slide ${slide.id}`);
+    } else if (sub === 'list') {
+      const list = listVariants(dir, slide.id);
+      console.log(list.length ? list.map((v) => `${v.name}  ${v.direction || '(no direction)'}${v.by ? ` (${v.by})` : ''}`).join('\n') : `No variants for ${slide.id} yet. \`quorum variant remix ${slide.id}\` makes some.`);
+    } else if (sub === 'remix') {
+      const r = remix(slideText(dir, file, slide));
+      if (!r.variants.length) { console.log(r.reason || 'Nothing to rearrange on this slide.'); return; }
+      r.variants.forEach((v) => addVariant(dir, slide.id, v.text, { by: 'quorum', direction: v.direction, name: v.name }));
+      console.log(`Saved ${r.variants.length} variants in variants/${slide.id}/: ${r.variants.map((v) => v.name).join(', ')}`);
+    } else if (sub === 'clear') {
+      clearVariants(dir, slide.id);
+      console.log(`Removed the variants of ${slide.id}.`);
+    } else if (sub === 'pick') {
+      let chosen = null;
+      let stored = null;
+      {
+        const which = args._[3];
+        if (!which) throw new Error('Say which one: quorum variant pick <slide> <name or number> (quorum variant list shows them).');
+        stored = findVariant(listVariants(dir, slide.id), which);
+        if (stored) chosen = { name: stored.name, text: stored.text };
+        else {
+          const made = remix(slideText(dir, file, slide)).variants.find((v) => v.name === which);
+          if (!made) throw new Error(`There is no variant "${which}" for ${slide.id}.`);
+          chosen = made;
+        }
+      }
+      const where = replaceSlide(dir, file, slide, chosen.text);
+      if (stored) removeVariant(dir, slide.id, stored);
+      console.log(`${slide.id} now uses "${chosen.name}". Written to ${where}. \`git diff\` shows the change; quorum check to verify.`);
+    } else {
+      console.error(usage);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
 function cmdSkill(args) {
   const to = resolve(args.to || join(homedir(), '.claude', 'skills'), 'quorum');
   mkdirSync(to, { recursive: true });
@@ -578,6 +698,13 @@ async function main() {
     case 'merge-driver': cmdMergeDriver(args); break;
     case 'repo': cmdRepo(args); break;
     case 'diff': await cmdDiff(args); break;
+    case 'remix':
+      args.slide = args._[1];
+      args._ = ['remix', args._[2]];
+      await cmdExplore(args);
+      break;
+    case 'explore': await cmdExplore(args); break;
+    case 'variant': await cmdVariant(args); break;
     case 'theme': cmdTheme(args); break;
     case 'clean': cmdClean(args); break;
     case 'skill': cmdSkill(args); break;

@@ -329,3 +329,37 @@ export function setupRepo(dir, { init = false } = {}) {
   }
   return { done, driver };
 }
+
+
+// --- one slide's text, in place ---------------------------------------------
+
+// Finds a slide of a parsed talk by id or by its number (1 is the first).
+export function findSlide(talk, ref) {
+  const byId = talk.slides.find((s) => s.id === String(ref));
+  if (byId) return byId;
+  const n = Number(ref);
+  if (Number.isInteger(n) && n >= 1 && n <= talk.slides.length) return talk.slides[n - 1];
+  throw new Error(`There is no slide "${ref}". Use a slide id (quorum diff and quorum check show them) or its number.`);
+}
+
+// The Markdown of one slide, as written in its file.
+export function slideText(dir, file, slide) {
+  if (slide.file && slide.file !== file) return readFileSync(join(dir, slide.file), 'utf8').replace(/\r\n?/g, '\n').replace(/\n+$/, '\n');
+  const lines = readFileSync(join(dir, file), 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  return `${lines.slice(slide.lines[0] - 1, slide.lines[1]).join('\n')}\n`;
+}
+
+// Writes new text for one slide into its file, leaving the rest alone.
+export function replaceSlide(dir, file, slide, text) {
+  const clean = `${String(text).replace(/\r\n?/g, '\n').replace(/^\n+|\n+$/g, '')}\n`;
+  if (cut(clean).slides.length !== 1) throw new Error('A slide cannot contain a line that is only "---": that would be two slides.');
+  if (slide.file && slide.file !== file) {
+    writeFileSync(join(dir, slide.file), clean);
+    return slide.file;
+  }
+  const full = join(dir, file);
+  const lines = readFileSync(full, 'utf8').replace(/\r\n?/g, '\n').split('\n');
+  lines.splice(slide.lines[0] - 1, slide.lines[1] - slide.lines[0] + 1, ...clean.replace(/\n$/, '').split('\n'));
+  writeFileSync(full, lines.join('\n'));
+  return file;
+}

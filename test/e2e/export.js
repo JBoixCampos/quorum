@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { exploreSlide } from '../../src/cli/explore.js';
 import { exportTalk } from '../../src/cli/pptx/export.js';
 import { unzip } from '../../src/cli/pptx/unzip.js';
 
@@ -64,6 +65,12 @@ try {
   const pdf = await exportTalk(join(ROOT, 'templates', 'starter'), { out: join(out, 'starter.pdf'), pdf: true });
   const pdfText = readFileSync(join(out, 'starter.pdf')).toString('latin1');
   check('pdf: one page per slide', pdf.slides === 13 && /\/Count 13/.test(pdfText));
+
+  const explored = await exploreSlide(join(ROOT, 'examples', 'showcase'), { slide: 'one-loaf-step-by-step', out: join(out, 'explore') });
+  check('remix: shows the slide and at least four other layouts', explored.candidates.length >= 5 && explored.candidates[0].name === 'current', String(explored.candidates.length));
+  check('remix: options are numbered from 1', explored.candidates.every((c, k) => c.number === k + 1));
+  check('remix: writes one picture to choose from', explored.grid && readFileSync(explored.grid).length > 20000);
+  check('remix: nothing fails to fit', explored.candidates.every((c) => !c.problems.some((p) => p.startsWith('does not fit'))), JSON.stringify(explored.candidates.map((c) => c.problems)));
 
   if (has('soffice')) {
     execFileSync('soffice', ['--headless', '--convert-to', 'pdf', '--outdir', out, join(out, 'showcase.pptx')], { stdio: 'ignore', timeout: 180000 });

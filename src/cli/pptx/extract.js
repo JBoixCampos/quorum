@@ -285,6 +285,7 @@ export function extractStage(options = {}) {
       name: el.dataset.name || (/^H[1-3]$/.test(el.tagName) ? `!!${el.tagName.toLowerCase()}` : ''),
       src: el.closest('[data-src]') ? el.closest('[data-src]').dataset.src : '',
       heading: /^H[1-6]$/.test(el.tagName) ? Number(el.tagName[1]) : 0,
+      chrome: !!el.closest('[data-footer], [data-logo]'),
     });
   }
 

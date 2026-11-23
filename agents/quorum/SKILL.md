@@ -59,6 +59,10 @@ Tell the user they can see the talk with `quorum preview <folder>`: it opens in 
 
 `quorum live <folder>` gives the talk to a real audience. That is the user's to run, not yours.
 
+### Offering alternatives for a slide
+
+When the user is unsure about a slide, or asks for options, do not rewrite it once: give them several. Run `quorum remix <slide>` to see Quorum's own layouts (cards, steps, a timeline, a chart, a split with a picture...) and tell them to look at `.quorum-snapshots/explore/<slide>/options.png`. For real alternatives, write two to five variants, each with a different direction ("data first", "one image and one sentence", "playful", "minimal"): save each with `quorum variant add <slide> --by <you> --direction "<what it tries>" < variant.md`. If you can start sub-agents, give each one a direction and let them write in parallel. A variant is one slide (no `---` line). Never pick for the user unless they ask: they choose with `quorum remix <slide> --pick <n>`. Give the slide an explicit id first (`<!-- id: name -->`) if its title may change. See docs/remix.md.
+
 ### Working in a repository
 
 When the talk is in a git repository (other people or agents work on it too): work on a branch named after the task (`agent/yeast-chart`), pull first, make small commits, run `quorum check` before pushing, and never push to `main` unless told to. If the talk is split (`slides:` in the front matter, one file per slide in `slides/`), touch only the slide files for your task: a new slide is a new file, numbered with a gap (`025-new-idea.md`). After pushing, run `quorum diff main --pictures` and look at `.quorum-snapshots/diff/diff.png`. See docs/repository.md.

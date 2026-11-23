@@ -45,10 +45,11 @@
 .layout-title.layout-center .q-content::before, .layout-title.opt-center .q-content::before { margin-left: auto; margin-right: auto; }
 
 /* Section: a divider in the accent colour */
+.q-stage { --ink: var(--fg); --paper: var(--bg); }
 .layout-section { background: var(--accent); color: var(--on-accent); --primary: var(--on-accent); --fg: var(--on-accent); --muted: color-mix(in srgb, var(--on-accent) 75%, transparent); --accent-text: var(--on-accent); --secondary-text: var(--on-accent); }
 .layout-section .q-content { justify-content: flex-end; }
 .layout-section .q-content h1, .layout-section .q-content h2 { font-size: calc(132px * var(--ts)); max-width: 1500px; }
-.layout-section .q-section-number { font-family: var(--font-display); font-weight: var(--title-weight); font-size: 300px; line-height: 0.8; letter-spacing: -0.05em; margin: 0 0 40px; opacity: 0.35; }
+.layout-section .q-section-number { font-family: var(--font-display); font-weight: var(--title-weight); font-size: calc(260px * min(var(--ts), 1)); line-height: 0.8; letter-spacing: -0.05em; margin: 0 0 32px; opacity: 0.35; font-variant-numeric: lining-nums; }
 .q-stage:has(.layout-section) .q-footer { color: color-mix(in srgb, var(--on-accent) 70%, transparent); }
 
 /* Split: the first image on one half */
@@ -319,7 +320,7 @@ pre[data-ranges] .q-line.on { opacity: 1; background: color-mix(in srgb, var(--a
 [data-preset="bold"] .q-content h2 { font-size: calc(96px * var(--ts)); }
 [data-preset="bold"] .layout-title { background: var(--accent); --primary: var(--on-accent); --fg: var(--on-accent); --accent-text: var(--on-accent); --muted: color-mix(in srgb, var(--on-accent) 80%, transparent); color: var(--on-accent); }
 [data-preset="bold"] .layout-title .q-content::before { background: var(--on-accent); }
-[data-preset="bold"] .layout-section { background: var(--fg); --on-accent: var(--bg); }
+[data-preset="bold"] .layout-section { background: var(--ink); --on-accent: var(--paper); }
 [data-preset="bold"] .q-content em { background: var(--accent); color: var(--on-accent); padding: 0 0.15em; }
 [data-preset="bold"] .q-card { border-top: 14px solid var(--accent); }
 
