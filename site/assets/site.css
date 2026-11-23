@@ -362,8 +362,6 @@ pre .c { color: var(--faint); }
 .scene .bar i { display: block; height: 100%; width: 0; border-radius: 7px; background: linear-gradient(90deg, #6e5cf0, #a99bff); transition: width 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .scene .count { position: absolute; left: 34px; bottom: 22px; font-size: 13px; color: var(--fg-2); opacity: 0; transition: opacity 0.4s; }
 .scene .count b { color: var(--fg); font-weight: 700; font-size: 16px; }
-.scene .qr { position: absolute; right: 22px; bottom: 20px; width: 70px; height: 70px; padding: 5px; border-radius: 8px; background: #fff; opacity: 0; transform: scale(0.8); transition: opacity 0.4s, transform 0.4s; }
-.scene .qr svg { display: block; width: 100%; height: 100%; }
 
 .scene .panel { right: 0; top: 42px; bottom: 0; width: 230px; padding: 18px; background: #101114; border-left: 1px solid var(--line); display: grid; align-content: start; gap: 10px; transition: opacity 0.5s, transform 0.5s; }
 .scene .panel .ph { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
@@ -384,12 +382,10 @@ pre .c { color: var(--faint); }
 /* what shows in each step (these are the still states: reduced motion stops here) */
 .scene .term { opacity: 0; pointer-events: none; }
 .scene[data-step="1"] .term { opacity: 1; }
-.scene[data-step="1"] .poll, .scene[data-step="1"] .qr { opacity: 0; }
 .scene[data-step="2"] .poll, .scene[data-step="3"] .poll { opacity: 1; }
 .scene[data-step="2"] .it.pick { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
 .scene[data-step="3"] .panel { opacity: 0; transform: translateX(24px); }
 .scene[data-step="3"] .phones { opacity: 1; transform: none; }
-.scene[data-step="3"] .qr { opacity: 1; transform: none; }
 .scene[data-step="3"] .count, .scene[data-step="3"] .opt b { opacity: 1; }
 .scene[data-step="3"] .bar i { width: var(--w); transition-delay: calc(1.7s + var(--k) * 0.3s); }
 .scene[data-step="3"] .phone .btn.t { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
