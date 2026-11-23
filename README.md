@@ -4,7 +4,7 @@
 
 Write your talk in Markdown. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
 
-**[Try the demo in your browser](https://jboixcampos.github.io/quorum/)** (it runs with a simulated audience).
+**[Try the demo in your browser](https://jboixcampos.github.io/quorum/#demo)** (seven slides with a simulated audience), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
 
 ```markdown
 ::: poll {#lunch} Where should we go for lunch?
@@ -56,7 +56,7 @@ Plus the usual slide things: steps that appear one click at a time, columns, big
 
 **Chat mode** is the plan B. If the link fails, or the audience is on a video call and cannot scan anything, press B: phones are told to use the chat and you click the options to type in what you read there.
 
-**`quorum build`** turns a talk into a static site that anyone can play with in rehearsal mode. The [demo](https://jboixcampos.github.io/quorum/) is one.
+**`quorum build`** turns a talk into a static site that anyone can play with in rehearsal mode. The [demo](https://jboixcampos.github.io/quorum/demo/) is one. Add `?slide=3` to its address to open it on a given slide.
 
 ## Build on it
 
@@ -84,7 +84,27 @@ export default {
 
 Quorum takes care of the rest: opening and closing, the QR code, rehearsal with simulated answers, chat mode, and keeping the shared window and your panel in sync.
 
-The [examples](examples/components) include a word cloud and a **next-word explorer** that asks a language model running on your laptop (through [llama.cpp](https://github.com/ggml-org/llama.cpp)) for the ten most likely next words, so the audience can watch a model think and steer it. See [docs/components.md](docs/components.md).
+The [examples](https://jboixcampos.github.io/quorum/examples/) include a word cloud and a **next-word explorer** that asks a language model running on your laptop (through [llama.cpp](https://github.com/ggml-org/llama.cpp)) for the ten most likely next words, so the audience can watch a model think and steer it. See [docs/components.md](docs/components.md).
+
+## Built for agents
+
+The audience takes part as people: live, in the room, from their phones. The talk is plain text and small JavaScript files, so an AI agent can write it, check it and extend it for you. Ask yours:
+
+```text
+Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
+an estimate with a reveal, a word cloud and a questions slide.
+Run `quorum check --json` until it reports no warnings.
+```
+
+What helps the agent:
+
+- **`quorum new` adds an [`AGENTS.md`](templates/starter/AGENTS.md)** to every talk folder: the format in short, how to check, how to write a component, and what never to touch (`.quorum/` and the presenter key).
+- **`quorum check --json`** prints `{ ok, title, slides, interactions, warnings }` and exits non-zero while there are warnings.
+- **[llms.txt](https://jboixcampos.github.io/quorum/llms.txt)** and **[llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt)**: the docs as an index and as one plain text file, generated from `docs/*.md`.
+- **A skill** in [agents/quorum/SKILL.md](agents/quorum/SKILL.md) that teaches an agent to create, check and rehearse a talk.
+- **[AGENTS.md](AGENTS.md)** at the root, for agents working on Quorum itself.
+
+More in [docs/agents.md](docs/agents.md).
 
 ## Commands
 
@@ -93,18 +113,22 @@ quorum new <folder>        Create a new talk
 quorum rehearse [folder]   Rehearse with a simulated audience
 quorum live [folder]       Give the talk (server, public link, QR code, windows)
 quorum offline [folder]    Give it without a public link: you type in votes from the chat
-quorum check [folder]      Check talk.md for mistakes
+quorum check [folder]      Check talk.md for mistakes (--json for tools and agents)
 quorum build [folder]      Build a static, playable demo (rehearsal mode)
 quorum clean [folder]      Delete the votes and questions of the last session
 
-Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>
+Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json
 ```
 
 ## Documentation
 
+Read it on the website, [jboixcampos.github.io/quorum/docs](https://jboixcampos.github.io/quorum/docs/), or here:
+
+- [Overview and quick start](docs/README.md)
 - [The talk format](docs/format.md): every block, with examples
 - [Components](docs/components.md): build your own, including one that uses a local model
 - [Giving a talk](docs/giving-a-talk.md): the day itself, on stage or on a call, and the plan B
+- [Built for agents](docs/agents.md): ask an AI agent to write, check and extend your talk
 
 ## How it works
 
@@ -116,10 +140,12 @@ The audience is anonymous: each phone gets a random id kept in its browser. Vote
 
 ```bash
 npm test               # unit tests
-npm run test:e2e       # a server, the presentation, the panel and three phones in a headless browser (needs Playwright)
+npm run test:e2e       # a server, the presentation, the panel and three phones, then the website, in a headless browser (needs Playwright)
 npm run demo           # rehearse the example talk
-npm run build:site     # the landing page and the demo, in _site/
+npm run build:site     # the website in _site/, with every internal link checked
 ```
+
+The website is built from this repository: `site/index.html` is the landing page, `docs/*.md` become the docs pages, `examples/components/*.js` the examples gallery, and `examples/demo` the playable demo that also renders the playground. Look at it with `python3 -m http.server -d _site`. [AGENTS.md](AGENTS.md) describes the project layout and conventions.
 
 ## License
 
