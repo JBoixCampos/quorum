@@ -59,55 +59,45 @@ function parseArgs(argv) {
   return args;
 }
 
-const HELP = `Quorum ${VERSION}: presentations where the audience takes part.
+const HELP = `Quorum ${VERSION}: talks your agent writes, you shape, and the room takes part in.
 
-Usage:
-  quorum new <folder>        Create a new talk
-  quorum studio [folder]     Edit a talk on a canvas: drag, type, rearrange, remix, undo
-  quorum preview [folder]    See it with a simulated audience, as you edit
-  quorum live [folder]       Give the talk (server, public link, QR code, windows)
-  quorum check [folder]      Check talk.md for mistakes and design problems
-  quorum snapshot [folder]   A picture of every slide, and a contact sheet
-  quorum schema              List themes, layouts, blocks, classes and icons
-  quorum theme new <name>    Save this talk's look as themes/<name>.yaml
-  quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
-  quorum remix <slide>       Other layouts for one slide, as a picture to choose from (--pick <n>)
-  quorum explore --themes    The first slides of the talk in several themes
-  quorum variant <add|list|remix|pick|clear> <slide>   Versions of one slide, kept in variants/
-  quorum split [folder]      One file per slide in slides/ (merges better in git)
-  quorum join [folder]       The reverse: slides/ back into one talk.md
-  quorum diff [rev] [folder] Which slides changed since a branch, tag or commit (--pictures, --json)
-  quorum repo [folder]       Set up git for this talk: merge driver, CI workflow
-  quorum build [folder]      Build a static, playable copy (simulated audience)
-  quorum export [folder]     The slides without the audience parts, if nobody can join
-  quorum export --pptx       A PowerPoint file (--pdf for a PDF), with --results for the real votes
+The workflow
+  1. quorum new my-talk       Start a talk (or "Use this template" on GitHub)
+  2. Your agent writes it     Claude Code, Codex, Cursor... in the folder; AGENTS.md tells it how
+  3. quorum studio            Shape it: edit, insert polls, try layouts, rehearse
+  4. Present or Export        From Studio, or with the commands below
+
+For you
+  quorum                     Open Studio (in a talk folder)
+  quorum new <folder>        Start a talk: talk.md, AGENTS.md, package.json, CI
+  quorum studio [folder]     Edit, rehearse, present and export
+  quorum present [folder]    Give the talk live: public link, QR code, windows
+  quorum preview [folder]    The talk with a simulated audience
+  quorum export --pptx       A PowerPoint file (--pdf for a PDF, --results with the votes)
   quorum clean [folder]      Delete the votes and questions of the last session
-  quorum skill               Install the agent skill (~/.claude/skills/quorum)
 
-Options:
-  --port <n>      Local port (default 8080)
-  --file <name>   Talk file inside the folder (default talk.md)
-  --no-tunnel     Do not open a public link
-  --no-open       Do not open any window
-  --no-moderation Show questions without approving them first
-  --out <folder>  Where "build" and "export" write (default <folder>/dist, <folder>/export)
-  --json          "check" prints { ok, title, slides, theme, interactions, warnings,
-                  issues, suggestions }; "schema" prints everything as JSON
-  --visual        "check" also measures each slide in a browser (needs Playwright)
-  --icons         "schema" lists the icon names
-  --no-results    "snapshot" does not play the interactions
-  --save <name>   "theme from" also writes themes/<name>.yaml
-  --to <folder>   Where "skill" installs (default ~/.claude/skills)
-  --pick <n>      "remix": use option n (or its name) for the slide
-  --no-remix      "remix": only the variants in variants/, not Quorum's own
-  --themes [a,b,c] "explore": the talk's first slides in these themes
-  --by, --direction, --from   "variant add": who made it, what it tries, a file to read (default stdin)
-  --pictures      "diff" saves before and after pictures of the changed slides (needs Playwright)
-  --repo          "new" also sets up git: merge driver, CI workflow
-  --pptx, --pdf   "export" writes a PowerPoint or PDF file (needs Playwright; --out is the file)
-  --results       With --pptx or --pdf: show the votes of the last session, not empty questions
-  --no-audience   With --pptx or --pdf: leave out the slides where the audience answers
-  --safe-fonts    With --pptx: use fonts every Office install has
+For agents and CI
+  quorum check [--json] [--visual]   Mistakes, contrast, slides that do not fit
+  quorum snapshot             A picture of every slide, and a contact sheet
+  quorum schema [--json]      Every theme, layout, block, class and icon
+  quorum remix <slide>        Other layouts for a slide (--pick <n> applies one)
+  quorum variant add <slide>  Save a version of a slide for the person to choose in Studio
+  quorum diff [rev]           Which slides changed since a branch, tag or commit (--pictures)
+  quorum explore --themes     The first slides in several themes
+  quorum split / join         One file per slide in slides/, and back
+  quorum repo                 Slide by slide merging in this clone, and the CI workflow
+  quorum theme new|from       Save the look as a theme file, or make one from a logo
+  quorum build                A static, playable copy of the talk
+  quorum export               The slides without the audience parts, as a website
+  quorum skill                Install the agent skill for Claude Code (--to <folder>)
+
+Options
+  --port <n>  --file <name>  --out <path>  --no-open  --no-tunnel  --no-moderation
+  --json  --visual  --icons  --no-results  --pictures  --pick <n>  --no-remix  --themes a,b
+  --pptx  --pdf  --results  --no-audience  --safe-fonts  --repo  --save <name>  --to <folder>
+  --by <name>  --direction <text>  --from <file>  --quiet
+
+Docs: https://jboixcampos.github.io/quorum/docs/
 `;
 
 function talkDir(args) {
@@ -143,22 +133,36 @@ function cmdNew(args) {
     console.error(`${dir} already exists and is not empty.`);
     process.exit(1);
   }
-  cpSync(join(ROOT, 'templates', 'starter'), dir, { recursive: true });
+  // Never the votes or keys of a session someone ran in the template itself.
+  cpSync(join(ROOT, 'templates', 'starter'), dir, { recursive: true, filter: (src) => !/[\\/]\.quorum([\\/]|$)/.test(src) });
   // npm drops files named .gitignore when publishing, so it is stored as "gitignore".
   if (existsSync(join(dir, 'gitignore'))) cpSync(join(dir, 'gitignore'), join(dir, '.gitignore'));
   rmSync(join(dir, 'gitignore'), { force: true });
-  let repoNote = '';
-  if (args.repo) {
-    const r = setupRepo(dir, { init: true });
-    repoNote = `\nRepository: ${r.done.join(', ') || 'already set up'}${r.driver ? '; slides now merge one by one' : ''}.`;
+  for (const f of ['gitattributes']) {
+    if (existsSync(join(dir, f))) {
+      cpSync(join(dir, f), join(dir, `.${f}`));
+      rmSync(join(dir, f), { force: true });
+    }
   }
+  // The package is named after the folder.
+  const pkg = join(dir, 'package.json');
+  if (existsSync(pkg)) {
+    const data = JSON.parse(readFileSync(pkg, 'utf8'));
+    data.name = basename(dir).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'my-talk';
+    writeFileSync(pkg, `${JSON.stringify(data, null, 2)}\n`);
+  }
+  // The CI workflow, and with --repo a git repository with slide by slide merging.
+  const r = setupRepo(dir, { init: !!args.repo });
+  const repoNote = args.repo ? `\nA git repository${r.driver ? ', with slides that merge one by one' : ''}.` : '';
   console.log(`Created ${dir}${repoNote}
 
 Next:
-  1. Edit ${join(name, 'talk.md')} (it explains the format as it goes),
-     or ask your AI agent to: ${join(name, 'AGENTS.md')} tells it how
-  2. quorum preview ${name}     see it with a simulated audience
-  3. quorum live ${name}        give it`);
+  cd ${name}
+  npm install          Quorum for this folder (or use a global quorum)
+  npm run studio       Open Studio
+
+Then ask your agent (Claude Code, Codex, Cursor...) in that folder for the talk
+you want: AGENTS.md tells it the format and how to check its work.`);
 }
 
 async function cmdCheck(args) {
@@ -539,6 +543,11 @@ function cmdMergeDriver(args) {
 function cmdRepo(args) {
   const dir = talkDir(args);
   const r = setupRepo(dir, { init: false });
+  // "npm install" runs this (the prepare script): only a word when it matters.
+  if (args.quiet) {
+    if (r.driver) console.log('Quorum: slides in talk.md merge one by one in this clone.');
+    return;
+  }
   console.log(r.done.length ? `Added: ${r.done.join(', ')}` : 'The workflow and .gitattributes are already there.');
   console.log(r.driver
     ? 'Slides now merge one by one in this clone. Every other clone runs `quorum repo` once too.'
@@ -688,7 +697,12 @@ Your agent can now write and check Quorum talks. Start a new agent session to lo
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const cmd = args._[0];
+  let cmd = args._[0];
+  // Just "quorum" in a talk folder opens Studio.
+  if (!cmd && !args.help && existsSync(join(process.cwd(), 'talk.md'))) {
+    cmd = 'studio';
+    args._ = ['studio'];
+  }
   if (args.version || cmd === 'version') {
     console.log(VERSION);
     return;
@@ -720,7 +734,8 @@ async function main() {
       break;
     case 'preview':
     case 'rehearse': await cmdPreview(args); break; // "rehearse" is the old name
-    case 'live': await cmdLive(args); break;
+    case 'live':
+    case 'present': await cmdLive(args); break;
     case 'studio': await cmdStudio(args); break;
     default:
       console.log(HELP);

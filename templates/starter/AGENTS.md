@@ -18,6 +18,10 @@ quorum check --json
 
 It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done, then work through the suggestions. With Playwright installed, `quorum check --visual --json` also measures each slide in a browser, and `quorum snapshot` saves a picture of every slide (and `contact.png` with all of them) in `.quorum-snapshots/` for you to look at. For a PowerPoint file, run `quorum export --pptx` (needs Playwright; `--safe-fonts` for unknown computers, `--no-audience` to leave out the slides where the audience answers). The slides with a poll become a panel that points to Quorum. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
+## Working with the person
+
+The person shapes the talk in Quorum Studio (`npm run studio`) while you work: it edits the same files and shows your changes as soon as they are saved, so keep the talk valid at every save. When they want something from you, Studio writes a request for them to paste: it names the slide (its id and lines) and what they want. Do exactly that, run `quorum check`, and say what you changed. Presenting and exporting are theirs to do from Studio.
+
 ## Alternatives for a slide
 
 `quorum remix <slide>` draws a slide in other layouts on one picture for the person to choose from (`--pick <n>` applies one). To offer your own, save each as a variant: `quorum variant add <slide> --by you --direction "data first" < variant.md` (one slide, no `---` line); they appear in the same picture. Do not pick for the person unless they ask.

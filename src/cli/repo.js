@@ -243,9 +243,9 @@ export function joinTalk(dir, file = 'talk.md') {
 
 // --- setting up a repository ----------------------------------------------------
 
-export const WORKFLOW = `# Checks a Quorum talk on every push and pull request, and builds what
-# reviewers need: a playable copy, pictures of the slides and, on a pull
-# request, which slides changed. Edit it freely.
+export const WORKFLOW = `# Checks this Quorum talk on every push and pull request, and keeps what
+# reviewers need: a playable copy, pictures of the slides, a PowerPoint file
+# and, on a pull request, which slides changed. Edit it freely.
 name: Quorum
 
 on:
@@ -264,22 +264,22 @@ jobs:
           node-version: 20
       - name: Install Quorum and a browser
         run: |
-          npm install -g github:JBoixCampos/quorum
+          if [ -f package.json ]; then npm install; else npm install --no-save github:JBoixCampos/quorum; fi
           npm install --no-save playwright
           npx playwright install --with-deps chromium
       - name: Check the talk (mistakes, contrast, slides that do not fit)
-        run: quorum check . --visual
+        run: npx quorum check . --visual
       - name: Build a playable copy
-        run: quorum build . --out build
+        run: npx quorum build . --out build
       - name: Take a picture of every slide
-        run: quorum snapshot . --no-results --out snapshots
+        run: npx quorum snapshot . --no-results --out snapshots
       - name: Export a PowerPoint file
-        run: quorum export . --pptx --safe-fonts --out deck.pptx
+        run: npx quorum export . --pptx --safe-fonts --out deck.pptx
       - name: Which slides changed
         if: github.event_name == 'pull_request'
         run: |
-          quorum diff "origin/\${{ github.base_ref }}" . | tee -a "$GITHUB_STEP_SUMMARY"
-          quorum diff "origin/\${{ github.base_ref }}" . --pictures --out diff-pictures
+          npx quorum diff "origin/\${{ github.base_ref }}" . | tee -a "$GITHUB_STEP_SUMMARY"
+          npx quorum diff "origin/\${{ github.base_ref }}" . --pictures --out diff-pictures
       - uses: actions/upload-artifact@v4
         with:
           name: quorum-talk
