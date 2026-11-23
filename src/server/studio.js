@@ -5,14 +5,19 @@
 // cannot reach it).
 
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync, mkdirSync, readdirSync, statSync, writeFileSync,
+} from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
 import { candidatesFor } from '../cli/explore.js';
+import { findVariant, listVariants, removeVariant } from '../cli/variants.js';
 import { assemble, frontMatterOf, reader } from '../cli/load.js';
 import { StudioError, Workspace } from '../cli/studio-ops.js';
 import { schema } from '../shared/design.js';
 import { parseTalk } from '../shared/markdown.js';
+import { agentRequest } from './studio-agent.js';
+import { createControls } from './studio-live.js';
 
 const IMAGE_TYPES = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
 const MAX_UPLOAD = 15 * 1024 * 1024;
@@ -48,6 +53,31 @@ export function createStudio({
   const tokens = new Map();
   const waiting = new Set();
   let revision = 1;
+  const controls = createControls({ dir, file, talk: () => workspace.talk(), onChange: () => notify() });
+
+  // Variants written by an agent appear in the Alternatives tray: look for
+  // new files in variants/ every two seconds.
+  let variantsSeen = '';
+  const variantsTimer = setInterval(() => {
+    const root = join(dir, 'variants');
+    let sign = '';
+    try {
+      if (existsSync(root)) {
+        readdirSync(root).forEach((d) => {
+          const sub = join(root, d);
+          if (statSync(sub).isDirectory()) readdirSync(sub).forEach((f) => { sign += `${d}/${f}:${statSync(join(sub, f)).mtimeMs};`; });
+        });
+      }
+    } catch {
+      sign = variantsSeen;
+    }
+    if (sign !== variantsSeen) {
+      const first = variantsSeen === '' && revision === 1;
+      variantsSeen = sign;
+      if (!first) notify();
+    }
+  }, 2000);
+  variantsTimer.unref();
 
   // Called after the talk was loaded again, from any cause.
   function notify() {
@@ -108,8 +138,10 @@ export function createStudio({
         lines: s.lines,
         file: s.file || file,
         interactive: !!s.interaction || s.components.length > 0 || s.join,
+        asks: !!s.interaction || s.components.some((c) => c.params && c.params.audience),
       })),
       schema: schema(),
+      components: existsSync(join(dir, 'components')) ? readdirSync(join(dir, 'components')).filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3)) : [],
     };
   }
 
@@ -188,6 +220,36 @@ export function createStudio({
             number: k + 1, name: c.name, source: c.source, by: c.by, direction: c.direction, text: c.text, token: k === 0 ? '' : remember(slide.id, c.text),
           })),
         });
+      } else if (route === 'check' && req.method === 'GET') {
+        send(res, 200, { ok: true, ...controls.check() });
+      } else if (route === 'live' && req.method === 'GET') {
+        send(res, 200, { ok: true, ...controls.liveState() });
+      } else if (route === 'live' && req.method === 'POST') {
+        const body = await readJson(req, 10000);
+        const state = body.action === 'stop' ? await controls.stopLive() : await controls.startLive({ tunnel: body.tunnel !== false, open: body.open !== false });
+        send(res, 200, { ok: true, ...state });
+      } else if (route === 'export' && req.method === 'GET') {
+        send(res, 200, { ok: true, job: controls.jobState() });
+      } else if (route === 'export' && req.method === 'POST') {
+        const body = await readJson(req, 10000);
+        if (body.action === 'open') {
+          controls.openFile(String(body.file || ''));
+          send(res, 200, { ok: true });
+        } else {
+          send(res, 200, { ok: true, job: controls.startExport(body) });
+        }
+      } else if (route === 'agent' && req.method === 'POST') {
+        const body = await readJson(req, 100000);
+        send(res, 200, { ok: true, ...agentRequest(workspace, body) });
+      } else if (route === 'variant' && req.method === 'POST') {
+        // A variant was used or dismissed: remove its file.
+        const body = await readJson(req, 10000);
+        // The slide may have a new id already (its title changed): use the one given.
+        const id = String(body.slide || '');
+        if (!/^[\w-]+$/.test(id)) throw new StudioError('Not a slide id.');
+        const found = findVariant(listVariants(dir, id), String(body.name || ''));
+        if (found) removeVariant(dir, id, found);
+        send(res, 200, { ok: true });
       } else if (route === 'upload' && req.method === 'POST') {
         send(res, 200, { ok: true, ...upload(await readJson(req, MAX_UPLOAD * 1.4)) });
       } else {
@@ -199,5 +261,12 @@ export function createStudio({
     return true;
   }
 
-  return { handle, notify, overrideTalk, workspace };
+  async function close() {
+    clearInterval(variantsTimer);
+    await controls.close();
+  }
+
+  return {
+    handle, notify, overrideTalk, workspace, close,
+  };
 }

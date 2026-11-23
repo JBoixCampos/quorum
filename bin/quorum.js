@@ -14,7 +14,7 @@
 //   quorum skill               install the agent skill for Claude Code
 
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { homedir, networkInterfaces } from 'node:os';
+import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,7 +34,9 @@ import {
 import {
   findSlide, joinTalk, mergeText, mergeTalks, replaceSlide, setupRepo, slideText, splitTalk,
 } from '../src/cli/repo.js';
-import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
+import {
+  INSTALL, findChromium, lanUrl, openAppWindow, openUrl, startTunnel,
+} from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
 import { withoutAudience } from '../src/shared/markdown.js';
 
@@ -130,15 +132,6 @@ function printWarnings(talk) {
 }
 
 // This computer's address on the local network, for people on the same wifi.
-function lanUrl(port) {
-  for (const list of Object.values(networkInterfaces())) {
-    for (const a of list || []) {
-      if (a.family === 'IPv4' && !a.internal) return `http://${a.address}:${port}`;
-    }
-  }
-  return null;
-}
-
 function cmdNew(args) {
   const name = args._[1];
   if (!name) {

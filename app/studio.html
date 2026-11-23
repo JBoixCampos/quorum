@@ -8,59 +8,84 @@
   <link rel="stylesheet" href="css/studio.css">
 </head>
 <body class="studio">
-  <header class="s-top">
-    <strong class="s-brand">Studio</strong>
-    <span class="s-title" data-title></span>
-    <span class="s-spacer"></span>
-    <button type="button" data-act="undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
-    <button type="button" data-act="redo" title="Redo (Ctrl+Shift+Z)" disabled>Redo</button>
-    <span class="s-sep"></span>
-    <button type="button" data-act="remix" title="See this slide laid out other ways">Remix</button>
-    <button type="button" data-act="source" aria-pressed="false" title="The Markdown of this slide">Source</button>
-    <button type="button" data-act="add" title="Add a slide after this one">Add slide</button>
-    <span class="s-sep"></span>
-    <button type="button" class="s-warn" data-act="warnings" hidden></button>
-    <span class="s-status" data-status>Loading</span>
-  </header>
-
-  <aside class="s-rail" data-rail aria-label="Slides"></aside>
-
-  <main class="s-center">
-    <div class="s-canvas-wrap" data-wrap>
-      <div class="s-canvas" data-canvas>
-        <iframe data-frame title="The slide"></iframe>
-        <div class="s-drop" data-drop hidden>Drop a picture here</div>
+  <header class="bar">
+    <div class="bar-left">
+      <img class="logo" src="favicon.svg" alt="">
+      <div class="doc">
+        <strong data-title>Studio</strong>
+        <span class="saved" data-status>Loading</span>
       </div>
     </div>
-    <section class="s-source" data-source hidden>
-      <div class="s-source-head"><b>Markdown of this slide</b><span class="s-muted" data-source-note></span></div>
+    <div class="bar-mid">
+      <button type="button" class="ib" data-act="undo" data-tip="Undo  Ctrl+Z" disabled></button>
+      <button type="button" class="ib" data-act="redo" data-tip="Redo  Ctrl+Shift+Z" disabled></button>
+      <span class="sep"></span>
+      <button type="button" class="ghost" data-act="palette" data-tip="Everything you can do  Ctrl+K"></button>
+    </div>
+    <div class="bar-right">
+      <div class="live" data-live hidden></div>
+      <button type="button" class="ghost" data-act="problems"></button>
+      <button type="button" class="ghost" data-act="rehearse" data-tip="The talk with a simulated audience"></button>
+      <button type="button" class="ghost" data-act="export" data-tip="PowerPoint or PDF"></button>
+      <button type="button" class="primary" data-act="present"></button>
+    </div>
+  </header>
+
+  <aside class="rail" aria-label="Slides">
+    <div class="rail-head"><span>Slides</span><span class="count" data-count></span><button type="button" class="ib sm" data-act="add" data-tip="Add a slide"></button></div>
+    <div class="rail-list" data-rail></div>
+  </aside>
+
+  <main class="stage">
+    <div class="stage-scroll" data-wrap>
+      <div class="canvas" data-canvas>
+        <iframe data-frame title="The slide"></iframe>
+        <div class="drop" data-drop hidden><span>Drop to add the picture</span></div>
+      </div>
+    </div>
+    <div class="float" data-float hidden></div>
+    <footer class="stage-foot">
+      <span class="muted" data-where></span>
+      <span class="grow"></span>
+      <button type="button" class="ghost sm" data-act="source" aria-pressed="false" data-tip="The Markdown of this slide"></button>
+      <span class="sep"></span>
+      <button type="button" class="ib sm" data-act="zoom-out" data-tip="Zoom out"></button>
+      <button type="button" class="ghost sm zoom" data-act="zoom-fit" data-tip="Fit to the window" data-zoom>Fit</button>
+      <button type="button" class="ib sm" data-act="zoom-in" data-tip="Zoom in"></button>
+    </footer>
+    <section class="source" data-source hidden>
+      <div class="source-head"><b>Markdown</b><span class="muted" data-source-note></span><span class="grow"></span><span class="muted">Saved as you type</span></div>
       <textarea data-source-text spellcheck="false" aria-label="Markdown of this slide"></textarea>
     </section>
   </main>
 
-  <aside class="s-inspector">
-    <nav class="s-tabs" role="tablist">
-      <button type="button" role="tab" data-tab="slide" aria-selected="true">Slide</button>
-      <button type="button" role="tab" data-tab="element" aria-selected="false">Element</button>
-      <button type="button" role="tab" data-tab="talk" aria-selected="false">Talk</button>
-    </nav>
-    <div class="s-panel" data-panel="slide"></div>
-    <div class="s-panel" data-panel="element" hidden></div>
-    <div class="s-panel" data-panel="talk" hidden></div>
+  <aside class="side">
+    <nav class="tabs" role="tablist" data-tabs></nav>
+    <div class="side-body" data-side></div>
   </aside>
 
-  <div class="s-editor" data-editor hidden>
+  <div class="pop" data-editor hidden>
+    <div class="pop-head"><b>Markdown</b><span class="muted">Ctrl+Enter saves, Esc cancels</span></div>
     <textarea data-editor-text spellcheck="false" aria-label="Markdown of the selected element"></textarea>
-    <div class="s-editor-bar"><span class="s-muted">Ctrl+Enter saves, Esc cancels</span><span class="s-spacer"></span><button type="button" data-editor-cancel>Cancel</button><button type="button" class="main" data-editor-save>Save</button></div>
+    <div class="pop-foot"><span class="grow"></span><button type="button" class="ghost" data-editor-cancel>Cancel</button><button type="button" class="primary" data-editor-save>Save</button></div>
   </div>
 
-  <div class="s-modal" data-modal hidden>
-    <div class="s-modal-card">
-      <header><strong data-modal-title></strong><span class="s-spacer"></span><button type="button" data-modal-close>Close</button></header>
-      <div class="s-modal-body" data-modal-body></div>
+  <div class="overlay" data-modal hidden>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <header><strong data-modal-title></strong><span class="grow"></span><button type="button" class="ib" data-modal-close aria-label="Close"></button></header>
+      <div class="dialog-body" data-modal-body></div>
     </div>
   </div>
-  <div class="s-toast" data-toast hidden role="status"></div>
+
+  <div class="overlay palette-wrap" data-palette hidden>
+    <div class="palette">
+      <input type="text" data-palette-input placeholder="Type a command or a slide" aria-label="Command">
+      <div class="palette-list" data-palette-list role="listbox"></div>
+    </div>
+  </div>
+
+  <div class="tip" data-tip-box hidden></div>
+  <div class="toasts" data-toasts aria-live="polite"></div>
 
   <script type="module" src="js/studio.js"></script>
 </body>

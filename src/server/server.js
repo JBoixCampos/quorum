@@ -405,12 +405,14 @@ export function startServer({
           studio: `${base}/studio?key=${KEY}`,
         },
         talk: () => talk,
+        connected,
         setPublicUrl(u) {
           session.apply({ type: 'url', url: u }, { presenter: true });
           save();
           broadcast();
         },
-        close() {
+        async close() {
+          if (studio) await studio.close();
           clearInterval(counter);
           watchers.forEach((w) => w.close());
           waiting.forEach((w) => w.res.end());

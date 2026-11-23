@@ -20,6 +20,8 @@ html.in-studio .q-footer, html.in-studio .q-logo, html.in-studio .q-reactions { 
 .qs-handle { width: 12px; height: 12px; background: #fff; border: 2px solid #6ea8fe; border-radius: 2px; pointer-events: auto; }
 .qs-line { background: #6ea8fe; border-radius: 2px; }
 .qs-guide { background: #ff6bd6; }
+.qs-editing { outline: 2px solid #6ea8fe !important; outline-offset: 4px; cursor: text !important; caret-color: currentColor; }
+.qs-editing:focus { outline: 2px solid #6ea8fe !important; }
 `;
 
 const LABELS = {
@@ -137,7 +139,7 @@ export function attachCanvas(frame, api) {
     const tag = add('qs-tag', { left: r.left, top: Math.max(0, r.top - 22), width: 0, height: 0 });
     tag.style.width = 'auto';
     tag.style.height = 'auto';
-    tag.textContent = labelOf(selected.el);
+    tag.textContent = (api.labelFor && api.labelFor(rangeOf(selected.el))) || labelOf(selected.el);
     if (inCanvas() && isTopLevel(selected.el)) {
       [['nw', r.left, r.top], ['ne', r.right, r.top], ['sw', r.left, r.bottom], ['se', r.right, r.bottom]].forEach(([name, x, y]) => {
         const h = add('qs-handle', { left: x - 6, top: y - 6, width: 12, height: 12 }, { 'data-handle': name });
@@ -314,6 +316,7 @@ export function attachCanvas(frame, api) {
 
   doc.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
+    if (editing() && e.target.closest && e.target.closest('[contenteditable="true"]')) return;
     const handle = e.target.closest && e.target.closest('[data-handle]');
     if (handle) { startResize(e, handle.getAttribute('data-handle')); return; }
     e.preventDefault();
@@ -327,6 +330,7 @@ export function attachCanvas(frame, api) {
   }, true);
 
   doc.addEventListener('pointermove', (e) => {
+    if (editing()) return;
     if (drag && drag.type === 'resize') { updateResize(e); return; }
     if (pending && !drag && Math.hypot(e.clientX - pending.x, e.clientY - pending.y) > 5) startDrag(e);
     if (drag) { updateDrag(e); return; }
@@ -341,21 +345,75 @@ export function attachCanvas(frame, api) {
   }, true);
 
   doc.addEventListener('pointerleave', () => { clearOverlay('.qs-hover'); });
-  doc.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+  doc.addEventListener('click', (e) => {
+    if (editing() && e.target.closest && e.target.closest('[contenteditable="true"]')) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
   doc.addEventListener('dblclick', (e) => {
+    if (editing()) return;
     e.preventDefault();
     e.stopPropagation();
     if (selected) api.onEdit(infoOf(selected.el));
   }, true);
-  doc.addEventListener('keydown', (e) => api.onKey(e), true);
+  doc.addEventListener('keydown', (e) => { if (!editing()) api.onKey(e); }, true);
+
+  // --- dropping: pictures from the desktop, blocks from the Insert library -----
+
+  const BLOCK_TYPE = 'application/x-quorum-block';
+  const typesOf = (e) => [...(e.dataTransfer ? e.dataTransfer.types : [])];
+
+  // Where a block dropped at (x, y) goes: before or after the nearest block.
+  function dropPlace(e) {
+    const blocks = [...slide().querySelectorAll('.q-content > [data-src], .q-media[data-src], .q-content > .q-step > [data-src]')]
+      .filter((n) => n.getBoundingClientRect().height > 0);
+    let best = null;
+    blocks.forEach((n) => {
+      const r = n.getBoundingClientRect();
+      const d = e.clientY < r.top ? r.top - e.clientY : (e.clientY > r.bottom ? e.clientY - r.bottom : 0);
+      if (!best || d < best.d) best = { n, d, r };
+    });
+    const s = slide().getBoundingClientRect();
+    const point = { x: ((e.clientX - s.left) / s.width) * 100, y: ((e.clientY - s.top) / s.height) * 100 };
+    if (!best) return { anchor: null, where: 'after', ...point };
+    const where = e.clientY < best.r.top + best.r.height / 2 ? 'before' : 'after';
+    return { anchor: rangeOf(best.n), where, rect: best.r, ...point };
+  }
 
   doc.addEventListener('dragover', (e) => {
-    if (![...(e.dataTransfer ? e.dataTransfer.types : [])].includes('Files')) return;
+    const types = typesOf(e);
+    if (types.includes(BLOCK_TYPE)) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      const place = dropPlace(e);
+      clearOverlay('.qs-line');
+      if (inCanvas()) {
+        add('qs-line', { left: e.clientX - 2, top: e.clientY - 2, width: 4, height: 4 });
+      } else if (place.rect) {
+        const r = place.rect;
+        add('qs-line', { left: r.left, top: (place.where === 'before' ? r.top : r.bottom) - 2, width: r.width, height: 4 });
+      }
+      return;
+    }
+    if (!types.includes('Files')) return;
     e.preventDefault();
     api.onDragFiles(true);
   });
-  doc.addEventListener('dragleave', () => api.onDragFiles(false));
+  doc.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget && doc.contains(e.relatedTarget)) return;
+    clearOverlay('.qs-line');
+    api.onDragFiles(false);
+  });
   doc.addEventListener('drop', (e) => {
+    const types = typesOf(e);
+    if (types.includes(BLOCK_TYPE)) {
+      e.preventDefault();
+      clearOverlay('.qs-line');
+      const place = dropPlace(e);
+      delete place.rect;
+      api.onDropBlock(e.dataTransfer.getData(BLOCK_TYPE), place);
+      return;
+    }
     const files = [...(e.dataTransfer ? e.dataTransfer.files : [])];
     if (!files.length) return;
     e.preventDefault();
@@ -364,6 +422,58 @@ export function attachCanvas(frame, api) {
     const s = slide().getBoundingClientRect();
     api.onDropFiles(files, { at: el ? infoOf(el) : null, x: ((e.clientX - s.left) / s.width) * 100, y: ((e.clientY - s.top) / s.height) * 100 });
   });
+
+  // --- typing on the slide -------------------------------------------------------
+
+  // Makes the selected heading or paragraph editable in place. done(html)
+  // gets what was typed; Esc gives back null.
+  function editInline(done) {
+    if (!selected || !selected.el.isConnected) return false;
+    const el = selected.el;
+    const before = el.innerHTML;
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('qs-editing');
+    clearOverlay('.qs-box, .qs-tag, .qs-handle, .qs-hover');
+    el.focus();
+    const range = doc.createRange();
+    range.selectNodeContents(el);
+    const sel = win.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    let finished = false;
+    const finish = (keep) => {
+      if (finished) return;
+      finished = true;
+      el.removeAttribute('contenteditable');
+      el.classList.remove('qs-editing');
+      el.removeEventListener('keydown', onKey, true);
+      el.removeEventListener('blur', onBlur);
+      const html = el.innerHTML;
+      if (!keep) el.innerHTML = before;
+      drawSelection();
+      done(keep && html !== before ? html : null);
+    };
+    const onKey = (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && ['b', 'i'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        doc.execCommand(e.key.toLowerCase() === 'b' ? 'bold' : 'italic');
+      }
+    };
+    const onBlur = () => finish(true);
+    el.addEventListener('keydown', onKey, true);
+    el.addEventListener('blur', onBlur);
+    // Pasting keeps the text, not the formatting of where it came from.
+    el.addEventListener('paste', (e) => {
+      e.preventDefault();
+      doc.execCommand('insertText', false, (e.clipboardData || win.clipboardData).getData('text/plain').replace(/\s+/g, ' '));
+    }, { once: false });
+    return true;
+  }
+  const editing = () => !!doc.querySelector('[contenteditable="true"]');
 
   // The slide is drawn again after every change: find the selection again.
   let queued = false;
@@ -374,6 +484,7 @@ export function attachCanvas(frame, api) {
   });
   if (slide()) observer.observe(slide(), { childList: true, subtree: true });
   win.addEventListener('resize', () => { drawSelection(); });
+  win.addEventListener('scroll', () => { drawSelection(); }, true);
 
   return {
     select(range, nth = 0) {
@@ -383,6 +494,8 @@ export function attachCanvas(frame, api) {
     },
     clear() { select(null, true); },
     redraw: drawSelection,
+    editInline,
+    editing,
     info() { return selected && selected.el.isConnected ? infoOf(selected.el) : null; },
     rect() { return selected && selected.el.isConnected ? selected.el.getBoundingClientRect() : null; },
     slideBox: () => slide().getBoundingClientRect(),
