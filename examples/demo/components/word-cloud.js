@@ -8,8 +8,8 @@
 //   :::
 //
 // "audience: text" is what makes phones show a text box. Quorum handles
-// opening and closing, rehearsal and chat mode; this file only draws
-// ctx.answers.values, the list of answers.
+// opening and closing, phones and the simulated audience of a preview;
+// this file only draws ctx.answers.values, the list of answers.
 
 function esc(t) {
   return String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -71,7 +71,7 @@ The queue is long for a reason.
       <div class="wrap split">
         <div>
           <h2>Build what nobody has built yet</h2>
-          <p class="intro">Add <code>audience:</code> to a component and every phone gets a text box, a number field or a list of options. Your code gets the answers. Quorum handles the rest: opening and closing, the QR code, rehearsal with simulated answers, the chat fallback, and keeping your screen and your panel in sync.</p>
+          <p class="intro">Add <code>audience:</code> to a component and every phone gets a text box, a number field or a list of options. Your code gets the answers. Quorum handles the rest: opening and closing, the QR code, one answer per phone, simulated answers in the preview, and keeping your screen and your panel in sync.</p>
           <p class="intro">The examples include a word cloud and a next-word explorer that asks a language model running on your own laptop for its ten most likely words, so the room can watch it think.</p>
           <p><a href="docs/components/">How components work</a> &middot; <a href="examples/">See the examples</a></p>
         </div>
@@ -97,13 +97,13 @@ export default {
     <section id="agents">
       <div class="wrap split">
         <div>
-          <h2>Built for agents</h2>
-          <p class="intro">The audience takes part as people: live, in the room, from their phones. The talk is plain text and small JavaScript files. So you can build it the way you build code today: ask your AI agent, rehearse it, and ask for changes.</p>
+          <h2>Your agent writes it. You give it.</h2>
+          <p class="intro">A talk is a Markdown file and a few small JavaScript files, so an AI agent can write it, check it and build new interactions for it, the way it edits code. You watch it take shape in <code>quorum preview</code>, ask for changes, and give it to a real room.</p>
           <ul class="checklist">
             <li><strong>A talk folder knows the rules.</strong> <code>quorum new</code> adds an <code>AGENTS.md</code> that tells an agent the format, the commands and what not to touch.</li>
             <li><strong>The docs fit in one file.</strong> Point any agent at <a href="llms-full.txt">llms-full.txt</a>, or at the short index in <a href="llms.txt">llms.txt</a>.</li>
             <li><strong>It can check its own work.</strong> <code>quorum check --json</code> lists every problem with its slide, and fails until there are none.</li>
-            <li><strong>A ready-made skill</strong> in <a href="https://github.com/JBoixCampos/quorum/blob/main/agents/quorum/SKILL.md">agents/quorum/SKILL.md</a> teaches an agent to create, check and rehearse a talk.</li>
+            <li><strong>A ready-made skill</strong> in <a href="https://github.com/JBoixCampos/quorum/blob/main/agents/quorum/SKILL.md">agents/quorum/SKILL.md</a> teaches an agent to write and check a talk and build components for it.</li>
           </ul>
           <p style="margin-top:24px"><a href="docs/agents/">How to work with an agent</a></p>
         </div>
@@ -126,12 +126,12 @@ export default {
             <p>One command starts it, opens a public link through a tunnel and puts the QR code on your slides. Votes stay in your talk folder until you delete them.</p>
           </div>
           <div>
-            <h3>Rehearse alone</h3>
-            <p>Rehearsal mode fills the room with simulated people, so you can time every vote before the day. The panel shows your notes, the next slides and your pace.</p>
+            <h3>Anonymous by design</h3>
+            <p>No names, no sign-up, no app. Each phone gets a random id so it votes once. Your notes and the right answers never reach the phones before you reveal them.</p>
           </div>
           <div>
-            <h3>A plan B built in</h3>
-            <p>If the link fails or the audience is on a call, press B. Phones are told to use the chat, and you click the options to count what you read there.</p>
+            <h3>A panel just for you</h3>
+            <p>Your notes, the next slides, how many people are in, the questions waiting for approval, and how you are doing on time. Before the day, <code>quorum preview</code> fills the room with simulated people.</p>
           </div>
         </div>
       </div>

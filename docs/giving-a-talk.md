@@ -2,7 +2,7 @@
 
 ## Before the day
 
-1. **Rehearse with the simulated audience.** `quorum rehearse my-talk` fills the room with simulated people who join, vote and ask questions. Go through the whole talk at least once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
+1. **Go through it with the preview.** `quorum preview my-talk` shows the talk with 24 simulated people who join, vote and ask questions, so every slide looks the way it will with a room. Click through it once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
 2. **Run `quorum check my-talk`.** It lists anything that looks wrong in `talk.md`.
 3. **Install cloudflared** for the public link: `winget install --id Cloudflare.cloudflared` on Windows, `brew install cloudflared` on a Mac, or see [Cloudflare's downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/). ngrok works too. Without either, only people on the same network as your laptop can join.
 4. **Do a test run with a real phone**, on mobile data rather than your wifi: `quorum live my-talk`, scan the QR code, vote once, then `quorum clean my-talk`.
@@ -29,7 +29,6 @@ Drive the talk from either window. In the panel, click the preview or use the ar
 | Home / End | First / last slide |
 | N | Speaker notes on the presentation (only if you are not sharing it) |
 | F | Full screen |
-| B | Chat mode on and off |
 
 Clicking the right part of the presentation also moves forward; clicking the left third goes back.
 
@@ -41,17 +40,11 @@ On a call with one monitor, share the presentation window and keep the panel in 
 
 People can ask at any time from the button on their phone. New questions wait in the panel until you approve them (or approve all). On the questions slide, click one to highlight it while you answer, and click again to mark it as answered.
 
-## Plan B: chat mode
+## If the public link stops
 
-If the public link fails, or the audience cannot scan anything (a webinar, people on their phones already), press **B** or "Switch to chat mode" in the panel:
+The terminal says so, and the QR code switches to your laptop's address on the local network: people on the same wifi can still join. For a new public link, press Ctrl+C and run `quorum live my-talk` again. Votes and questions are kept.
 
-- Phones are told to use the chat of the call.
-- Open voting as usual, read the answers in the chat, and click the options on the presentation to add each vote. Numbers and words are typed into a box.
-- "Undo" removes the last vote you added.
-
-If you already know there will be no link, start with `quorum offline my-talk`.
-
-If the tunnel stops in the middle of a talk, the terminal says so. Press B and carry on.
+If you know there will be no internet, use `quorum live my-talk --no-tunnel` and put everyone on the same network as your laptop.
 
 ## After the talk
 

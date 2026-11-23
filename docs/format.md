@@ -1,6 +1,6 @@
 # The talk format
 
-A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while `quorum rehearse` or `quorum live` is running and the slides update on their own; votes already cast are kept.
+A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while `quorum preview` or `quorum live` is running and the slides update on their own; votes already cast are kept.
 
 `quorum check` reads the file and lists anything that looks wrong, with the slide number.
 
@@ -227,7 +227,7 @@ A component can also ask the audience something with `audience:`:
 audience: text            # text, number, choice or choices
 prompt: One word: how do you feel about AI?
 length: 24                # text: maximum characters (up to 140)
-examples: curious | worried | excited   # text: answers for rehearsal mode
+examples: curious | worried | excited   # text: answers for the simulated audience
 :::
 ```
 

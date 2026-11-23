@@ -86,9 +86,8 @@ All three are optional. `primary()` lets a component take over the right arrow, 
 | `view` | The live session: `people` (how many are in), `questions`, `publicUrl`, `interaction` and more |
 | `act(action)` | Send an action to the session, as the presenter |
 | `talk` | The whole parsed talk: `meta` and `slides` |
-| `chatMode` | `true` when the audience is answering through the chat |
 | `where` | `'screen'` (the window you share), `'preview'` (your panel) or `'thumbnail'` (the next slides in the panel). Start slow or costly work only on `'screen'` |
-| `rehearse` | `true` in rehearsal mode and in static demos |
+| `preview` | `true` with a simulated audience: `quorum preview`, static builds, the playground. (`rehearse` is the older name, still set.) |
 | `publicUrl` | The link people use to join |
 
 ## Asking the audience
@@ -113,7 +112,7 @@ examples: curious | worried | excited | tired
 :::
 ```
 
-Quorum then does the rest: an Open / Close bar under your component (the right arrow drives it too), the corner QR code, validation, one answer per phone (people can change it while it is open), simulated answers in rehearsal mode (picked from `examples:`), and a box to type answers in chat mode.
+Quorum then does the rest: an Open / Close bar under your component (the right arrow drives it too), the corner QR code, validation, one answer per phone (people can change it while it is open), and simulated answers in a preview (picked from `examples:`).
 
 Your component reads `ctx.answers`:
 
@@ -149,7 +148,7 @@ A few things it shows that apply to any component that calls an outside service:
 
 - **Only the presentation calls the model.** Phones never do, so the model never needs to be reachable from the internet.
 - **The result goes into shared state.** Only the shared screen (`ctx.where === 'screen'`) asks for the first words, or whichever window you clicked in; it writes the answer with `setState()` and every other copy of the slide just draws it. Your panel's preview and thumbnails never ask the model a second time.
-- **Errors are shown on the slide**, so if the model is not running you find out in rehearsal, not on stage.
+- **Errors are shown on the slide**, so if the model is not running you find out in the preview, not on stage.
 
 The presentation page may call any `http://` or `https://` address, but the service must allow it with [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) headers. If the browser console says a request was blocked by CORS, that is the setting to change in the service.
 

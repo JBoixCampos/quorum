@@ -426,7 +426,7 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 
 ## Optional
 
-- [Agent skill](${BLOB}agents/quorum/SKILL.md): create, check and rehearse a talk
+- [Agent skill](${BLOB}agents/quorum/SKILL.md): write and check a talk, and build components for it
 - [AGENTS.md](${BLOB}AGENTS.md): for agents working on Quorum itself
 - [Source code](${REPO})
 `;

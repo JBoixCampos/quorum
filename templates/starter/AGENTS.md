@@ -16,7 +16,7 @@ After every change, run:
 quorum check --json
 ```
 
-It prints `{ ok, title, slides, interactions, warnings }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done. Then the speaker can try it with `quorum rehearse` (a simulated audience votes).
+It prints `{ ok, title, slides, interactions, warnings }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
 ## The format in short
 
