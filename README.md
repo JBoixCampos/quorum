@@ -4,9 +4,9 @@
 
 Write your talk in Markdown, or ask your coding agent to. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
 
-Because a talk is a plain Markdown file and a few small JavaScript files, an agent can write it, check it with `quorum check --json` and build new interactions for it. See [Built for agents](docs/agents.md).
+Because a talk is a plain Markdown file and a few small JavaScript files, an agent can write it, design it, check it with `quorum check --json`, look at it with `quorum snapshot` and build new interactions for it. See [Built for agents](docs/agents.md).
 
-**[Try the demo in your browser](https://jboixcampos.github.io/quorum/demo/)** (seven slides with a simulated audience), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
+**[Try the demo in your browser](https://jboixcampos.github.io/quorum/demo/)** (seven slides with a simulated audience), see the **[showcase](https://jboixcampos.github.io/quorum/showcase/)** (themes, layouts, charts and motion), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
 
 ```markdown
 ::: poll {#lunch} Where should we go for lunch?
@@ -59,6 +59,10 @@ quorum live my-talk         # give it
 
 Plus the usual slide things: steps that appear one click at a time, columns, big numbers, callouts, images, tables, code, speaker notes, sections with a pace clock.
 
+**A look in one line**: eight themes (`theme: midnight`, `editorial`, `bold`, `paper`, `studio`, `signal`, `terminal`, `clean`), layouts that compose a slide (split with a picture, full bleed, section dividers, statements, quotes, big numbers, an agenda), visual blocks (cards with icons, timelines, processes, key figures, comparisons, charts from your numbers), highlighted code, transitions that morph titles from slide to slide, results drawn as bars, columns, donuts, pictograms, races or bubbles, and emoji reactions from phones. Every option is a name that `quorum check` validates, so an agent can use all of it. See [Design and themes](docs/design.md).
+
+![One slide in each of the eight themes](docs/images/themes.png)
+
 **Your brand**: accent, primary, secondary, background and text colours, a logo on every slide and on phones, your own fonts, your own footer, image or colour backgrounds per slide, and a stylesheet for anything else. See [the talk format](docs/format.md#your-brand) and the [example](examples/brand/talk.md).
 
 ![A poll in a talk with its own brand: dark background, yellow bars, serif titles, a logo and a custom footer](docs/images/brand.png)
@@ -105,15 +109,18 @@ A talk is plain text and small JavaScript files, so an AI agent can write it, ch
 
 ```text
 Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
-an estimate with a reveal, a word cloud and a questions slide.
-Run `quorum check --json` until it reports no warnings.
+an estimate with a reveal, a word cloud and a questions slide. Make it look
+warm and handmade. Run `quorum check --json` until it reports no warnings,
+then `quorum snapshot` and fix anything that looks wrong.
 ```
 
 First install Quorum where the agent works (`npm install -g github:JBoixCampos/quorum`, or ask the agent to), then teach it the format. What helps the agent:
 
-- **`quorum skill`** installs the skill in [agents/quorum/SKILL.md](agents/quorum/SKILL.md) for Claude Code (`--to <folder>` for other agents): how to write and check a talk and build components for it.
+- **`quorum skill`** installs the skill in [agents/quorum/](agents/quorum/SKILL.md) for Claude Code (`--to <folder>` for other agents): how to write, design and check a talk and build components for it, with a library of [slide patterns](agents/quorum/patterns.md).
 - **`quorum new` adds an [`AGENTS.md`](templates/starter/AGENTS.md)** to every talk folder: the format in short, how to check, how to write a component, and what never to touch (`.quorum/` and the presenter key).
-- **`quorum check --json`** prints `{ ok, title, slides, interactions, warnings }` and exits non-zero while there are warnings.
+- **`quorum check --json`** prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits non-zero while there are warnings: mistakes, contrast problems and (with `--visual`) slides that do not fit. Suggestions point at design problems: too many words, too many plain slides in a row.
+- **`quorum schema --json`** lists every theme, setting, layout, block, class, chart and icon, so the agent never guesses a name.
+- **`quorum snapshot`** saves a picture of every slide and a contact sheet, for agents that can look at images.
 - **[llms.txt](https://jboixcampos.github.io/quorum/llms.txt)** and **[llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt)**: the docs as an index and as one plain text file, generated from `docs/*.md`.
 - **[AGENTS.md](AGENTS.md)** at the root, for agents working on Quorum itself.
 
@@ -125,13 +132,18 @@ More in [docs/agents.md](docs/agents.md).
 quorum new <folder>        Create a new talk
 quorum preview [folder]    See it with a simulated audience, as you edit
 quorum live [folder]       Give the talk (server, public link, QR code, windows)
-quorum check [folder]      Check talk.md for mistakes (--json for tools and agents)
+quorum check [folder]      Check talk.md for mistakes and design problems (--json, --visual)
+quorum snapshot [folder]   A picture of every slide, and a contact sheet
+quorum schema              Every theme, layout, block, class and icon (--json, --icons)
+quorum theme new <name>    Save the talk's look as themes/<name>.yaml
+quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
 quorum build [folder]      Build a static, playable copy (simulated audience)
 quorum export [folder]     The slides without the audience parts, if nobody can join
 quorum clean [folder]      Delete the votes and questions of the last session
 quorum skill               Install the agent skill for Claude Code (--to <folder> for others)
 
-Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json  --to <folder>
+Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json
+         --visual  --icons  --no-results  --save <name>  --to <folder>
 ```
 
 ## Documentation
@@ -140,6 +152,7 @@ Read it on the website, [jboixcampos.github.io/quorum/docs](https://jboixcampos.
 
 - [Overview and quick start](docs/README.md)
 - [The talk format](docs/format.md): every block, with examples
+- [Design and themes](docs/design.md): themes, layouts, visual blocks, charts, motion, result looks, reactions
 - [Components](docs/components.md): build your own, including one that uses a local model
 - [Giving a talk](docs/giving-a-talk.md): the day itself, on stage or on a call
 - [Built for agents](docs/agents.md): ask an AI agent to write, check and extend your talk

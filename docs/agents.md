@@ -36,11 +36,12 @@ Open your agent (Claude Code, or any coding agent that can read files and run co
 
 ```text
 Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
-an estimate with a reveal, a word cloud and a questions slide.
-Run `quorum check --json` until it reports no warnings.
+an estimate with a reveal, a word cloud and a questions slide. Make it look
+warm and handmade. Run `quorum check --json` until it reports no warnings,
+then `quorum snapshot` and fix anything that looks wrong.
 ```
 
-Give it your brand too, if you have one: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg."
+Give it your brand too, if you have one: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg." Or a mood: "Make it look like a keynote" (the agent picks a theme such as `midnight` or `bold`).
 
 ## 4. Look at it and ask for changes
 
@@ -49,14 +50,15 @@ Run `quorum preview my-talk` in a terminal of your own. It opens the talk in you
 | The agent | You |
 | --- | --- |
 | Writes and edits `talk.md` | Look at it with `quorum preview` |
+| Picks a theme, layouts and blocks | Say what it should feel like |
 | Writes components in `components/` | Decide what the audience should do |
-| Runs `quorum check --json` after every change | Give the talk with `quorum live` |
+| Runs `quorum check --json` after every change, and `quorum snapshot` to look | Give the talk with `quorum live` |
 
 `quorum live` is yours to run, not the agent's: it opens a public link and the windows you present from.
 
 ## Checking a talk
 
-`quorum check` lists anything that looks wrong in `talk.md`, with the slide number: a block it does not know, a missing component, logo or image file, a duplicated id. With `--json` it prints a result a program can read, and exits with a non-zero code when there are warnings:
+`quorum check` lists anything that looks wrong in `talk.md`, with the slide number: a block, layout, class or icon it does not know, a missing component, logo or image file, a duplicated id, colours with too little contrast. It also suggests design improvements: too many words, images without a description, too many plain slides in a row. With `--json` it prints a result a program can read, and exits with a non-zero code when there are warnings (suggestions never fail it):
 
 ```bash
 quorum check my-talk --json
@@ -67,16 +69,42 @@ quorum check my-talk --json
   "ok": false,
   "title": "How bread rises",
   "slides": 9,
+  "theme": "editorial",
   "interactions": [
     { "slide": 2, "id": "warmup", "kind": "poll", "title": "Do you bake?" }
   ],
   "warnings": [
     "Slide 5: the component \"oven-timer\" has no file components/oven-timer.js."
+  ],
+  "issues": [
+    { "kind": "file", "slide": 5, "message": "Slide 5: the component \"oven-timer\" has no file components/oven-timer.js." }
+  ],
+  "suggestions": [
+    { "kind": "variety", "slide": 6, "message": "Slides 6 to 9 are all text on the default layout. Break them up: ..." }
   ]
 }
 ```
 
-An agent should run it after every change and fix each warning before it says the talk is done.
+`issues` are the warnings with a `kind` (`format`, `file`, `contrast`, `overflow`, `error`) and a slide number. `suggestions` have a kind too: `text`, `variety`, `alt`, `overflow`, `contrast`.
+
+An agent should run it after every change and fix each warning before it says the talk is done, then work through the suggestions.
+
+## The design loop
+
+A talk should look good, not only work. Quorum gives an agent what it needs to get there on its own:
+
+| Command | What the agent learns |
+| --- | --- |
+| `quorum schema --json` | Every theme, setting, layout, block, class, chart and result look, with the values each takes. Ask the tool instead of guessing |
+| `quorum schema --icons` | The icon names for `{icon=}` and `:icon[]` |
+| `quorum check --json` | Mistakes, contrast problems and design suggestions |
+| `quorum check --visual --json` | Also measures every slide in a browser, with its results shown: a slide that does not fit is a warning |
+| `quorum snapshot` | A picture of every slide in `.quorum-snapshots/`, and `contact.png` with the whole talk on one image. An agent that can see images looks at it the way the speaker will |
+| `quorum theme from logo.svg` | Colours and a theme from the speaker's logo |
+
+`--visual` and `snapshot` need Playwright: `npm install --no-save playwright && npx playwright install chromium`.
+
+The skill comes with a library of slide patterns (opening, agenda, section break, statement, big number, cards, split with a picture, timeline, chart, quiz, questions, closing) and a guide to choosing a theme. See [Design and themes](design.md) for everything a talk can look like.
 
 ## What an agent should not do
 

@@ -244,6 +244,50 @@ prompt: One word
   check('preview: the simulated audience votes', await until(async () => Number(await preview.textContent('.q-ring b')) > 3, 8000));
   await previewServer.close();
 
+  // The design system: examples/showcase uses a preset, layouts, blocks,
+  // result looks, morphing titles and reactions.
+  const showDir = mkdtempSync(join(tmpdir(), 'quorum-e2e-showcase-'));
+  cpSync(join(ROOT, 'examples', 'showcase'), showDir, { recursive: true });
+  const show = await startServer({ talkDir: showDir, port: 0, key: 'showkey', log: () => {} });
+  const showBase = `http://localhost:${show.port}`;
+  const showPages = [];
+  try {
+    const screen = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    showPages.push(screen);
+    screen.on('pageerror', (e) => errors.push(`showcase: ${e.message}`));
+    await screen.goto(`${showBase}/present?key=showkey`);
+    await until(() => screen.$('.q-slide.layout-title'));
+    check('showcase: the preset is applied', await screen.evaluate(() => document.documentElement.dataset.preset === 'midnight' && document.documentElement.dataset.surface === 'glass'));
+    const slides = show.talk().slides;
+    const layouts = new Set();
+    for (const s of slides) {
+      await screen.evaluate((i) => window.quorum.go(i, 0), s.index);
+      await until(() => screen.evaluate((i) => document.querySelector('[data-slide]').dataset.sid === `s${i + 1}`, s.index));
+      layouts.add(await screen.evaluate(() => document.querySelector('[data-slide]').className));
+    }
+    check('showcase: every slide renders', layouts.size > 8, [...layouts].join(' | '));
+    await screen.evaluate((i) => window.quorum.go(i, 0), slides.findIndex((s) => s.layout === 'split'));
+    check('showcase: split moves the picture into a media pane', await until(() => screen.$('.layout-split .q-media img')));
+    await screen.evaluate((i) => window.quorum.go(i, 0), slides.findIndex((s) => /q-cards/.test(s.html)));
+    check('showcase: cards appear one per click', await until(async () => (await screen.$$('.q-card.q-step:not(.shown)')).length === 3));
+    await screen.evaluate((i) => window.quorum.go(i, 0), slides.findIndex((s) => s.interaction && s.interaction.chart === 'donut'));
+    check('showcase: a poll can draw its results as a donut', await until(() => screen.$('[data-slide] .q-donut')));
+
+    // Reactions: a phone sends one, the screen shows it floating.
+    const phone = await browser.newPage({ viewport: { width: 390, height: 700 } });
+    showPages.push(phone);
+    phone.on('pageerror', (e) => errors.push(`showcase phone: ${e.message}`));
+    await phone.goto(`${showBase}/`);
+    check('showcase: phones show the reactions', await until(async () => (await phone.$$('[data-react]')).length === 4));
+    await phone.click('[data-react="👏"]');
+    check('showcase: a reaction floats up on the screen', await until(async () => (await screen.textContent('[data-reactions]')).includes('👏')));
+    check('showcase: phones use the palette for options', await phone.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--series-2').trim() === '#22d3ee'));
+  } finally {
+    await Promise.all(showPages.map((p) => p.close()));
+    await show.close();
+    rmSync(showDir, { recursive: true, force: true });
+  }
+
   check('no errors in any page', errors.length === 0, errors.slice(0, 3).join(' | '));
 } finally {
   await browser.close();

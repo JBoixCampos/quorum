@@ -4,7 +4,10 @@
 //   quorum new <folder>        create a talk from the starter template
 //   quorum preview [folder]    see the talk with a simulated audience
 //   quorum live [folder]       give the talk: server, public link, QR, windows
-//   quorum check [folder]      check talk.md for mistakes (--json for tools)
+//   quorum check [folder]      check talk.md for mistakes (--json for tools, --visual to measure)
+//   quorum snapshot [folder]   a picture of every slide and a contact sheet
+//   quorum schema              every theme, layout, block and class (--json)
+//   quorum theme ...           save a theme file, or propose one from a logo
 //   quorum build [folder]      a static, playable copy of the talk
 //   quorum export [folder]     the slides without the audience parts, as a fallback
 //   quorum clean [folder]      delete votes and questions saved by a live session
@@ -16,9 +19,14 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkTalk } from '../src/cli/check.js';
+import { frontMatterFor, saveTheme, themeFromLogo } from '../src/cli/theme.js';
+import { INSTALL_PLAYWRIGHT, overflowIssues, renderTalk } from '../src/cli/visual.js';
+import { schema } from '../src/shared/design.js';
+import { ICONS } from '../src/shared/icons.js';
+import { readTalk } from '../src/cli/load.js';
 import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
-import { parseTalk, withoutAudience } from '../src/shared/markdown.js';
+import { withoutAudience } from '../src/shared/markdown.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
@@ -30,7 +38,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) args[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to'].includes(k)) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save'].includes(k)) {
         args[k] = argv[i + 1];
         i += 1;
       } else args[k] = true;
@@ -45,7 +53,11 @@ Usage:
   quorum new <folder>        Create a new talk
   quorum preview [folder]    See it with a simulated audience, as you edit
   quorum live [folder]       Give the talk (server, public link, QR code, windows)
-  quorum check [folder]      Check talk.md for mistakes
+  quorum check [folder]      Check talk.md for mistakes and design problems
+  quorum snapshot [folder]   A picture of every slide, and a contact sheet
+  quorum schema              List themes, layouts, blocks, classes and icons
+  quorum theme new <name>    Save this talk's look as themes/<name>.yaml
+  quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
   quorum build [folder]      Build a static, playable copy (simulated audience)
   quorum export [folder]     The slides without the audience parts, if nobody can join
   quorum clean [folder]      Delete the votes and questions of the last session
@@ -58,7 +70,12 @@ Options:
   --no-open       Do not open any window
   --no-moderation Show questions without approving them first
   --out <folder>  Where "build" and "export" write (default <folder>/dist, <folder>/export)
-  --json          "check" prints { ok, title, slides, interactions, warnings }
+  --json          "check" prints { ok, title, slides, theme, interactions, warnings,
+                  issues, suggestions }; "schema" prints everything as JSON
+  --visual        "check" also measures each slide in a browser (needs Playwright)
+  --icons         "schema" lists the icon names
+  --no-results    "snapshot" does not play the interactions
+  --save <name>   "theme from" also writes themes/<name>.yaml
   --to <folder>   Where "skill" installs (default ~/.claude/skills)
 `;
 
@@ -117,10 +134,32 @@ Next:
   3. quorum live ${name}        give it`);
 }
 
-function cmdCheck(args) {
+async function cmdCheck(args) {
   const dir = talkDir(args);
   const file = talkFile(args);
   const result = checkTalk(dir, file);
+  if (args.visual && existsSync(join(dir, file))) {
+    const report = await renderTalk(dir, { file, results: true });
+    if (!report.available) {
+      result.visual = false;
+      result.note = `--visual needs Playwright: ${INSTALL_PLAYWRIGHT}`;
+      if (!args.json) console.log(result.note);
+    } else {
+      result.visual = true;
+      // The browser measured: its answer replaces the estimate.
+      result.suggestions = result.suggestions.filter((s) => s.kind !== 'overflow');
+      overflowIssues(report).forEach((i) => {
+        result.issues.push(i);
+        result.warnings.push(i.message);
+      });
+      report.errors.forEach((e) => {
+        const i = { kind: 'error', slide: null, message: `The page reported an error: ${e}` };
+        result.issues.push(i);
+        result.warnings.push(i.message);
+      });
+      result.ok = result.warnings.length === 0;
+    }
+  }
   if (args.json) {
     console.log(JSON.stringify(result, null, 2));
     process.exit(result.ok ? 0 : 1);
@@ -133,7 +172,98 @@ function cmdCheck(args) {
     console.log('\nThings to check in your talk:');
     result.warnings.forEach((w) => console.log(`  - ${w}`));
   }
+  if (result.suggestions.length) {
+    console.log('\nSuggestions to make it better:');
+    result.suggestions.forEach((s) => console.log(`  - ${s.message}`));
+  }
   process.exit(result.ok ? 0 : 1);
+}
+
+async function cmdSnapshot(args) {
+  const dir = talkDir(args);
+  const file = talkFile(args);
+  ensureTalk(dir, file);
+  const out = resolve(args.out || join(dir, '.quorum-snapshots'));
+  console.log(`Taking a picture of every slide of ${join(dir, file)}…`);
+  const report = await renderTalk(dir, {
+    file,
+    out,
+    results: !args['no-results'],
+    onSlide: (s) => process.stdout.write(`  ${s.slide}`),
+  });
+  if (!report.available) {
+    console.error(`\nquorum snapshot needs Playwright: ${INSTALL_PLAYWRIGHT}`);
+    process.exit(1);
+  }
+  console.log(`\n\n${report.pictures.length} pictures in ${out}
+Contact sheet: ${report.contact}`);
+  const issues = overflowIssues(report);
+  issues.forEach((i) => console.log(`  - ${i.message}`));
+  report.errors.forEach((e) => console.log(`  - The page reported an error: ${e}`));
+  process.exit(issues.length || report.errors.length ? 1 : 0);
+}
+
+function cmdSchema(args) {
+  if (args.icons) {
+    const names = Object.keys(ICONS);
+    if (args.json) console.log(JSON.stringify(names));
+    else console.log(`${names.length} icons, for {icon=name} and :icon[name]:\n\n${names.join(' ')}`);
+    return;
+  }
+  const s = schema();
+  if (args.json) {
+    console.log(JSON.stringify({ ...s, icons: Object.keys(ICONS) }, null, 2));
+    return;
+  }
+  const section = (title, entries) => {
+    console.log(`\n${title}`);
+    Object.entries(entries).forEach(([k, v]) => console.log(`  ${k.padEnd(16)} ${typeof v === 'string' ? v : v.about || ''}${v.values ? ` (${v.values.join(', ')})` : ''}`));
+  };
+  console.log('Everything a talk can use. `quorum schema --json` prints it for tools.');
+  section('Themes (theme:)', s.presets);
+  section('Tokens (front matter)', s.tokens);
+  section('Brand (front matter)', s.brand);
+  section('Layouts (<!-- layout: name -->)', s.layouts);
+  section('Blocks (::: name)', s.blocks);
+  section('Classes ({.name})', s.classes);
+  section('Attributes ({key=value})', s.attributes);
+  section('Result looks ({chart=name} on an interaction)', Object.fromEntries(Object.entries(s.resultStyles).map(([k, v]) => [k, v.join(', ')])));
+  console.log(`\nChart types (::: chart type): ${s.chartTypes.join(', ')}`);
+  console.log(`Step effects (-- name): ${s.stepEffects.join(', ')}`);
+  console.log(`Icons: ${Object.keys(ICONS).length}, listed by \`quorum schema --icons\`.`);
+}
+
+function cmdTheme(args) {
+  const [, sub, value] = args._;
+  try {
+    if (sub === 'new') {
+      if (!value) throw new Error('Usage: quorum theme new <name> [folder]');
+      const dir = resolve(args._[3] || '.');
+      ensureTalk(dir, talkFile(args));
+      const out = saveTheme(dir, value, talkFile(args));
+      console.log(`Saved ${out}
+Use it in any talk folder that has it: theme: themes/${value}.yaml`);
+      return;
+    }
+    if (sub === 'from') {
+      if (!value) throw new Error('Usage: quorum theme from <logo.svg|logo.png> [--save name]');
+      const theme = themeFromLogo(resolve(value));
+      const lines = frontMatterFor(theme, value);
+      console.log(`A theme for this logo. Put these lines in the front matter of talk.md:\n\n${lines}\n`);
+      if (args.save) {
+        const dir = resolve(args._[3] || '.');
+        mkdirSync(join(dir, 'themes'), { recursive: true });
+        const out = join(dir, 'themes', `${args.save}.yaml`);
+        writeFileSync(out, `# A Quorum theme made from ${value}.\n${lines.replace(/^theme: /, 'extends: ').replace(/^logo: .*$/m, '')}\n`);
+        console.log(`Saved ${out} (theme: themes/${args.save}.yaml)`);
+      }
+      return;
+    }
+    throw new Error('Usage: quorum theme new <name> [folder] | quorum theme from <logo>');
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }
 
 function cmdClean(args) {
@@ -258,7 +388,7 @@ function buildStatic(args, { audience = true } = {}) {
   const file = talkFile(args);
   ensureTalk(dir, file);
   const out = resolve(args.out || join(dir, audience ? 'dist' : 'export'));
-  let talk = parseTalk(readFileSync(join(dir, file), 'utf8'));
+  let talk = readTalk(dir, file);
   printWarnings(talk);
   if (!audience) talk = withoutAudience(talk);
   rmSync(out, { recursive: true, force: true });
@@ -295,7 +425,7 @@ Present it from any static web server, for example: python3 -m http.server -d ${
 function cmdSkill(args) {
   const to = resolve(args.to || join(homedir(), '.claude', 'skills'), 'quorum');
   mkdirSync(to, { recursive: true });
-  cpSync(join(ROOT, 'agents', 'quorum', 'SKILL.md'), join(to, 'SKILL.md'));
+  cpSync(join(ROOT, 'agents', 'quorum'), to, { recursive: true });
   console.log(`Installed the Quorum skill in ${join(to, 'SKILL.md')}
 Your agent can now write and check Quorum talks. Start a new agent session to load it.`);
 }
@@ -309,7 +439,10 @@ async function main() {
   }
   switch (cmd) {
     case 'new': cmdNew(args); break;
-    case 'check': cmdCheck(args); break;
+    case 'check': await cmdCheck(args); break;
+    case 'snapshot': await cmdSnapshot(args); break;
+    case 'schema': cmdSchema(args); break;
+    case 'theme': cmdTheme(args); break;
     case 'clean': cmdClean(args); break;
     case 'skill': cmdSkill(args); break;
     case 'build': buildStatic(args); break;

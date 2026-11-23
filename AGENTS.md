@@ -10,21 +10,24 @@ A command line tool and a small web app for presentations where the audience tak
 
 | Path | What it is |
 | --- | --- |
-| `bin/quorum.js` | The command line: new, preview, live, check, build, export, clean, skill |
-| `src/cli/` | Command helpers: `check.js` (also `--json`), `system.js` (tunnels, browser windows) |
+| `bin/quorum.js` | The command line: new, preview, live, check, snapshot, schema, theme, build, export, clean, skill |
+| `src/cli/` | Command helpers: `check.js` (also `--json`), `design-check.js` (contrast, density, variety, overflow estimate), `visual.js` (`check --visual` and `snapshot`, with Playwright), `theme.js` (theme files, colours from a logo), `load.js` (reads a talk and its theme file), `system.js` (tunnels, browser windows) |
 | `src/server/server.js` | The HTTP server: talk, state, long polling, static files |
-| `src/shared/` | Runs in Node and in the browser: `markdown.js` (the talk parser), `session.js` (state and actions), `kinds.js` (one entry per interaction kind) |
+| `src/shared/` | Runs in Node and in the browser: `markdown.js` (the talk parser), `design.js` (the registry of themes, tokens, layouts, blocks, classes and result looks), `charts.js` (charts for blocks and results), `highlight.js` (code), `icons.js` (generated from Lucide by `scripts/icons.js`), `color.js`, `session.js` (state and actions), `kinds.js` (one entry per interaction kind) |
 | `app/` | The web app: `present.html` (the shared screen), `panel.html` (the presenter), `join.html` (phones), with `js/` and `css/` |
 | `app/js/components.js` | Component loading and the built-in components (countdown, qr, embed) |
+| `app/js/brand.js`, `app/js/motion.js` | The theme on the page (tokens become `data-*` attributes on `<html>`), and transitions, morph, count-ups, code ranges and reactions |
+| `app/css/design.css` | Layouts, visual blocks, charts, motion and the eight presets. Tokens are in `base.css` |
 | `examples/demo/` | The demo talk published on the website |
 | `examples/components/` | Example components. The website's Examples page builds a talk with one live slide per component (`examples/live/`) |
 | `examples/brand/` | A talk with its own colours, logo, fonts and footer (the landing page's brand screenshot) |
+| `examples/showcase/` | A talk that uses a theme, layouts, blocks, result looks, morph and reactions. Built into the website's `showcase/`, used by the e2e tests and `themes.png` |
 | `templates/starter/` | What `quorum new` copies, including its own `AGENTS.md` |
 | `docs/*.md` | The documentation. The single source of truth for the website's docs pages and `llms.txt` |
 | `docs/images/` | Screenshots used by the docs, the README and the landing page. Made by `scripts/screenshots.js` |
 | `site/` | The landing page, the website's shared CSS and JS (`assets/`) and `og.png`, the image shown when a link is shared |
 | `scripts/build-site.js` | Builds `_site/`: landing, docs, examples, playground, demo, llms.txt, llms-full.txt, then checks every internal link |
-| `agents/quorum/SKILL.md` | A skill that teaches an agent to write and check a talk and build components for it |
+| `agents/quorum/` | The agent skill: `SKILL.md` (write, design and check a talk, build components) and `patterns.md` (slide patterns and choosing a theme) |
 | `test/` | Unit tests (`*.test.js`) and end-to-end tests (`e2e/`) |
 
 ## Commands
@@ -38,6 +41,9 @@ node scripts/screenshots.js   # retake docs/images/*.png after a visible change 
 node scripts/og-image.js      # redraw site/og.png, the link preview image (needs Playwright)
 python3 -m http.server -d _site   # look at the built site locally
 node bin/quorum.js check templates/starter --json
+node bin/quorum.js check examples/showcase --visual   # measures every slide (needs Playwright)
+node bin/quorum.js snapshot examples/showcase         # a picture of every slide in .quorum-snapshots/
+node bin/quorum.js schema --json                      # the design registry, as agents see it
 ```
 
 Playwright is not a dependency. If it is missing: `npm install --no-save playwright && npx playwright install chromium`.
@@ -45,7 +51,9 @@ Playwright is not a dependency. If it is missing: `npm install --no-save playwri
 ## Conventions
 
 - **No runtime dependencies**, and no build dependencies either. Node 18 or newer. Plain ES modules, no bundler, no framework.
-- **Keep the component API backwards compatible**: `mount(el, ctx)` returns `{ update, primary, destroy }`, all optional. `ctx` has `params`, `text`, `state`, `setState`, `answers`, `step`, `view`, `act`, `talk`, `where`, `preview`, `publicUrl`, `assets`, plus the older `rehearse` (same as `preview`) and `chatMode` (always `false`).
+- **Keep the component API backwards compatible**: `mount(el, ctx)` returns `{ update, primary, destroy }`, all optional. `ctx` has `params`, `text`, `state`, `setState`, `answers`, `step`, `view`, `act`, `talk`, `where`, `preview`, `publicUrl`, `assets`, `theme`, `ui`, plus the older `rehearse` (same as `preview`) and `chatMode` (always `false`).
+- **Design options live in `src/shared/design.js`.** A new theme, token, layout, block, class or result look goes there first, so the parser checks it, `quorum schema` lists it and the docs can say it exists. Keep `meta.theme` meaning `light` or `dark` (components read it); the preset is `meta.preset`.
+- **Fonts and icons are bundled** (`app/fonts/`, OFL; `src/shared/icons.js`, ISC). Add a font only for a preset that uses it; add icons by listing them in `scripts/icons.js` and running it.
 - **Code in `src/shared/` must run in both Node and the browser**: no Node imports there.
 - **Docs live in `docs/*.md`** and must read well on GitHub. The website renders them at build time with `scripts/site/markdown.js`, which supports a subset of Markdown: headings, paragraphs, lists (no code blocks inside them), tables, fenced code, inline code, images (from `docs/images/`), links, bold and emphasis. Link between docs with relative `.md` links; the build rewrites them. A new doc must be added to `DOCS` in `scripts/build-site.js`.
 - **Website paths are relative**, so the site works under `/quorum/` on GitHub Pages and from a local folder. No analytics, trackers or requests to other hosts: fonts are bundled in `app/fonts/`.
@@ -61,7 +69,7 @@ Playwright is not a dependency. If it is missing: `npm install --no-save playwri
 
 ## Constraints
 
-- Never commit `.quorum/` folders: they hold votes, questions and presenter keys.
+- Never commit `.quorum/` folders: they hold votes, questions and presenter keys. `.quorum-snapshots/` (pictures from `quorum snapshot`) is not committed either.
 - The presenter key controls a live talk. Never log it in a way that ends up on screen, and never put it in a URL that phones see.
 - Phones must never get the notes or the right answers before the reveal: on a live server, `/api/talk` and `/talk/talk.md` give the whole talk only to the presenter. Only a preview server (localhost) gives it to anyone.
 - The Pages workflow (`.github/workflows/pages.yml`) runs `npm test` and `npm run build:site` on every push to `main` and deploys `_site/`.

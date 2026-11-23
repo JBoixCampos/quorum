@@ -10,10 +10,10 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, watch, writeFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
+import { basename, dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseTalk } from '../shared/markdown.js';
+import { readTalk, themeFile } from '../cli/load.js';
 import { Session, isDevice } from '../shared/session.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -78,7 +78,7 @@ export function startServer({
   const stateFile = join(dataDir, 'state.json');
   const KEY = key || readKey(join(dataDir, 'key.txt'));
 
-  let talk = parseTalk(readFileSync(talkFile, 'utf8'));
+  let talk = readTalk(dir, file);
   talk.warnings.forEach((w) => log(`  Warning: ${w}`));
   let talkVersion = 1;
   let saved = null;
@@ -297,13 +297,13 @@ export function startServer({
   });
 
   // Edit talk.md and the slides update on their own, keeping every vote.
+  // The theme file too, when the talk uses one (themes/acme.yaml).
   let reloadTimer = null;
-  const watcher = watch(dir, (event, name) => {
-    if (name !== file) return;
+  const onChange = () => {
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(() => {
       try {
-        const next = parseTalk(readFileSync(talkFile, 'utf8'));
+        const next = readTalk(dir, file);
         talk = next;
         talkVersion += 1;
         session = new Session(talk, session.toJSON(), { moderation });
@@ -313,8 +313,46 @@ export function startServer({
       } catch (error) {
         log(`  Could not reload ${file}: ${error.message}`);
       }
+      watchAll();
     }, 150);
-  });
+  };
+  // One watcher per folder that holds a watched file (talk.md, the theme).
+  const watchers = new Map();
+  function watchAll() {
+    let theme = null;
+    try {
+      theme = themeFile(readFileSync(talkFile, 'utf8'));
+    } catch {
+      theme = null;
+    }
+    const files = [file, theme].filter(Boolean).map((f) => join(dir, f));
+    const folders = new Map();
+    files.forEach((f) => {
+      const folder = dirname(f);
+      if (!folders.has(folder)) folders.set(folder, new Set());
+      folders.get(folder).add(basename(f));
+    });
+    watchers.forEach((w, folder) => {
+      if (!folders.has(folder)) {
+        w.close();
+        watchers.delete(folder);
+      }
+    });
+    folders.forEach((names, folder) => {
+      const current = watchers.get(folder);
+      if (current) {
+        current.names = names;
+        return;
+      }
+      if (!existsSync(folder)) return;
+      const w = watch(folder, (event, name) => {
+        if (name && w.names.has(String(name))) onChange();
+      });
+      w.names = names;
+      watchers.set(folder, w);
+    });
+  }
+  watchAll();
 
   // If someone leaves, the "connected" count updates.
   let lastCount = 0;
@@ -348,9 +386,13 @@ export function startServer({
         },
         close() {
           clearInterval(counter);
-          watcher.close();
+          watchers.forEach((w) => w.close());
           waiting.forEach((w) => w.res.end());
-          return new Promise((r) => server.close(() => r()));
+          const closed = new Promise((r) => server.close(() => r()));
+          // Open pages poll again at once; drop their connections so
+          // closing does not wait for them (Node 18.2 and newer).
+          if (server.closeAllConnections) server.closeAllConnections();
+          return closed;
         },
       });
     });

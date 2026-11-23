@@ -5,6 +5,7 @@
 //   examples/              a gallery of the example components
 //   playground/            Markdown next to the live slide
 //   demo/                  a playable static build of examples/demo
+//   showcase/              a playable static build of examples/showcase (themes, layouts, blocks)
 //   llms.txt, llms-full.txt   the docs for AI agents
 //
 // docs/*.md stay the single source of truth. Every link is relative, so the
@@ -32,6 +33,7 @@ const read = (...p) => readFileSync(join(ROOT, ...p), 'utf8');
 const DOCS = [
   { file: 'README.md', slug: '', label: 'Overview' },
   { file: 'format.md', slug: 'format', label: 'The talk format' },
+  { file: 'design.md', slug: 'design', label: 'Design and themes' },
   { file: 'components.md', slug: 'components', label: 'Components' },
   { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Giving a talk' },
   { file: 'agents.md', slug: 'agents', label: 'Built for agents' },
@@ -121,6 +123,7 @@ function footer(path) {
           <ul>
             <li><a href="${to('docs/')}">Overview</a></li>
             <li><a href="${to('docs/format/')}">The talk format</a></li>
+            <li><a href="${to('docs/design/')}">Design and themes</a></li>
             <li><a href="${to('docs/components/')}">Components</a></li>
             <li><a href="${to('docs/giving-a-talk/')}">Giving a talk</a></li>
           </ul>
@@ -130,6 +133,7 @@ function footer(path) {
           <ul>
             <li><a href="${to('playground/')}">Playground</a></li>
             <li><a href="${to('demo/')}">Demo talk</a></li>
+            <li><a href="${to('showcase/')}">Showcase</a></li>
             <li><a href="${to('examples/')}">Examples</a></li>
           </ul>
         </nav>
@@ -555,6 +559,8 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
 - [Demo talk source](${BLOB}examples/demo/talk.md): seven slides, one feature each
+- [Showcase talk source](${BLOB}examples/showcase/talk.md): a theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
+- [Slide patterns](${BLOB}agents/quorum/patterns.md): proven slides to build a talk from, and how to choose a theme
 - [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
 - [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
@@ -570,11 +576,14 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
     'templates/starter/components/counter.js',
     'templates/starter/talk.md',
     'examples/brand/talk.md',
+    'examples/showcase/talk.md',
+    'agents/quorum/patterns.md',
   ].map((f) => `${'='.repeat(72)}\nFile: ${f}\n${'='.repeat(72)}\n\n${read(f).trim()}\n`);
   const full = `# Quorum: the full reference
 
 This file has the whole Quorum documentation, then an example component, the
-counter component and the starter talk that \`quorum new\` creates.
+counter component, the starter talk that \`quorum new\` creates, the branded and
+showcase talks, and the slide patterns.
 Source: ${REPO}
 
 ${[...parts, ...sources].join('\n')}`;
@@ -591,6 +600,7 @@ cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
 cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'demo'), '--out', join(OUT, 'demo')], { stdio: 'inherit' });
+execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'showcase'), '--out', join(OUT, 'showcase')], { stdio: 'inherit' });
 // The playground renders through the demo build: give it every example.
 cpSync(join(ROOT, 'templates', 'starter', 'components', 'counter.js'), join(OUT, 'demo', 'talk', 'components', 'counter.js'));
 

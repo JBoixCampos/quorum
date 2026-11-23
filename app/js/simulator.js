@@ -53,6 +53,12 @@ export class Simulator {
       const approved = this.session.d.questions.filter((q) => q.status === 'approved');
       if (approved.length && d) changed = this.act(d, { type: 'upvote', id: approved[0].id }) || changed;
     }
+    // Now and then someone reacts, if the talk allows reactions.
+    const emoji = (this.session.talk.meta && this.session.talk.meta.reactions) || [];
+    if (emoji.length && present.length && Math.random() < 0.12) {
+      const d = present[Math.floor(Math.random() * present.length)];
+      if (this.act(d, { type: 'react', emoji: emoji[Math.floor(Math.random() * emoji.length)] })) changed = true;
+    }
     if (changed) this.onChange();
   }
 

@@ -16,7 +16,7 @@ After every change, run:
 quorum check --json
 ```
 
-It prints `{ ok, title, slides, interactions, warnings }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
+It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done, then work through the suggestions. With Playwright installed, `quorum check --visual --json` also measures each slide in a browser, and `quorum snapshot` saves a picture of every slide (and `contact.png` with all of them) in `.quorum-snapshots/` for you to look at. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
 ## The format in short
 
@@ -47,16 +47,19 @@ Speaker notes, only for the speaker.
 :::
 ```
 
-- `---` on its own line starts a new slide. `--` starts the next step of the same slide.
+- `---` on its own line starts a new slide. `--` starts the next step of the same slide (`-- fly`, `-- zoom`, `-- blur`, `-- drop`, `-- highlight` choose how it appears).
+- `theme:` sets the whole look: `clean`, `editorial`, `bold`, `midnight`, `paper`, `studio`, `signal` or `terminal` (or `light`, `dark`, or a theme file `themes/acme.yaml`). Fine tuning in the front matter: `scale`, `weight`, `case`, `radius`, `density`, `surface`, `texture`, `gradient`, `transition`, `charts`, `reveal`, `palette`. `quorum schema` lists every value.
 - Branding goes in the front matter: `accent:`, `primary:` (titles), `secondary:` (details), `background:`, `text:`, `logo: images/logo.svg`, `font:` and `text-font:` (a CSS font-family or a font file), `footer: {title} | {n} / {total}` (or `off`), `style: brand.css`. Use the speaker's brand when they give one.
 - `<!-- background: images/photo.jpg, dim -->` puts an image (or a `#colour`) behind one slide. `<!-- logo: off -->` and `<!-- footer: off -->` hide the logo and the footer there.
-- `<!-- layout: center -->` centres a slide. `<!-- section: Warm-up, 5 -->` starts a section planned for 5 minutes.
-- Layout blocks: `::: columns` (columns split by `+++`), `::: stat 88` (a big number), `::: callout Title`, `::: center`.
+- `<!-- layout: name -->` composes a slide: `center`, `title`, `section`, `agenda`, `split` (first image on one half; `split, right`), `full` (image fills the slide), `statement`, `quote`, `big-number`, `grid`, `compare`, `closing`. `<!-- section: Warm-up, 5 -->` starts a section planned for 5 minutes. `<!-- transition: zoom -->` changes how one slide comes in.
+- Blocks: `::: columns` (split by `+++`), `::: stat 88`, `::: callout Title`, `::: center`, `::: cards` (split by `+++`), `::: timeline` (`- 1857: text`), `::: steps`, `::: kpis` (`- 42%: label`), `::: compare`, `::: chart bar|column|line|donut|pictogram` (`Label: 12` lines), `::: style` (CSS for this slide).
+- `{.class key=value}` after a heading, paragraph, image or block opener: `## Title {.center icon=wheat}`, `![Photo](a.jpg){.round width=300}`, `::: cards {.steps}`. Inline: `:icon[clock]`, `:badge[new]`, `==highlight==`. A video file in image syntax plays on its own.
+- `reactions: 👏 🤯 ❤️` lets the audience react at any time; `phone-welcome:` and `phone-thanks:` are what phones show between questions and at the end.
 
 One interaction per slide, each with a stable id in `{#name}`:
 
 ```markdown
-::: poll {#coffee} Coffee or tea?
+::: poll {#coffee chart=donut} Coffee or tea?
 - Coffee
 - [x] Tea              # [x] marks a right answer, revealed later
 
@@ -91,7 +94,7 @@ there: was | lived
 :::
 ```
 
-(Remove the `# ...` comments when you copy these.) The full reference is in the Quorum docs: https://jboixcampos.github.io/quorum/llms-full.txt
+(Remove the `# ...` comments when you copy these.) `chart=` draws the results as `bars`, `columns`, `donut`, `pictogram`, `race` or `bubbles` (`strip`, `histogram`, `beeswarm`, `thermometer` for estimates; `list`, `wall`, `spotlight` for questions). The full reference is in the Quorum docs: https://jboixcampos.github.io/quorum/llms-full.txt
 
 ## Writing a component
 
@@ -126,5 +129,6 @@ Keep anything that must look the same on the shared screen and the speaker's pan
 - **Never touch `.quorum/`**, and never show or share the presenter key or the presentation and panel links that contain it.
 - **Do not invent facts or statistics.** An estimate with a reveal uses a well-known, verifiable fact, with its source in the reveal text.
 - **One idea per slide, few words.** People read the screen and answer on their phones.
+- **Make it look designed**: a theme, a mix of layouts and blocks, no long runs of bullet slides.
 - Keep every interaction id unique and stable: renaming an id loses its votes.
 - Run `quorum check --json` until `ok` is `true`.

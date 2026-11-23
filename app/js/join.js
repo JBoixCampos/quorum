@@ -12,6 +12,7 @@ const askButton = document.querySelector('[data-open-ask]');
 const dialog = document.querySelector('[data-ask-dialog]');
 
 let view = null;
+let meta = null;
 let mountedKey = '';
 let picked = new Set(); // "multi" choices not sent yet
 let messages = {};
@@ -45,7 +46,7 @@ async function act(action, where, success) {
 function screenKey(v) {
   const i = v.interaction;
   if (v.slideKind === 'questions') return 'questions';
-  if (!i) return 'wait';
+  if (!i) return v.last && meta && meta.phone && meta.phone.thanks ? 'thanks' : 'wait';
   const s = i.summary || {};
   if (i.spec.kind === 'sentence') {
     if (i.canVote) return `sentence-${s.round}`;
@@ -86,13 +87,24 @@ function askForm(id = 'ask') {
   </form>`;
 }
 
+// Each answer in its own colour, the same as on the screen.
+function optionColor(k) {
+  return `--c: var(--series-${(k % 8) + 1})`;
+}
+
 function build(key, v) {
   const i = v.interaction;
   if (key === 'ready') {
     return '<div class="j-center"><div class="j-dot"></div><h1>Get ready</h1><p class="j-muted">A question is coming. It will appear here.</p></div>';
   }
   if (key === 'wait') {
-    return '<div class="j-center"><div class="j-dot"></div><h1>You are in</h1><p class="j-muted">Look at the screen. When there is something to answer, it will appear here.</p></div>';
+    const welcome = meta && meta.phone && meta.phone.welcome;
+    return welcome
+      ? `<div class="j-center"><div class="j-dot"></div><h1 class="j-welcome">${welcome}</h1><p class="j-muted">When there is something to answer, it will appear here.</p></div>`
+      : '<div class="j-center"><div class="j-dot"></div><h1>You are in</h1><p class="j-muted">Look at the screen. When there is something to answer, it will appear here.</p></div>';
+  }
+  if (key === 'thanks') {
+    return `<div class="j-center"><h1 class="j-welcome">${meta.phone.thanks}</h1></div>`;
   }
   if (key === 'questions') {
     return `<h1>Questions</h1>${askForm('ask-inline')}<h2>Vote for the ones you want answered</h2><div data-list></div>`;
@@ -104,13 +116,13 @@ function build(key, v) {
   }
   if (look === 'poll') {
     return `<p class="j-label">${spec.kind === 'input' ? 'Pick one' : 'Vote'}</p><h1>${esc(spec.title)}</h1>
-      <div class="j-options">${spec.options.map((o) => `<button type="button" class="j-option" data-one="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+      <div class="j-options">${spec.options.map((o, k) => `<button type="button" class="j-option" data-one="${esc(o)}" style="${optionColor(k)}">${esc(o)}</button>`).join('')}</div>
       <p class="j-message" data-message="vote" role="status"></p>`;
   }
   if (look === 'multi') {
     picked = new Set(Array.isArray(i.mine) ? i.mine : []);
     return `<p class="j-label">Pick all that apply</p><h1>${esc(spec.title)}</h1>
-      <div class="j-options">${spec.options.map((o) => `<button type="button" class="j-option j-check" data-toggle="${esc(o)}"><span class="j-box" aria-hidden="true"></span>${esc(o)}</button>`).join('')}</div>
+      <div class="j-options">${spec.options.map((o, k) => `<button type="button" class="j-option j-check" data-toggle="${esc(o)}" style="${optionColor(k)}"><span class="j-box" aria-hidden="true"></span>${esc(o)}</button>`).join('')}</div>
       <button type="button" class="j-button" data-send-multi>Send</button>
       <p class="j-message" data-message="vote" role="status"></p>`;
   }
@@ -257,11 +269,44 @@ dialog.addEventListener('click', (e) => {
   if (e.target === dialog || e.target.closest('[data-close-ask]')) dialog.hidden = true;
 });
 
+// The talk's reactions, at the bottom of the screen, at any time.
+const reactionBar = document.querySelector('[data-reactions]');
+function showReactions(list) {
+  if (!reactionBar || !list || !list.length) return;
+  reactionBar.innerHTML = list.map((e) => `<button type="button" class="j-react" data-react="${esc(e)}" aria-label="React with ${esc(e)}">${esc(e)}</button>`).join('');
+  reactionBar.hidden = false;
+  document.body.classList.add('j-has-reactions');
+}
+if (reactionBar) {
+  reactionBar.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-react]');
+    if (!b) return;
+    b.classList.remove('sent');
+    void b.offsetWidth;
+    b.classList.add('sent');
+    if (navigator.vibrate) navigator.vibrate(8);
+    await send({ type: 'react', emoji: b.dataset.react }, { device: DEVICE });
+  });
+}
+
+function phoneBackground(m) {
+  const bg = m.phone && m.phone.background;
+  if (!bg) return;
+  if (bg.color) document.body.style.backgroundColor = bg.color;
+  if (bg.image) {
+    document.body.style.backgroundImage = `linear-gradient(color-mix(in srgb, var(--bg) 82%, transparent), color-mix(in srgb, var(--bg) 82%, transparent)), url("/talk/${bg.image}")`;
+    document.body.classList.add('j-photo');
+  }
+}
+
 async function start() {
   try {
     const r = await fetch('/api/talk', { cache: 'no-store' });
     const t = await r.json();
+    meta = t.meta;
     applyBrand(t.meta);
+    phoneBackground(t.meta);
+    showReactions(t.meta.reactions);
     document.title = t.meta.title;
     document.querySelector('[data-logo]').innerHTML = logoHtml(t.meta);
     document.querySelector('[data-title]').textContent = t.meta.title;

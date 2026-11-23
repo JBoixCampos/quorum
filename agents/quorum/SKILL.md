@@ -1,6 +1,6 @@
 ---
 name: quorum
-description: Write and check Quorum talks, and build components for them. Quorum talks are presentations written in Markdown where the audience answers from their phones (polls, estimates, rounds, a shared sentence, questions and custom JavaScript components). Use when asked to make, edit or extend a Quorum talk, or a talk with live audience interaction.
+description: Write, design and check Quorum talks, and build components for them. Quorum talks are presentations written in Markdown where the audience answers from their phones (polls, estimates, rounds, a shared sentence, questions and custom JavaScript components), with themes, layouts, visual blocks, charts and motion. Use when asked to make, edit, restyle or extend a Quorum talk, or a talk with live audience interaction.
 ---
 
 # Quorum talks
@@ -18,7 +18,7 @@ Quorum turns `talk.md` into a presentation where people vote, guess and ask from
 Plan first: how long the talk is (`duration:` in the front matter, in minutes), its sections, and where the audience takes part. Count 30 to 60 seconds for each vote.
 
 - One idea per slide, few words. Titles short.
-- If the user gives a brand (colours, logo, fonts), put it in the front matter: `accent`, `primary`, `secondary`, `background`, `text`, `logo`, `font`, `text-font`, `footer`, `style`. See "Your brand" in the reference.
+- If the user gives a brand (colours, logo, fonts), put it in the front matter: `accent`, `primary`, `secondary`, `background`, `text`, `palette`, `logo`, `font`, `text-font`, `footer`, `style`. With only a logo, `quorum theme from <logo>` proposes the colours.
 - Start with a title slide that has `::: join`, then a quick warm-up `::: poll` so everyone has answered once.
 - One interaction per slide, each with a unique `{#id}`.
 - An `::: estimate` with a reveal must use a well-known, verifiable fact, with its source in the reveal text. Never invent numbers.
@@ -26,15 +26,34 @@ Plan first: how long the talk is (`duration:` in the front matter, in minutes), 
 - End with `::: questions` and a closing slide.
 - For anything the blocks do not cover, write a component in `components/<name>.js` (see the `AGENTS.md` in the talk folder). Use `audience:` to give phones an input.
 
-## 3. Check
+## 3. Design
+
+A talk that is only titles and bullets is hard to watch. Make it look designed:
+
+- **Pick a theme** that fits the mood: `theme: midnight` or `bold` (keynote), `editorial` (lecture), `studio` or `paper` (workshop, classroom), `signal` (company), `terminal` (technical). With a brand, keep the theme and set `accent` (and `logo`).
+- **Build from patterns.** [patterns.md](patterns.md) has proven slides: opening, agenda, section break, statement, big number, cards, split with a picture, timeline, steps, kpis, chart, compare, quote, quiz, questions, closing. Never more than three slides in a row with the same pattern.
+- **Use layouts** (`<!-- layout: split -->`, `section`, `statement`, `big-number`, `quote`, `full`, `grid`, `agenda`, `closing`) and **blocks** (`::: cards`, `timeline`, `steps`, `kpis`, `compare`, `chart`) instead of long lists. Icons: `{icon=name}` on headings, `:icon[name]` in text.
+- **Give results a look**: `{chart=donut}`, `pictogram`, `bubbles` or `race` on polls, `{chart=beeswarm}` on estimates, `{chart=wall}` on questions, `reveal=spotlight` for quizzes.
+- **Add motion with care**: `transition: morph` and the same `{#title}` on related titles; `{.steps}` on blocks so items appear one by one.
+- `reactions: 👏 🤯 ❤️` lets people react at any time; `phone-welcome:` greets them.
+- Do not guess names: `quorum schema --json` lists every theme, setting, layout, block, class and look, and `quorum schema --icons` the icons.
+
+## 4. Check
 
 ```bash
 quorum check <folder> --json
 ```
 
-It prints `{ ok, title, slides, interactions, warnings }` and exits non-zero while there are warnings. Fix each warning and run it again until `ok` is `true`. Report the slide count and the interactions to the user.
+It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits non-zero while there are warnings. Fix each warning and run it again until `ok` is `true`. Then work through the `suggestions` (too many words, plain slides in a row, images without a description).
 
-## 4. Hand over
+If Playwright is installed (`npm install --no-save playwright && npx playwright install chromium`):
+
+- `quorum check <folder> --visual --json` also measures every slide in a browser: a slide that does not fit is a warning.
+- `quorum snapshot <folder>` saves a picture of every slide (and its results) in `.quorum-snapshots/`, plus `contact.png` with all of them. If you can read images, look at the contact sheet and fix what looks wrong: crowded slides, weak contrast, too many similar slides.
+
+Report the slide count, the theme and the interactions to the user.
+
+## 5. Hand over
 
 Tell the user they can see the talk with `quorum preview <folder>`: it opens in the browser with a simulated audience, and the slides update as you keep editing `talk.md`. Then take their changes and check again.
 

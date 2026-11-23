@@ -8,6 +8,10 @@ export const LIMITS = {
   chars: 140,
   secondsBetweenQuestions: 5,
   actionsPerSecond: 8,
+  // Reactions: at most one every 300 ms per phone; the screen keeps the
+  // last few seconds of them.
+  msBetweenReactions: 300,
+  reactionSeconds: 6,
 };
 
 const STATUSES = ['pending', 'approved', 'hidden'];
@@ -39,6 +43,8 @@ export function initialState() {
     // Shared screen state of components (so the shared window and the
     // presenter's preview always show the same thing).
     ui: {},
+    // Reactions: how many of each, and the latest ones (never who sent them).
+    reactions: { counts: {}, recent: [] },
   };
 }
 
@@ -148,6 +154,8 @@ export class Session {
     const visible = d.questions.filter((q) => q.status === 'approved' || q.author === device);
     return {
       stage: { slide: d.stage.slide, step: d.stage.step },
+      // On the last slide phones can say thank you ("phone-thanks:").
+      last: d.stage.slide === this.talk.slides.length - 1 && d.stage.slide > 0,
       slideKind: slide && slide.interaction ? slide.interaction.kind : null,
       interaction,
       questions: visible.map((q) => ({
@@ -173,6 +181,7 @@ export class Session {
       interaction: spec ? this.summaryOf(spec, { withValues: true }) : null,
       questions: this.screenQuestions(),
       questionOnScreen: d.questionOnScreen,
+      reactions: this.recentReactions(),
       pendingQuestions: d.questions.filter((q) => q.status === 'pending').length,
       ui: d.ui,
       people: Object.keys(d.devices).length,
@@ -186,6 +195,14 @@ export class Session {
       allQuestions: this.d.questions.map((q) => ({
         id: q.id, text: q.text, status: q.status, votes: q.votes.length, answered: q.answered, created: q.created,
       })),
+    };
+  }
+
+  recentReactions(now = Date.now()) {
+    const r = this.d.reactions || { counts: {}, recent: [] };
+    return {
+      counts: { ...r.counts },
+      recent: r.recent.filter((x) => now - x.at < LIMITS.reactionSeconds * 1000).map((x) => ({ id: x.id, emoji: x.emoji })),
     };
   }
 
@@ -307,6 +324,19 @@ const AUDIENCE = {
       created: now,
     });
     return ok({ pending: this.moderation });
+  },
+  // An emoji from the talk's "reactions:" list, floating up on the screen.
+  react(action, dev, device, now) {
+    const allowed = (this.talk.meta && this.talk.meta.reactions) || [];
+    if (!allowed.includes(action.emoji)) return fail('That reaction is not available.');
+    if (now - (dev.lastReaction || 0) < LIMITS.msBetweenReactions) return fail('Too fast. Wait a moment.');
+    dev.lastReaction = now;
+    if (!this.d.reactions) this.d.reactions = { counts: {}, recent: [] };
+    const r = this.d.reactions;
+    r.counts[action.emoji] = (r.counts[action.emoji] || 0) + 1;
+    r.recent.push({ id: this.newId('r'), emoji: action.emoji, at: now });
+    r.recent = r.recent.filter((x) => now - x.at < LIMITS.reactionSeconds * 1000).slice(-60);
+    return ok();
   },
   upvote(action, dev, device) {
     const q = this.d.questions.find((x) => x.id === action.id && x.status === 'approved');

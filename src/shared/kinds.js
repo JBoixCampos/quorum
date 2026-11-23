@@ -208,7 +208,8 @@ const sentence = {
     const counts = countVotes(options, st.votes);
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     const fix = (text) => {
-      st.words.push({ text, share: total ? (counts[text] || 0) / total : null });
+      // The words not chosen stay, for the "tree" look.
+      st.words.push({ text, share: total ? (counts[text] || 0) / total : null, alts: options.filter((o) => o !== text) });
       st.votes = {};
       st.open = false;
       st.round += 1;

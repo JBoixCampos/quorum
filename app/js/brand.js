@@ -1,6 +1,7 @@
-// The talk's branding, from its front matter: colours, fonts and (on the
-// presentation) a stylesheet of its own. Used by the presentation, the
-// panel and phones. The values were checked by the parser.
+// The talk's look, from its front matter: the preset, tokens, colours,
+// palette, fonts and (on the presentation) a stylesheet of its own. Used by
+// the presentation, the panel and phones. The values were checked by the
+// parser.
 
 import { isDark } from '../shared/color.js';
 
@@ -24,7 +25,10 @@ export function applyBrand(meta, { assets = '/talk/', style = false } = {}) {
     if (value) root.style.setProperty(name, value);
     else root.style.removeProperty(name);
   };
-  root.dataset.theme = meta.theme;
+  root.dataset.theme = meta.mode || meta.theme;
+  root.dataset.preset = meta.preset || 'clean';
+  // Tokens become data attributes: <html data-radius="round" ...>.
+  Object.entries(meta.tokens || {}).forEach(([k, v]) => { root.dataset[k] = v; });
   set('--accent', meta.accent);
   const dark = isDark(meta.accent);
   set('--on-accent', dark === null ? '' : (dark ? '#fff' : '#111'));
@@ -32,6 +36,9 @@ export function applyBrand(meta, { assets = '/talk/', style = false } = {}) {
   set('--secondary', meta.secondary);
   set('--bg', meta.background);
   set('--fg', meta.text);
+  const palette = meta.palette && meta.palette.length ? meta.palette : [meta.accent];
+  for (let i = 0; i < 8; i += 1) set(`--series-${i + 1}`, palette[i % palette.length]);
+  root.classList.toggle('series', !!meta.series);
   // With a background or text colour of its own, the greys follow them.
   root.classList.toggle('custom-colors', !!(meta.background || meta.text));
 
@@ -45,6 +52,7 @@ export function applyBrand(meta, { assets = '/talk/', style = false } = {}) {
   };
   set('--font-display', family('Talk Display', meta.fontFile, meta.font, DISPLAY));
   set('--font-text', family('Talk Text', meta.textFontFile, meta.textFont, TEXT));
+  set('--font-accent', family('Talk Accent', meta.accentFontFile, meta.accentFont, 'var(--font-display)'));
   const fontStyle = element('style[data-brand-fonts]', () => {
     const el = document.createElement('style');
     el.dataset.brandFonts = '';
@@ -65,6 +73,31 @@ export function applyBrand(meta, { assets = '/talk/', style = false } = {}) {
       else link.removeAttribute('href');
     }
   }
+}
+
+// The resolved look, for components: ctx.theme.
+export function themeOf(meta) {
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  return {
+    preset: meta.preset || 'clean',
+    mode: meta.mode || meta.theme,
+    tokens: { ...(meta.tokens || {}) },
+    colors: {
+      accent: v('--accent'),
+      onAccent: v('--on-accent'),
+      primary: v('--primary'),
+      secondary: v('--secondary'),
+      background: v('--bg'),
+      text: v('--fg'),
+      muted: v('--muted'),
+      surface: v('--surface'),
+      line: v('--line'),
+    },
+    palette: Array.from({ length: 8 }, (_, i) => v(`--series-${i + 1}`)),
+    fonts: { display: v('--font-display'), text: v('--font-text'), accent: v('--font-accent') },
+    radius: v('--radius'),
+  };
 }
 
 // The talk's logo as an <img>, or '' when it has none.

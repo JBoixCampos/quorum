@@ -1,6 +1,13 @@
 # Proposal: a design system for Quorum talks
 
-Status: draft for discussion. Nothing here is built yet.
+Status: implemented. The user guide is [docs/design.md](../docs/design.md); the registry of every option is `src/shared/design.js`.
+
+Where the implementation differs from this proposal:
+
+- Phone settings are flat front matter keys (`phone-welcome:`, `phone-thanks:`, `phone-background:`), since the front matter is one `key: value` per line.
+- `theme:` keeps meaning light or dark for components (`meta.theme`); the preset is `meta.preset` and the mode `meta.mode`.
+- Overflow is estimated from the text in `quorum check`, and measured in a browser with `quorum check --visual` and `quorum snapshot`.
+- Results take `{chart=...}` and `{reveal=...}` on the block; the defaults come from `charts:` and `reveal:` in the front matter.
 
 ## Why
 

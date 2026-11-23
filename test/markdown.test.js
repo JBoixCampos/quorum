@@ -69,7 +69,7 @@ test('columns, notes, components and attributes', () => {
 
 test('nested blocks with the same fence', () => {
   const t = parseTalk('::: columns\n::: stat 42\nthe answer\n:::\n+++\nright side\n:::');
-  assert.match(t.slides[0].html, /q-stat-value">42/);
+  assert.match(t.slides[0].html, /q-stat-value"[^>]*>42/);
   assert.match(t.slides[0].html, /right side/);
   assert.deepEqual(t.warnings, []);
 });

@@ -37,6 +37,7 @@ Every block works the same way: you write it in `talk.md`, phones get the right 
 ## The guides
 
 - [The talk format](format.md): every block with examples, and [your brand](format.md#your-brand): colours, logo, fonts, footer, backgrounds.
+- [Design and themes](design.md): eight themes, layouts, cards, timelines, charts, icons, transitions, result looks, reactions, and the checks that keep a talk readable.
 - [Components](components.md): build your own slide pieces in JavaScript, including one that uses a local language model.
 - [Giving a talk](giving-a-talk.md): the day itself, with screenshots of the three views (the shared screen, your panel, a phone), and what to do if people cannot join.
 - [Built for agents](agents.md): install Quorum where your agent works, teach it the format, and ask it to write, check and extend your talk.
@@ -48,10 +49,14 @@ Every block works the same way: you write it in `talk.md`, phones get the right 
 | `quorum new <folder>` | Create a new talk |
 | `quorum preview [folder]` | See the talk with a simulated audience, updated as you edit |
 | `quorum live [folder]` | Give the talk: server, public link, QR code, windows |
-| `quorum check [folder]` | Check `talk.md` for mistakes (`--json` for tools) |
+| `quorum check [folder]` | Check `talk.md` for mistakes and design problems (`--json` for tools, `--visual` to measure in a browser) |
+| `quorum snapshot [folder]` | A picture of every slide, and a contact sheet |
+| `quorum schema` | Every theme, layout, block, class and icon (`--json`, `--icons`) |
+| `quorum theme new <name>` | Save the talk's look as `themes/<name>.yaml` |
+| `quorum theme from <logo>` | Propose colours and a theme from a logo |
 | `quorum build [folder]` | Build a static, playable copy with a simulated audience |
 | `quorum export [folder]` | The slides without the audience parts, for when nobody can join |
 | `quorum clean [folder]` | Delete the votes and questions of the last session |
 | `quorum skill` | Install the agent skill for Claude Code (`--to <folder>` for other agents) |
 
-Options: `--port <n>`, `--file <name>`, `--no-tunnel`, `--no-open`, `--no-moderation`, `--out <folder>`, `--json`, `--to <folder>`.
+Options: `--port <n>`, `--file <name>`, `--no-tunnel`, `--no-open`, `--no-moderation`, `--out <folder>`, `--json`, `--visual`, `--icons`, `--no-results`, `--save <name>`, `--to <folder>`.
