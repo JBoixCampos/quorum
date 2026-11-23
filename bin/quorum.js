@@ -5,7 +5,7 @@
 //   quorum rehearse [folder]   rehearse with a simulated audience
 //   quorum live [folder]       give the talk: server, public link, QR, windows
 //   quorum offline [folder]    give it without a public link (votes typed from the chat)
-//   quorum check [folder]      check talk.md for mistakes
+//   quorum check [folder]      check talk.md for mistakes (--json for tools)
 //   quorum build [folder]      a static, playable demo of the talk (rehearsal mode)
 //   quorum clean [folder]      delete votes and questions saved by a live session
 
@@ -14,6 +14,7 @@ import { networkInterfaces } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { checkTalk } from '../src/cli/check.js';
 import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
 import { parseTalk } from '../src/shared/markdown.js';
@@ -55,6 +56,7 @@ Options:
   --no-open       Do not open any window
   --no-moderation Show questions without approving them first
   --out <folder>  Where "build" writes the site (default <folder>/dist)
+  --json          "check" prints { ok, title, slides, interactions, warnings }
 `;
 
 function talkDir(args) {
@@ -114,13 +116,20 @@ Next:
 function cmdCheck(args) {
   const dir = talkDir(args);
   const file = talkFile(args);
+  const result = checkTalk(dir, file);
+  if (args.json) {
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.ok ? 0 : 1);
+  }
   ensureTalk(dir, file);
-  const talk = parseTalk(readFileSync(join(dir, file), 'utf8'));
-  const kinds = talk.slides.filter((s) => s.interaction).map((s) => s.interaction.kind);
-  console.log(`${talk.meta.title}: ${talk.slides.length} slides, ${kinds.length} interactions${kinds.length ? ` (${[...new Set(kinds)].join(', ')})` : ''}.`);
-  if (!talk.warnings.length) console.log('No problems found.');
-  printWarnings(talk);
-  process.exit(talk.warnings.length ? 1 : 0);
+  const kinds = [...new Set(result.interactions.map((i) => i.kind))];
+  console.log(`${result.title}: ${result.slides} slides, ${result.interactions.length} interactions${kinds.length ? ` (${kinds.join(', ')})` : ''}.`);
+  if (result.ok) console.log('No problems found.');
+  else {
+    console.log('\nThings to check in your talk:');
+    result.warnings.forEach((w) => console.log(`  - ${w}`));
+  }
+  process.exit(result.ok ? 0 : 1);
 }
 
 function cmdClean(args) {
