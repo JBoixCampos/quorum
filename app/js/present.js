@@ -1,13 +1,16 @@
 // The presentation: what you share on screen. Also runs inside the panel
 // (a live, clickable preview), as still thumbnails, and on its own as a
-// rehearsal with a simulated audience.
+// preview with a simulated audience.
 //
 //   /present?key=...            the real thing, in sync with the server
 //   /present?key=...&view=panel the preview inside the panel
 //   /present?key=...&view=still&slide=3   a thumbnail: one slide, all steps done
-//   /present?rehearse=1         rehearsal: everything runs here, nothing is sent
+//   /present?preview=1          `quorum preview`: everything runs here, with a
+//                               simulated audience, and nothing is sent
 //
-// A static build (`quorum build`) always rehearses. It also accepts:
+// A static build (`quorum build`) is always a preview; `quorum export`
+// builds one without the audience slides and without a simulated audience.
+// Both accept:
 //
 //   ?slide=3                    start on that slide (counted from 0)
 //   ?playground=1               wait for Markdown from the page that embeds
@@ -15,6 +18,7 @@
 
 import { parseTalk } from '../shared/markdown.js';
 import { Session } from '../shared/session.js';
+import { applyBrand, logoHtml } from './brand.js';
 import { mountError, loadComponent } from './components.js';
 import { connect, esc, send } from './net.js';
 import { qrSvg } from './qr.js';
@@ -27,15 +31,20 @@ const KEY = params.get('key') || '';
 const VIEW = params.get('view') || '';
 const STILL = VIEW === 'still';
 const IN_PANEL = VIEW === 'panel';
-const REHEARSE = !!STATIC || params.get('rehearse') === '1' || !KEY;
+const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
+// `quorum export`: the slides alone, with no audience at all.
+const AUDIENCE = !STATIC || STATIC.audience !== false;
+// Where the talk folder (images, components, fonts) is served.
+const ASSETS = STATIC ? STATIC.assets : '/talk/';
 
 const stage = document.querySelector('[data-stage]');
 const slideEl = document.querySelector('[data-slide]');
 const footer = document.querySelector('[data-footer]');
 const corner = document.querySelector('[data-corner]');
+const logo = document.querySelector('[data-logo]');
 const notesEl = document.querySelector('[data-notes]');
-const bar = document.querySelector('[data-rehearse]');
+const bar = document.querySelector('[data-preview]');
 
 const state = {
   talk: null,
@@ -52,6 +61,8 @@ const state = {
 
 let session = null;
 let simulator = null;
+// The slide a thumbnail shows (?slide=N, then whatever the panel asks).
+let stillSlide = Number(params.get('slide') || 0);
 
 // --- scaling the 1920x1080 stage to the window ------------------------------
 
@@ -67,23 +78,22 @@ fit();
 // --- loading the talk --------------------------------------------------------
 
 async function loadTalk() {
-  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'rehearse=1'}`;
+  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'preview=1'}`;
   const r = await fetch(url, { cache: 'no-store' });
   if (!r.ok) throw new Error(r.status === 403 ? 'Wrong presenter key.' : `Could not load the talk (${r.status}).`);
   return r.json();
 }
 
 function applyTheme(meta) {
-  const root = document.documentElement;
-  root.style.setProperty('--accent', meta.accent);
-  root.dataset.theme = meta.theme;
-  if (meta.font) root.style.setProperty('--font-display', meta.font);
+  applyBrand(meta, { assets: ASSETS, style: true });
+  const html = logoHtml(meta, ASSETS);
+  if (logo.innerHTML !== html) logo.innerHTML = html;
   document.title = STILL || IN_PANEL ? 'Preview' : meta.title;
 }
 
 // Relative image and video paths in talk.md live next to it.
 function fixAssets(root) {
-  const base = STATIC ? STATIC.assets : '/talk/';
+  const base = ASSETS;
   root.querySelectorAll('img[src], video[src], source[src]').forEach((n) => {
     const src = n.getAttribute('src');
     if (!/^([a-z]+:|\/|#|data:)/i.test(src)) n.setAttribute('src', base + src.replace(/^\.\//, ''));
@@ -113,7 +123,7 @@ function setUi(key, partial) {
 
 function act(action) {
   if (STILL) return Promise.resolve({ ok: true });
-  if (REHEARSE) {
+  if (PREVIEW) {
     const r = session.apply(action, { presenter: true });
     refreshLocalView();
     return Promise.resolve(r);
@@ -137,9 +147,12 @@ function context(extra = {}) {
     view: state.view,
     step: state.step,
     talk: state.talk,
-    chatMode: !!state.view.chatMode,
     publicUrl: state.view.publicUrl || '',
-    rehearse: REHEARSE,
+    // True with a simulated audience (quorum preview, a static build).
+    preview: PREVIEW,
+    // Older names, kept so existing components keep working.
+    rehearse: PREVIEW,
+    chatMode: false,
     // Which copy of the slide this is: the shared screen, the panel's
     // preview, or a still thumbnail. Only "screen" should start slow work.
     where: STILL ? 'thumbnail' : (IN_PANEL ? 'preview' : 'screen'),
@@ -159,15 +172,24 @@ function renderSlide() {
   if (state.mountedFor === key) return;
   state.mountedFor = key;
   unmount();
-  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}`;
+  const bg = slide.background;
+  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}${bg ? ' has-bg' : ''}${bg && bg.dim ? ' bg-dim' : ''}`;
+  slideEl.style.backgroundColor = bg && bg.color ? bg.color : '';
+  slideEl.style.backgroundImage = bg && bg.image ? `url("${ASSETS}${bg.image}")` : '';
   slideEl.innerHTML = `<div class="q-content">${slide.html}</div>`;
   fixAssets(slideEl);
+  logo.hidden = !slide.logo || !logo.innerHTML;
+  stage.classList.toggle('dim', !!(bg && bg.dim));
 
   if (slide.interaction) {
     const el = slideEl.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`);
     if (el) state.mounted.push({ type: 'interaction', handle: mountInteraction(el, slide.interaction, context()) });
   }
   slideEl.querySelectorAll('[data-join]').forEach((el) => {
+    if (!AUDIENCE) {
+      el.remove();
+      return;
+    }
     state.mounted.push({ type: 'join', handle: mountJoin(el, context()) });
   });
   slide.components.forEach((spec) => {
@@ -195,14 +217,33 @@ function componentContext(spec) {
   });
 }
 
+// The footer of the talk ("footer:" in the front matter) with its
+// placeholders filled in. Where the audience can answer, its right side
+// says how to join, next to the corner QR code.
+function footerHtml(slide, showJoin, url) {
+  const { meta, slides } = state.talk;
+  const on = slide.footer === 'on' || (slide.footer !== 'off' && state.index > 0);
+  const parts = on && meta.footer ? { ...meta.footer } : { left: '', right: '' };
+  if (showJoin) parts.right = `Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b>`;
+  if (!parts.left && !parts.right) return '';
+  const section = slides.slice(0, state.index + 1).reverse().find((s) => s.section);
+  const values = {
+    title: meta.title,
+    author: meta.author,
+    section: section ? section.section.name : '',
+    n: String(state.index + 1),
+    total: String(slides.length),
+  };
+  const fill = (text) => text.replace(/\{(title|author|section|n|total)\}/g, (_, k) => esc(values[k]));
+  return `<span>${fill(parts.left)}</span><span>${showJoin ? parts.right : fill(parts.right)}</span>`;
+}
+
 function paintFooter() {
   const slide = state.talk.slides[state.index];
   const url = state.view.publicUrl || '';
-  const votes = !!(slide.interaction && slide.interaction.kind !== 'questions') || (slide.interaction && slide.interaction.kind === 'questions');
-  const showJoin = votes && !slide.join && url && !state.view.chatMode;
-  const left = state.index === 0 ? '' : esc(state.talk.meta.title);
-  const right = showJoin ? `Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b>` : `${state.index + 1} / ${state.talk.slides.length}`;
-  const html = `<span>${left}</span><span>${right}</span>`;
+  const votes = !!slide.interaction;
+  const showJoin = votes && !slide.join && url;
+  const html = footerHtml(slide, showJoin, url);
   if (footer.innerHTML !== html) footer.innerHTML = html;
   const cornerKey = showJoin ? url : '';
   if (corner.dataset.url !== cornerKey) {
@@ -237,22 +278,20 @@ function paintNotes() {
   notesEl.innerHTML = `<p class="q-notes-title">${esc(slide.title)} · step ${state.step + 1} of ${slide.steps}</p>
     <div class="q-notes-text">${esc(slide.notes || 'No notes for this slide.')}</div>
     ${next ? `<p class="q-notes-next">Next: ${esc(next.title)}</p>` : ''}
-    <p class="q-notes-keys">→ next · ← back · N notes · F fullscreen · B chat mode</p>`;
+    <p class="q-notes-keys">→ next · ← back · N notes · F fullscreen</p>`;
 }
 
 function paintBar() {
   if (!bar) return;
-  bar.hidden = !REHEARSE || STILL || IN_PANEL || !!STATIC;
+  bar.hidden = !PREVIEW || STILL || IN_PANEL || !!STATIC;
   if (bar.hidden) return;
-  bar.innerHTML = `Rehearsal: ${simulator ? simulator.joined : 0} simulated people.
-    <button type="button" data-sim>${simulator && simulator.paused ? 'Resume' : 'Pause'} audience</button>
-    <button type="button" data-chat>${state.view.chatMode ? 'Phone mode' : 'Chat mode'}</button>`;
+  bar.innerHTML = `Preview: ${simulator ? simulator.joined : 0} simulated people.
+    <button type="button" data-sim>${simulator && simulator.paused ? 'Resume' : 'Pause'} audience</button>`;
 }
 
 if (bar) {
   bar.addEventListener('click', (e) => {
     if (e.target.closest('[data-sim]') && simulator) simulator.paused = !simulator.paused;
-    if (e.target.closest('[data-chat]')) act({ type: 'chatMode', on: !state.view.chatMode });
     paintBar();
   });
 }
@@ -266,7 +305,7 @@ function go(index, step) {
   state.step = Math.max(0, Math.min(step, slides[index].steps - 1));
   refresh();
   if (STILL) return;
-  if (REHEARSE) {
+  if (PREVIEW) {
     session.apply({ type: 'stage', slide: state.index, step: state.step }, { presenter: true });
     refreshLocalView();
     return;
@@ -278,14 +317,15 @@ function go(index, step) {
   });
 }
 
+// Whether an interaction or component that reacts to "next" is on screen
+// (not hidden in a later step).
 function interactionVisible() {
-  const slide = state.talk.slides[state.index];
-  const handles = state.mounted.filter((m) => m.handle && m.handle.primary);
-  return handles.filter((m) => {
+  return state.mounted.some((m) => {
+    if (!m.handle || !m.handle.primary) return false;
     const el = m.type === 'interaction' ? slideEl.querySelector('[data-interaction]') : null;
     const stepEl = el && el.closest('.q-step');
     return !stepEl || Number(stepEl.dataset.step) <= state.step;
-  }).length > 0 && slide;
+  });
 }
 
 export function next() {
@@ -319,7 +359,10 @@ window.quorum = {
   previous,
   go: (i, step = 0) => go(i, step),
   show(index) {
-    // Thumbnails: one slide with every step shown.
+    // Thumbnails: one slide with every step shown. The panel may ask for
+    // another slide before the talk has loaded: remember it for then.
+    stillSlide = index;
+    if (!state.talk) return;
     state.index = index;
     state.step = state.talk.slides[index] ? state.talk.slides[index].steps - 1 : 0;
     refresh();
@@ -341,7 +384,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 'f' || k === 'F') {
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen().catch(() => {});
-  } else if (k === 'b' || k === 'B') act({ type: 'chatMode', on: !state.view.chatMode });
+  }
 });
 
 // Click to advance (left third goes back), except on buttons and controls.
@@ -373,7 +416,7 @@ function loadSource(markdown) {
   // Keep the votes of interactions that are still there.
   session = new Session(talk, session ? session.toJSON() : null, { moderation: false });
   if (simulator) simulator.session = session;
-  else simulator = new Simulator(session, () => refreshLocalView());
+  else if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
   state.index = Math.min(state.index, talk.slides.length - 1);
   return talk;
 }
@@ -417,13 +460,13 @@ async function start() {
   if (IN_PANEL) document.documentElement.classList.add('in-panel');
   if (STILL) {
     document.documentElement.classList.add('still');
-    window.quorum.show(Number(params.get('slide') || 0));
+    window.quorum.show(stillSlide);
   }
 
-  if (REHEARSE) {
+  if (PREVIEW) {
     session = new Session(talk, null, { moderation: false });
     if (!STATIC) session.apply({ type: 'url', url: location.origin }, { presenter: true });
-    simulator = new Simulator(session, () => refreshLocalView());
+    if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
     refreshLocalView();
     // A static build can be opened on a given slide: ?slide=3
     if (STATIC && !STILL && params.has('slide')) {

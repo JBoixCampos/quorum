@@ -14,7 +14,7 @@ import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseTalk } from '../shared/markdown.js';
-import { Session } from '../shared/session.js';
+import { Session, isDevice } from '../shared/session.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP = join(ROOT, 'app');
@@ -57,7 +57,9 @@ function readKey(file) {
 }
 
 // Starts the server for the talk in `talkDir`. Returns a handle with the
-// URLs, the presenter key and close().
+// URLs, the presenter key and close(). With `preview`, anyone who opens
+// /present gets the whole talk (notes and answers included) and plays it
+// with a simulated audience: only for `quorum preview`, never for a live talk.
 export function startServer({
   talkDir,
   file = 'talk.md',
@@ -65,6 +67,7 @@ export function startServer({
   key = null,
   publicUrl = '',
   moderation = true,
+  preview = false,
   log = console.log,
 } = {}) {
   const dir = resolve(talkDir);
@@ -182,7 +185,7 @@ export function startServer({
     if (!['audience', 'screen', 'panel'].includes(role)) return send(res, 400, { ok: false, error: 'Not a valid role.' });
     if (role !== 'audience' && !isPresenter(req, url)) return send(res, 403, { ok: false, error: 'Wrong key.' });
     if (role === 'audience') {
-      if (!/^[a-z0-9-]{8,64}$/i.test(device)) return send(res, 400, { ok: false, error: 'Not a valid device.' });
+      if (!isDevice(device)) return send(res, 400, { ok: false, error: 'Not a valid device.' });
       see(device);
     }
     const w = { res, role, device, timer: null };
@@ -208,7 +211,7 @@ export function startServer({
     }
     const presenter = isPresenter(req, url);
     const device = presenter ? null : body.device;
-    if (!presenter && typeof device === 'string' && /^[a-z0-9-]{8,64}$/i.test(device)) see(device);
+    if (!presenter && isDevice(device)) see(device);
     const result = session.apply(body.action, { presenter, device });
     if (result.ok && body.action.type !== 'join') {
       save();
@@ -222,14 +225,15 @@ export function startServer({
     });
   }
 
-  // The talk itself. The presenter gets everything; phones only what they
-  // need to look right (title and colours).
+  // The talk itself. The presenter (or anyone, in a preview) gets
+  // everything; phones only what they need to look right (title, colours).
   function talkJson(req, res, url) {
-    if (isPresenter(req, url) || url.searchParams.get('rehearse') === '1') {
+    if (isPresenter(req, url) || preview) {
       return send(res, 200, { ...talk, version: talkVersion });
     }
-    const { title, accent, theme, lang, font } = talk.meta;
-    return send(res, 200, { meta: { title, accent, theme, lang, font }, version: talkVersion });
+    // Branding too, so phones look like the talk (not its stylesheet).
+    const { style, ...meta } = talk.meta;
+    return send(res, 200, { meta, version: talkVersion });
   }
 
   async function serveFile(res, base, path, longCache = false) {
@@ -276,9 +280,12 @@ export function startServer({
       } else if (path.startsWith('/shared/')) {
         await serveFile(res, SHARED, path.slice('/shared/'.length));
       } else if (path.startsWith('/talk/')) {
-        // Images, videos and components that live next to talk.md.
+        // Images, videos and components that live next to talk.md. Not
+        // talk.md itself: it has the notes and the right answers.
         const rel = path.slice('/talk/'.length);
-        if (rel.split('/').some((p) => p.startsWith('.'))) send(res, 404, { ok: false, error: 'Not found.' });
+        const dotted = rel.split('/').some((p) => p.startsWith('.'));
+        const isTalk = normalize(rel) === normalize(file) && !preview && !isPresenter(req, url);
+        if (dotted || isTalk) send(res, 404, { ok: false, error: 'Not found.' });
         else await serveFile(res, dir, rel);
       } else {
         await serveFile(res, APP, path.replace(/^\/+/, ''));
@@ -321,7 +328,8 @@ export function startServer({
 
   return new Promise((done, failed) => {
     server.once('error', failed);
-    server.listen(port, () => {
+    // A preview is only for this computer.
+    server.listen(port, preview ? '127.0.0.1' : undefined, () => {
       const base = `http://localhost:${server.address().port}`;
       done({
         key: KEY,
@@ -330,16 +338,11 @@ export function startServer({
           audience: `${base}/`,
           present: `${base}/present?key=${KEY}`,
           panel: `${base}/panel?key=${KEY}`,
-          rehearse: `${base}/present?rehearse=1`,
+          preview: `${base}/present?preview=1`,
         },
         talk: () => talk,
         setPublicUrl(u) {
           session.apply({ type: 'url', url: u }, { presenter: true });
-          save();
-          broadcast();
-        },
-        setChatMode(on) {
-          session.apply({ type: 'chatMode', on }, { presenter: true });
           save();
           broadcast();
         },

@@ -16,7 +16,7 @@ After every change, run:
 quorum check --json
 ```
 
-It prints `{ ok, title, slides, interactions, warnings }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done. Then the speaker can try it with `quorum rehearse` (a simulated audience votes).
+It prints `{ ok, title, slides, interactions, warnings }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
 ## The format in short
 
@@ -48,6 +48,8 @@ Speaker notes, only for the speaker.
 ```
 
 - `---` on its own line starts a new slide. `--` starts the next step of the same slide.
+- Branding goes in the front matter: `accent:`, `primary:` (titles), `secondary:` (details), `background:`, `text:`, `logo: images/logo.svg`, `font:` and `text-font:` (a CSS font-family or a font file), `footer: {title} | {n} / {total}` (or `off`), `style: brand.css`. Use the speaker's brand when they give one.
+- `<!-- background: images/photo.jpg, dim -->` puts an image (or a `#colour`) behind one slide. `<!-- logo: off -->` and `<!-- footer: off -->` hide the logo and the footer there.
 - `<!-- layout: center -->` centres a slide. `<!-- section: Warm-up, 5 -->` starts a section planned for 5 minutes.
 - Layout blocks: `::: columns` (columns split by `+++`), `::: stat 88` (a big number), `::: callout Title`, `::: center`.
 

@@ -161,7 +161,7 @@ async function checkPublic() {
   } catch {
     publicOk = false;
   }
-  el.textContent = publicOk ? 'Public link works' : 'Public link NOT responding';
+  el.textContent = publicOk ? 'Public link works' : 'Public link not responding';
   el.className = publicOk ? 'good' : 'bad';
 }
 
@@ -175,8 +175,6 @@ function paint() {
   $('[data-next]').textContent = next ? `Next: ${next.title}` : 'Last slide';
   $('[data-notes]').textContent = slide.notes || '';
   $('[data-people]').textContent = `${view.connected} ${view.connected === 1 ? 'person' : 'people'} connected`;
-  $('[data-chat-mode]').textContent = view.chatMode ? 'Back to phone mode' : 'Switch to chat mode';
-  $('[data-chat-mode]').classList.toggle('main', !!view.chatMode);
   const urlInput = $('[data-url]');
   if (document.activeElement !== urlInput) urlInput.value = view.publicUrl || '';
   paintSections();
@@ -196,7 +194,6 @@ document.addEventListener('click', (e) => {
   } else if (b.dataset.mod) act({ type: 'moderate', id: b.dataset.mod, status: b.dataset.status });
   else if (b.dataset.answered) act({ type: 'answered', id: b.dataset.answered });
   else if (b.hasAttribute('data-approve-all')) act({ type: 'approveAll' });
-  else if (b.hasAttribute('data-chat-mode')) act({ type: 'chatMode', on: !view.chatMode });
   else if (b.hasAttribute('data-reset')) {
     // A deliberate second click instead of a browser dialog.
     if (b.dataset.armed) {

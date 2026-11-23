@@ -1,6 +1,7 @@
 // The audience app: what a phone shows after scanning the QR code.
 // No sign-up, no names: each phone gets a random id kept in the browser.
 
+import { applyBrand, logoHtml } from './brand.js';
 import { connect, deviceId, esc, send } from './net.js';
 import { morph } from './morph.js';
 
@@ -42,7 +43,6 @@ async function act(action, where, success) {
 // Which screen to show. When the key changes, the screen is rebuilt;
 // otherwise it is patched in place.
 function screenKey(v) {
-  if (v.chatMode) return 'chat';
   const i = v.interaction;
   if (v.slideKind === 'questions') return 'questions';
   if (!i) return 'wait';
@@ -61,7 +61,7 @@ function screenKey(v) {
 }
 
 function needsAction(v) {
-  return !v.chatMode && !!v.interaction && v.interaction.canVote;
+  return !!v.interaction && v.interaction.canVote;
 }
 
 function format(v) {
@@ -88,9 +88,6 @@ function askForm(id = 'ask') {
 
 function build(key, v) {
   const i = v.interaction;
-  if (key === 'chat') {
-    return '<div class="j-center"><h1>We are using the chat</h1><p class="j-muted">Today you answer in the chat of the call. Keep an eye on the screen.</p></div>';
-  }
   if (key === 'ready') {
     return '<div class="j-center"><div class="j-dot"></div><h1>Get ready</h1><p class="j-muted">A question is coming. It will appear here.</p></div>';
   }
@@ -193,7 +190,7 @@ function render() {
   }
   update(key, view);
   document.body.classList.toggle('j-your-turn', needsAction(view));
-  askButton.hidden = key === 'questions' || key === 'chat';
+  askButton.hidden = key === 'questions';
 }
 
 main.addEventListener('click', async (e) => {
@@ -264,12 +261,12 @@ async function start() {
   try {
     const r = await fetch('/api/talk', { cache: 'no-store' });
     const t = await r.json();
-    document.documentElement.style.setProperty('--accent', t.meta.accent);
-    document.documentElement.dataset.theme = t.meta.theme;
+    applyBrand(t.meta);
     document.title = t.meta.title;
+    document.querySelector('[data-logo]').innerHTML = logoHtml(t.meta);
     document.querySelector('[data-title]').textContent = t.meta.title;
   } catch {
-    // The talk title is only decoration.
+    // The title and branding are only decoration.
   }
   send({ type: 'join' }, { device: DEVICE });
   connect({

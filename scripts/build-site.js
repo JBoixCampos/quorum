@@ -63,6 +63,8 @@ function docLink(from) {
     if (/^(https?:|mailto:|#)/.test(link)) return link;
     const [path, fragment] = link.split('#');
     const repoPath = posix.normalize(posix.join('docs', path));
+    // Screenshots and other images are copied to the same place.
+    if (repoPath.startsWith('docs/images/')) return href(from, repoPath);
     const doc = DOCS.find((d) => `docs/${d.file}` === repoPath);
     if (doc) return href(from, docPath(doc) + (fragment ? `#${fragment}` : ''));
     const example = repoPath.match(/^examples\/components\/([\w-]+)\.js$/);
@@ -172,8 +174,7 @@ function demoSlide(from, n) {
   return `<div class="side-by-side">
   <pre><code class="language-markdown">${escapeHtml(shown)}</code></pre>
   <figure>
-    <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${n - 1}" title="Slide ${n} of the demo talk, live" loading="lazy"></iframe></div>
-    <figcaption>Slide ${n} of the demo talk, live, with 24 simulated people.</figcaption>
+    <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${n - 1}" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
   </figure>
 </div>`;
 }
@@ -411,7 +412,7 @@ function buildLlms() {
 
 > Quorum is an open-source toolkit for presentations where the audience takes part. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components. People answer from their phones through a QR code, and everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
 
-To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
+Install with \`npm install -g github:JBoixCampos/quorum\` (Node.js 18 or newer). To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
 
 ## Docs
 
@@ -423,10 +424,11 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
 - [Demo talk source](${BLOB}examples/demo/talk.md): seven slides, one feature each
 - [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
+- [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
 ## Optional
 
-- [Agent skill](${BLOB}agents/quorum/SKILL.md): create, check and rehearse a talk
+- [Agent skill](${BLOB}agents/quorum/SKILL.md): write and check a talk, and build components for it
 - [AGENTS.md](${BLOB}AGENTS.md): for agents working on Quorum itself
 - [Source code](${REPO})
 `;
@@ -435,6 +437,7 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
     'examples/components/word-cloud.js',
     'templates/starter/components/counter.js',
     'templates/starter/talk.md',
+    'examples/brand/talk.md',
   ].map((f) => `${'='.repeat(72)}\nFile: ${f}\n${'='.repeat(72)}\n\n${read(f).trim()}\n`);
   const full = `# Quorum: the full reference
 
@@ -453,6 +456,7 @@ rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 cpSync(join(ROOT, 'site'), OUT, { recursive: true });
 cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
+cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'demo'), '--out', join(OUT, 'demo')], { stdio: 'inherit' });
 // The playground renders through the demo build: give it every example.

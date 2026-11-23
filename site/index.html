@@ -19,23 +19,9 @@
       <p class="lede">Write your talk in Markdown. People scan a QR code and vote, guess, write and ask from their phones, and the results land on your slides as they arrive. It all runs from your laptop.</p>
       <div class="actions">
         <div class="install"><code id="install-command">npm install -g github:JBoixCampos/quorum</code><button type="button" class="copy" data-copy="#install-command">Copy</button></div>
-        <a class="play" href="#demo">Play the demo</a>
+        <a class="play" href="#write">Write a slide</a>
       </div>
     </div>
-
-    <section id="demo">
-      <div class="wrap">
-        <h2>This is a real talk. Give it.</h2>
-        <p class="intro">Seven slides, two minutes, 24 simulated people in the room. Click the slide or use the arrow keys. On a slide with a question, the first click opens voting and the next one closes it.</p>
-        <div class="screen">
-          <iframe src="demo/" title="Demo talk: How does an AI write?" loading="lazy"></iframe>
-        </div>
-        <div class="under">
-          <span>On stage, the people are real: they join by scanning the code in the corner.</span>
-          <a href="demo/">Open the demo full screen</a>
-        </div>
-      </div>
-    </section>
 
     <section id="write">
       <div class="wrap">
@@ -53,7 +39,7 @@ The queue is long for a reason.
         </div>
         <div class="under">
           <span>This is the same code that runs your talk, in your browser.</span>
-          <a href="playground/">Open the full playground</a>
+          <span><a href="playground/">Open the full playground</a> &middot; <a href="demo/">Play a demo talk</a></span>
         </div>
         <div class="blocks">
           <div><h3><code>poll</code> and <code>multi</code></h3><p>Live bars. Mark a right answer and it stays hidden until you reveal it.</p></div>
@@ -67,11 +53,57 @@ The queue is long for a reason.
       </div>
     </section>
 
+    <section id="brand">
+      <div class="wrap">
+        <h2>Your slides, your brand</h2>
+        <p class="intro">Colours, logo, fonts, footer and backgrounds are a few lines at the top of <code>talk.md</code>. Phones follow the same brand, and a stylesheet of your own covers anything else.</p>
+        <div class="brand-demo">
+<pre><span class="k">---</span>
+title: Harbor Labs roadmap
+background: "#0f1b2d"
+primary: "#ffffff"
+accent: "#ffb703"
+secondary: "#8ecae6"
+logo: images/logo.svg
+font: Georgia, serif
+footer: Harbor Labs · {section} | {n} / {total}
+<span class="k">---</span>
+
+<span class="c">&lt;!-- background: images/team.jpg, dim --&gt;</span>
+<span class="c">&lt;!-- footer: off --&gt;</span></pre>
+          <img src="docs/images/brand.png" alt="The same kind of poll with the Harbor Labs brand: dark blue background, yellow bars, serif titles, a logo and a custom footer" width="1600" height="900" loading="lazy">
+        </div>
+        <p style="margin-top:24px"><a href="docs/format/#your-brand">Every brand setting</a> &middot; <a href="https://github.com/JBoixCampos/quorum/tree/main/examples/brand">The example talk</a></p>
+      </div>
+    </section>
+
+    <section id="views">
+      <div class="wrap">
+        <h2>One talk, three views</h2>
+        <p class="intro"><code>quorum live</code> opens two windows on your laptop. You share the presentation, keep the panel to yourself, and everyone in the room answers on their phone. All three stay in sync.</p>
+        <div class="views">
+          <figure>
+            <img src="docs/images/screen.png" alt="The shared screen during a poll: live bars, 23 answers, and a QR code in the corner" width="1600" height="900" loading="lazy">
+            <figcaption><strong>What the room sees</strong>The presentation window, shared on a projector or in a call. Results land as they arrive.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/images/panel.png" alt="The presenter panel: a clickable preview, the next slides, notes, vote counts and questions waiting for approval" width="1600" height="820" loading="lazy">
+            <figcaption><strong>What you see</strong>Your panel: a clickable preview, the next slides, your notes, the clock and the questions to approve.</figcaption>
+          </figure>
+          <figure>
+            <img src="docs/images/phone.png" alt="A phone showing the same poll with three options to tap" width="390" height="600" loading="lazy">
+            <figcaption><strong>What each phone sees</strong>Only the question of the moment, after scanning the QR code. No app, no account.</figcaption>
+          </figure>
+        </div>
+        <p style="margin-top:24px"><a href="docs/giving-a-talk/">How to give a talk</a></p>
+      </div>
+    </section>
+
     <section>
       <div class="wrap split">
         <div>
           <h2>Build what nobody has built yet</h2>
-          <p class="intro">Add <code>audience:</code> to a component and every phone gets a text box, a number field or a list of options. Your code gets the answers. Quorum handles the rest: opening and closing, the QR code, rehearsal with simulated answers, the chat fallback, and keeping your screen and your panel in sync.</p>
+          <p class="intro">Add <code>audience:</code> to a component and every phone gets a text box, a number field or a list of options. Your code gets the answers. Quorum handles the rest: opening and closing, the QR code, one answer per phone, simulated answers in the preview, and keeping your screen and your panel in sync.</p>
           <p class="intro">The examples include a word cloud and a next-word explorer that asks a language model running on your own laptop for its ten most likely words, so the room can watch it think.</p>
           <p><a href="docs/components/">How components work</a> &middot; <a href="examples/">See the examples</a></p>
         </div>
@@ -97,22 +129,22 @@ export default {
     <section id="agents">
       <div class="wrap split">
         <div>
-          <h2>Built for agents</h2>
-          <p class="intro">The audience takes part as people: live, in the room, from their phones. The talk is plain text and small JavaScript files. So you can build it the way you build code today: ask your AI agent, rehearse it, and ask for changes.</p>
+          <h2>Your agent writes it. You give it.</h2>
+          <p class="intro">A talk is a Markdown file and a few small JavaScript files, so an AI agent can write it, check it and build new interactions for it, the way it edits code. You watch it take shape in <code>quorum preview</code>, ask for changes, and give it to a real room.</p>
           <ul class="checklist">
+            <li><strong>Set up once.</strong> Install Quorum where the agent works, then <code>quorum skill</code> teaches Claude Code the format in every folder (<code>--to</code> for other agents).</li>
             <li><strong>A talk folder knows the rules.</strong> <code>quorum new</code> adds an <code>AGENTS.md</code> that tells an agent the format, the commands and what not to touch.</li>
             <li><strong>The docs fit in one file.</strong> Point any agent at <a href="llms-full.txt">llms-full.txt</a>, or at the short index in <a href="llms.txt">llms.txt</a>.</li>
             <li><strong>It can check its own work.</strong> <code>quorum check --json</code> lists every problem with its slide, and fails until there are none.</li>
-            <li><strong>A ready-made skill</strong> in <a href="https://github.com/JBoixCampos/quorum/blob/main/agents/quorum/SKILL.md">agents/quorum/SKILL.md</a> teaches an agent to create, check and rehearse a talk.</li>
           </ul>
-          <p style="margin-top:24px"><a href="docs/agents/">How to work with an agent</a></p>
+          <p style="margin-top:24px"><a href="docs/agents/">Set up your agent, step by step</a></p>
         </div>
         <div>
           <div class="prompt">
             <p id="agent-prompt">Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll, an estimate with a reveal, a word cloud and a questions slide. Run quorum check --json until it reports no warnings.</p>
             <button type="button" class="button" data-copy="#agent-prompt">Copy the prompt</button>
           </div>
-          <p class="intro" style="margin:0;font-size:16px">Paste it into Claude Code or any coding agent, in a folder where Quorum is installed. Change the topic and the blocks to suit your talk.</p>
+          <p class="intro" style="margin:0;font-size:16px">Paste it into Claude Code or any coding agent once Quorum is installed. Change the topic, the blocks and the brand to suit your talk.</p>
         </div>
       </div>
     </section>
@@ -126,14 +158,26 @@ export default {
             <p>One command starts it, opens a public link through a tunnel and puts the QR code on your slides. Votes stay in your talk folder until you delete them.</p>
           </div>
           <div>
-            <h3>Rehearse alone</h3>
-            <p>Rehearsal mode fills the room with simulated people, so you can time every vote before the day. The panel shows your notes, the next slides and your pace.</p>
+            <h3>Anonymous by design</h3>
+            <p>No names, no sign-up, no app. Each phone gets a random id so it votes once. Your notes and the right answers never reach the phones before you reveal them.</p>
           </div>
           <div>
-            <h3>A plan B built in</h3>
-            <p>If the link fails or the audience is on a call, press B. Phones are told to use the chat, and you click the options to count what you read there.</p>
+            <h3>Ready for any room</h3>
+            <p>No public link? People on the same wifi still join. Nobody can join at all? <code>quorum export</code> gives you the same talk without the audience slides.</p>
           </div>
         </div>
+      </div>
+    </section>
+    <section id="start">
+      <div class="wrap">
+        <h2>Start in three commands</h2>
+        <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer. Then, in a terminal:</p>
+<pre><span class="k">npm install -g github:JBoixCampos/quorum</span>
+
+quorum new my-talk        <span class="c"># a starter talk that shows every feature</span>
+quorum preview my-talk    <span class="c"># see it with a simulated audience while you edit talk.md</span>
+quorum live my-talk       <span class="c"># give it: public link, QR code, your panel</span></pre>
+        <p style="margin-top:24px"><a href="docs/">Read the docs</a> &middot; <a href="docs/giving-a-talk/">Giving a talk</a> &middot; <a href="docs/agents/">Built for agents</a></p>
       </div>
     </section>
   </main>

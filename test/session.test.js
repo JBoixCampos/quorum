@@ -138,15 +138,10 @@ test('questions: moderated, voted, highlighted', () => {
   assert.equal(s.screenView().questions[0].answered, true);
 });
 
-test('chat votes and undo', () => {
-  const s = new Session(TALK);
-  s.apply({ type: 'stage', slide: 1 }, P);
-  s.apply({ type: 'control', id: 'lie', action: 'phase', phase: 1 }, P);
-  s.apply({ type: 'chatVote', id: 'lie', value: 'B' }, P);
-  s.apply({ type: 'chatVote', id: 'lie', value: 'B' }, P);
-  assert.equal(s.screenView().interaction.counts.B, 2);
-  s.apply({ type: 'chatUndo' }, P);
-  assert.equal(s.screenView().interaction.counts.B, 1);
+test('state saved with a chat mode by older versions still loads', () => {
+  const s = new Session(TALK, { chatMode: true, chat: { n: 2, stack: [] } });
+  assert.equal(s.toJSON().chatMode, undefined);
+  assert.ok(!s.apply({ type: 'chatVote', id: 'lie', value: 'B' }, P).ok);
 });
 
 test('saved state survives a reload', () => {

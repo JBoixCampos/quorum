@@ -166,22 +166,8 @@ try {
   await phones[1].click('[data-up]');
   check('others can vote for it', await until(async () => (await present.textContent('.q-votes')) === '1'));
 
-  // Chat mode
-  await goTo(2);
-  await panel.click('[data-chat-mode]');
-  check('chat mode tells phones to use the chat', await until(() => phones[0].$('text=We are using the chat')));
-  await present.click('[data-do="reset"]').catch(() => {});
-  await until(async () => (await present.isVisible('[data-do="open"]')));
-  await present.click('[data-do="open"]');
-  await until(() => present.isVisible('[data-chat]'));
-  await present.click('.q-bar[data-option="Coffee"] .q-bar-label');
-  await present.click('.q-bar[data-option="Coffee"] .q-bar-label');
-  check('clicking options adds votes read in the chat', await until(async () => (await present.textContent('.q-ring b')) === '2'));
-  await present.click('[data-do="chatUndo"]');
-  check('the last chat vote can be undone', await until(async () => (await present.textContent('.q-ring b')) === '1'));
-  await panel.click('[data-chat-mode]');
-
   // Thumbnails
+  await goTo(2);
   check('thumbnails show this slide and the next two', await until(async () => {
     const ids = await panel.$$eval('[data-thumb] iframe', (fs) => fs.map((f) => {
       const t = f.contentDocument && f.contentDocument.querySelector('.q-question, h1, h2');
@@ -242,14 +228,21 @@ prompt: One word
   // The state is saved
   check('the session is saved to disk', await until(() => readFileSync(join(dir, '.quorum', 'state.json'), 'utf8').includes('Can I use this at work?')));
 
-  // Rehearsal mode works on its own
-  const rehearse = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  rehearse.on('pageerror', (e) => errors.push(`rehearse: ${e.message}`));
-  await rehearse.goto(`${base}/present?rehearse=1`);
-  await until(() => rehearse.$('.q-slide h1'));
-  await rehearse.evaluate(() => window.quorum.go(2, 0));
-  await rehearse.keyboard.press('ArrowRight');
-  check('rehearsal: the simulated audience votes', await until(async () => Number(await rehearse.textContent('.q-ring b')) > 3, 8000));
+  // A live server never gives the whole talk (notes, answers) to phones
+  const leaked = await (await fetch(`${base}/api/talk?preview=1`)).json();
+  check('phones cannot read the notes and answers', !leaked.slides);
+  check('nor the talk file itself', (await fetch(`${base}/talk/talk.md`)).status === 404);
+
+  // quorum preview: the talk with a simulated audience
+  const previewServer = await startServer({ talkDir: dir, port: 0, key: 'testkey', preview: true, log: () => {} });
+  const preview = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  preview.on('pageerror', (e) => errors.push(`preview: ${e.message}`));
+  await preview.goto(previewServer.urls.preview);
+  await until(() => preview.$('.q-slide h1'));
+  await preview.evaluate(() => window.quorum.go(2, 0));
+  await preview.keyboard.press('ArrowRight');
+  check('preview: the simulated audience votes', await until(async () => Number(await preview.textContent('.q-ring b')) > 3, 8000));
+  await previewServer.close();
 
   check('no errors in any page', errors.length === 0, errors.slice(0, 3).join(' | '));
 } finally {

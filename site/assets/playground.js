@@ -156,14 +156,13 @@ function setup(root) {
       ready = true;
       send();
     } else if (data.type === 'quorum:parsed') {
-      const where = `Slide ${data.slide + 1} of ${data.slides}.`;
       const hint = 'Click the slide or focus it and press → to open voting: 24 simulated people answer.';
       status.classList.toggle('warn', data.warnings.length > 0);
       if (data.warnings.length) {
         const items = data.warnings.map((w) => `<li>${w.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`).join('');
-        status.innerHTML = `${where} Things to check:<ul>${items}</ul>`;
+        status.innerHTML = `Things to check:<ul>${items}</ul>`;
       } else {
-        status.textContent = `${where} ${hint}`;
+        status.textContent = hint;
       }
     }
   });

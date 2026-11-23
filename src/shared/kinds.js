@@ -1,7 +1,7 @@
 // The interaction kinds a talk can use. Each kind says how its state
 // starts, which votes are valid, what the presenter can do, and how its
 // results are summarised. The same code runs on the server and in the
-// browser (rehearsal mode), so a rehearsal behaves exactly like the talk.
+// browser (previews), so a preview behaves exactly like the talk.
 
 const ok = (extra = {}) => ({ ok: true, ...extra });
 const fail = (error) => ({ ok: false, error });
@@ -273,7 +273,7 @@ const sentence = {
 };
 
 // Input: what a component asks the audience. The component draws the
-// results however it likes; Quorum handles phones, phases and rehearsal.
+// results however it likes; Quorum handles phones, phases and previews.
 const SAMPLE_WORDS = ['curious', 'excited', 'tired', 'hopeful', 'sceptical', 'hungry', 'curious', 'excited'];
 
 const input = {

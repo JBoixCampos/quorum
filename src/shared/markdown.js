@@ -5,6 +5,8 @@
 // The parser has no dependencies and runs both in Node (the server needs
 // the interaction definitions to validate votes) and in the browser.
 
+import { isDark } from './color.js';
+
 const INTERACTIONS = new Set(['poll', 'multi', 'estimate', 'rounds', 'sentence', 'questions']);
 const LAYOUTS = new Set(['columns', 'center', 'stat', 'callout']);
 
@@ -57,12 +59,86 @@ function frontMatter(lines) {
     if (end > 0) {
       lines.slice(1, end).forEach((l) => {
         const m = l.match(/^\s*([A-Za-z][\w-]*)\s*:\s*(.*)$/);
-        if (m) meta[m[1]] = unquote(m[2].trim());
+        // "key: value   # a comment": the comment is dropped.
+        if (m) meta[m[1]] = unquote(m[2].replace(/\s+#\s.*$/, '').trim());
       });
       return { meta, rest: lines.slice(end + 1) };
     }
   }
   return { meta, rest: lines };
+}
+
+// A CSS colour: #hex, a name (navy) or rgb()/hsl().
+const COLOR = /^(#[0-9a-f]{3,8}|[a-z]{3,20}|(rgb|hsl)a?\([\d\s.,%/]+\))$/i;
+
+// A file in the talk folder: a relative path, never outside it.
+export function isLocalPath(p) {
+  return typeof p === 'string' && /^[^\s"'()<>\\:]+$/.test(p) && !p.startsWith('/') && !p.split('/').includes('..');
+}
+
+const FONT_FILE = /\.(woff2?|ttf|otf)$/i;
+
+// The branding settings of the front matter, checked. `warn` gets a
+// message for each value that cannot be used.
+function brand(meta, warn) {
+  const color = (key, fallback = '') => {
+    const v = meta[key];
+    if (v === undefined || v === '') return fallback;
+    if (COLOR.test(v)) return v;
+    warn(`The ${key} colour "${v}" is not a colour. Use #hex, a name or rgb().`);
+    return fallback;
+  };
+  const file = (key) => {
+    const v = meta[key];
+    if (!v) return '';
+    if (isLocalPath(v)) return v.replace(/^\.\//, '');
+    warn(`The ${key} "${v}" must be a file in the talk folder, like images/logo.svg.`);
+    return '';
+  };
+  // A font is a CSS font-family, or a font file in the talk folder.
+  const font = (key) => {
+    const v = meta[key] || '';
+    if (!FONT_FILE.test(v)) return { family: v, file: '' };
+    return { family: '', file: file(key) };
+  };
+  const display = font('font');
+  const text = font('text-font');
+  return {
+    accent: color('accent', '#ff6a00'),
+    primary: color('primary'),
+    secondary: color('secondary'),
+    background: color('background'),
+    text: color('text'),
+    logo: file('logo'),
+    style: file('style'),
+    font: display.family,
+    fontFile: display.file,
+    textFont: text.family,
+    textFontFile: text.file,
+  };
+}
+
+// The footer: "left | right", with {title}, {author}, {section}, {n} and
+// {total}. Null when it is turned off.
+export const DEFAULT_FOOTER = '{title} | {n} / {total}';
+
+function footer(value) {
+  const v = value === undefined ? DEFAULT_FOOTER : String(value).trim();
+  if (!v || /^(off|none)$/i.test(v)) return null;
+  const bar = v.indexOf('|');
+  const [left, right] = bar < 0 ? [v, ''] : [v.slice(0, bar), v.slice(bar + 1)];
+  return { left: inline(left.trim()), right: inline(right.trim()) };
+}
+
+// A slide background: <!-- background: images/photo.jpg, dim --> or a colour.
+function slideBackground(value, warn) {
+  if (!value) return null;
+  const [what, ...flags] = value.split(',').map((x) => x.trim());
+  const dim = flags.includes('dim');
+  if (COLOR.test(what)) return { color: what, image: '', dim };
+  if (isLocalPath(what)) return { color: '', image: what.replace(/^\.\//, ''), dim };
+  warn(`the background "${what}" is not a colour or a file in the talk folder.`);
+  return null;
 }
 
 function unquote(v) {
@@ -483,6 +559,10 @@ export function parseTalk(source) {
       html,
       steps: p.step + 1,
       layout: p.attrs.layout || '',
+      background: slideBackground(p.attrs.background, (m) => warnings.push(`Slide ${index + 1}: ${m}`)),
+      logo: p.attrs.logo !== 'off',
+      // "on", "off" or "" (the default: everywhere but the first slide).
+      footer: ['on', 'off'].includes(p.attrs.footer) ? p.attrs.footer : '',
       notes: p.notes.join('\n\n'),
       interaction: p.interactions[0] || null,
       components: p.components,
@@ -501,13 +581,23 @@ export function parseTalk(source) {
     meta: {
       title: meta.title || (slides[0] && slides[0].title) || 'Untitled talk',
       author: meta.author || '',
-      accent: /^#[0-9a-f]{3,8}$/i.test(meta.accent || '') ? meta.accent : '#ff6a00',
-      theme: meta.theme === 'dark' ? 'dark' : 'light',
+      // Without a theme, a dark background makes it dark.
+      theme: (meta.theme ? meta.theme === 'dark' : isDark(meta.background)) ? 'dark' : 'light',
       lang: meta.lang || 'en',
       duration: number(meta.duration, null),
-      font: meta.font || '',
+      ...brand(meta, (m) => warnings.push(m)),
+      footer: footer(meta.footer),
     },
     slides,
     warnings,
   };
+}
+
+// Slides only: none where the audience answers. Slides with a join block
+// stay (it is often the title slide); the presentation hides the block.
+export function withoutAudience(talk) {
+  const slides = talk.slides
+    .filter((slide) => !slide.interaction)
+    .map((slide, index) => ({ ...slide, index, join: false }));
+  return { ...talk, slides };
 }

@@ -1,6 +1,6 @@
 // A small Markdown renderer for the documentation pages. It covers what
 // docs/*.md uses: headings, paragraphs, lists, tables, fenced code, inline
-// code, links, bold and emphasis. It has no dependencies on purpose.
+// code, images, links, bold and emphasis. It has no dependencies on purpose.
 
 export function escapeHtml(text) {
   return String(text)
@@ -29,6 +29,9 @@ export function inline(text, link = (href) => href) {
   };
   let s = String(text);
   s = s.replace(/`([^`]+)`/g, (_, code) => hold(`<code>${escapeHtml(code)}</code>`));
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => hold(
+    `<img src="${escapeHtml(link(src))}" alt="${escapeHtml(alt)}" loading="lazy">`,
+  ));
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
     const target = link(href);
     const external = /^https?:/.test(target);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -69,6 +69,37 @@ test('check --json without a talk file still prints JSON', () => {
     assert.equal(status, 1);
     assert.equal(result.ok, false);
     assert.match(result.warnings[0], /No talk\.md/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('check warns about missing logo, background and image files', () => {
+  const dir = talkFolder([
+    '---', 'logo: images/logo.svg', 'style: brand.css', '---', '',
+    '<!-- background: images/photo.jpg, dim -->', '# Hi', '', '![A cat](images/cat.jpg)',
+    '', '![Remote](https://example.com/a.png)', '',
+  ].join('\n'));
+  try {
+    writeFileSync(join(dir, 'brand.css'), 'h1 { color: red; }\n');
+    const result = checkTalk(dir);
+    assert.deepEqual(result.warnings, [
+      'The logo file images/logo.svg does not exist.',
+      'Slide 1: the background images/photo.jpg does not exist.',
+      'Slide 1: the image images/cat.jpg does not exist.',
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('quorum skill copies the agent skill into a skills folder', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'quorum-skill-'));
+  try {
+    const r = spawnSync(process.execPath, [CLI, 'skill', '--to', dir], { encoding: 'utf8' });
+    assert.equal(r.status, 0);
+    const skill = readFileSync(join(dir, 'quorum', 'SKILL.md'), 'utf8');
+    assert.match(skill, /^---\nname: quorum\n/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

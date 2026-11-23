@@ -2,7 +2,7 @@
 
 ## Before the day
 
-1. **Rehearse with the simulated audience.** `quorum rehearse my-talk` fills the room with simulated people who join, vote and ask questions. Go through the whole talk at least once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
+1. **Go through it with the preview.** `quorum preview my-talk` shows the talk with 24 simulated people who join, vote and ask questions, so every slide looks the way it will with a room. Click through it once with a clock: votes take longer than you think (count on 30 to 60 seconds each).
 2. **Run `quorum check my-talk`.** It lists anything that looks wrong in `talk.md`.
 3. **Install cloudflared** for the public link: `winget install --id Cloudflare.cloudflared` on Windows, `brew install cloudflared` on a Mac, or see [Cloudflare's downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/). ngrok works too. Without either, only people on the same network as your laptop can join.
 4. **Do a test run with a real phone**, on mobile data rather than your wifi: `quorum live my-talk`, scan the QR code, vote once, then `quorum clean my-talk`.
@@ -14,11 +14,27 @@
 quorum live my-talk
 ```
 
-This prints three things:
+It opens two windows on your laptop and prints the audience link, the one in the QR code. That gives three views of the same talk, always in sync.
 
-- **Presentation**: opens in its own window. Share or project this window, and only this one.
-- **Panel**: opens in your browser. This is for you: preview, notes, next slides, time, people and questions.
-- **Audience link**: what the QR code points to.
+### What the room sees: the presentation
+
+It opens in its own window. Share or project this window, and only this one. The QR code stays in the corner whenever the audience can answer, so latecomers can still join.
+
+![The presentation during a poll: live bars, 23 answers and a QR code in the corner](images/screen.png)
+
+### What you see: the panel
+
+It opens in your browser and is only for you: a clickable preview of the presentation, the next slides, your notes, the clock against your plan, how many people are in, the votes so far, and the questions waiting for your approval. Never share it: its link contains the presenter key.
+
+![The panel: preview, next slides, notes, vote counts and two questions waiting for approval](images/panel.png)
+
+### What each phone sees
+
+After scanning the QR code, a phone shows only what the room is asked right now, and a button to ask a question. No app, no account, no name.
+
+![A phone showing the poll with three options to tap](images/phone.png)
+
+### Driving the talk
 
 Drive the talk from either window. In the panel, click the preview or use the arrow keys; in the presentation, use the keyboard or a clicker.
 
@@ -29,7 +45,6 @@ Drive the talk from either window. In the panel, click the preview or use the ar
 | Home / End | First / last slide |
 | N | Speaker notes on the presentation (only if you are not sharing it) |
 | F | Full screen |
-| B | Chat mode on and off |
 
 Clicking the right part of the presentation also moves forward; clicking the left third goes back.
 
@@ -41,21 +56,15 @@ On a call with one monitor, share the presentation window and keep the panel in 
 
 People can ask at any time from the button on their phone. New questions wait in the panel until you approve them (or approve all). On the questions slide, click one to highlight it while you answer, and click again to mark it as answered.
 
-## Plan B: chat mode
+## If people cannot join
 
-If the public link fails, or the audience cannot scan anything (a webinar, people on their phones already), press **B** or "Switch to chat mode" in the panel:
-
-- Phones are told to use the chat of the call.
-- Open voting as usual, read the answers in the chat, and click the options on the presentation to add each vote. Numbers and words are typed into a box.
-- "Undo" removes the last vote you added.
-
-If you already know there will be no link, start with `quorum offline my-talk`.
-
-If the tunnel stops in the middle of a talk, the terminal says so. Press B and carry on.
+- **The public link stops**: the terminal says so, and the QR code switches to your laptop's address on the local network, so people on the same wifi can still join. For a new public link, press Ctrl+C and run `quorum live my-talk` again. Votes and questions are kept.
+- **No internet, but one network**: `quorum live my-talk --no-tunnel`, and everyone joins on the same wifi as your laptop.
+- **Nobody can join at all**: give the talk without the audience. `quorum export my-talk` makes a copy with only the slides nobody answers (the QR code is left out too), in `my-talk/export`. Present it from any static web server, for example `python3 -m http.server -d my-talk/export`, and open the address it prints. Make one before the day, just in case.
 
 ## After the talk
 
-- The results stay in `my-talk/.quorum/state.json` until you delete them. Export what you need (the panel shows every question), then run `quorum clean my-talk`.
+- The results stay in `my-talk/.quorum/state.json` until you delete them. Copy what you need (the panel shows every question), then run `quorum clean my-talk`.
 - `quorum clean my-talk --key` also creates a new presenter key next time.
 - To share a playable version of the talk afterwards, `quorum build my-talk` makes a static site that anyone can open and click through with a simulated audience. It contains your slides and components, never the votes or questions.
 
