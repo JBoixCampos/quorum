@@ -101,6 +101,7 @@ A talk should look good, not only work. Quorum gives an agent what it needs to g
 | `quorum check --visual --json` | Also measures every slide in a browser, with its results shown: a slide that does not fit is a warning |
 | `quorum snapshot` | A picture of every slide in `.quorum-snapshots/`, and `contact.png` with the whole talk on one image. An agent that can see images looks at it the way the speaker will |
 | `quorum theme from logo.svg` | Colours and a theme from the speaker's logo |
+| `quorum diff main --json` | The slides that changed since a branch, tag or commit; `--pictures` saves before and after pictures. See [Working in a repository](repository.md) |
 | `quorum export --pptx` | An editable PowerPoint file (also `--pdf`). Slides where the audience answers become a placeholder that points to Quorum; `--results` puts the real votes in. See [PowerPoint and PDF](powerpoint.md) |
 
 `--visual`, `snapshot` and `export --pptx` need Playwright: `npm install --no-save playwright && npx playwright install chromium`.

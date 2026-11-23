@@ -24,7 +24,9 @@ import { INSTALL_PLAYWRIGHT, overflowIssues, renderTalk } from '../src/cli/visua
 import { schema } from '../src/shared/design.js';
 import { ICONS } from '../src/shared/icons.js';
 import { readTalk } from '../src/cli/load.js';
+import { cleanup, describe, diffPictures, diffTalk } from '../src/cli/diff.js';
 import { exportTalk } from '../src/cli/pptx/export.js';
+import { joinTalk, mergeText, mergeTalks, setupRepo, splitTalk } from '../src/cli/repo.js';
 import { INSTALL, findChromium, openAppWindow, openUrl, startTunnel } from '../src/cli/system.js';
 import { startServer } from '../src/server/server.js';
 import { withoutAudience } from '../src/shared/markdown.js';
@@ -59,6 +61,10 @@ Usage:
   quorum schema              List themes, layouts, blocks, classes and icons
   quorum theme new <name>    Save this talk's look as themes/<name>.yaml
   quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
+  quorum split [folder]      One file per slide in slides/ (merges better in git)
+  quorum join [folder]       The reverse: slides/ back into one talk.md
+  quorum diff [rev] [folder] Which slides changed since a branch, tag or commit (--pictures, --json)
+  quorum repo [folder]       Set up git for this talk: merge driver, CI workflow
   quorum build [folder]      Build a static, playable copy (simulated audience)
   quorum export [folder]     The slides without the audience parts, if nobody can join
   quorum export --pptx       A PowerPoint file (--pdf for a PDF), with --results for the real votes
@@ -79,6 +85,8 @@ Options:
   --no-results    "snapshot" does not play the interactions
   --save <name>   "theme from" also writes themes/<name>.yaml
   --to <folder>   Where "skill" installs (default ~/.claude/skills)
+  --pictures      "diff" saves before and after pictures of the changed slides (needs Playwright)
+  --repo          "new" also sets up git: merge driver, CI workflow
   --pptx, --pdf   "export" writes a PowerPoint or PDF file (needs Playwright; --out is the file)
   --results       With --pptx or --pdf: show the votes of the last session, not empty questions
   --no-audience   With --pptx or --pdf: leave out the slides where the audience answers
@@ -131,7 +139,12 @@ function cmdNew(args) {
   // npm drops files named .gitignore when publishing, so it is stored as "gitignore".
   if (existsSync(join(dir, 'gitignore'))) cpSync(join(dir, 'gitignore'), join(dir, '.gitignore'));
   rmSync(join(dir, 'gitignore'), { force: true });
-  console.log(`Created ${dir}
+  let repoNote = '';
+  if (args.repo) {
+    const r = setupRepo(dir, { init: true });
+    repoNote = `\nRepository: ${r.done.join(', ') || 'already set up'}${r.driver ? '; slides now merge one by one' : ''}.`;
+  }
+  console.log(`Created ${dir}${repoNote}
 
 Next:
   1. Edit ${join(name, 'talk.md')} (it explains the format as it goes),
@@ -465,6 +478,81 @@ async function cmdExportFile(args) {
   if (pdf) console.log('The PDF has one picture per slide: text in it cannot be selected.');
 }
 
+function cmdSplit(args) {
+  const dir = talkDir(args);
+  ensureTalk(dir, talkFile(args));
+  try {
+    const { files } = splitTalk(dir, talkFile(args));
+    console.log(`Split ${talkFile(args)} into ${files.length} files in slides/:\n${files.map((f) => `  ${f}`).join('\n')}\nOne file per slide: two people or agents on two slides never touch the same file. Put new slides between others by numbering (015-new-idea.md), or list the order with "order:" in the front matter.`);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+function cmdJoin(args) {
+  const dir = talkDir(args);
+  ensureTalk(dir, talkFile(args));
+  try {
+    const { files } = joinTalk(dir, talkFile(args));
+    console.log(`Joined ${files.length} slide files into ${talkFile(args)} and removed them.`);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+// git calls this to merge talk.md: quorum merge-driver %O %A %B
+function cmdMergeDriver(args) {
+  const [, base, ours, theirs] = args._;
+  if (!base || !ours || !theirs) {
+    console.error('Usage: quorum merge-driver <base> <ours> <theirs> (git runs this; see `quorum repo`)');
+    process.exit(2);
+  }
+  const read = (f) => readFileSync(f, 'utf8');
+  let result = mergeTalks(read(base), read(ours), read(theirs));
+  if (result.text === null) result = mergeText(read(base), read(ours), read(theirs));
+  if (result.text === null) process.exit(1);
+  writeFileSync(ours, result.text.endsWith('\n') ? result.text : `${result.text}\n`);
+  process.exit(result.conflicts ? 1 : 0);
+}
+
+function cmdRepo(args) {
+  const dir = talkDir(args);
+  const r = setupRepo(dir, { init: false });
+  console.log(r.done.length ? `Added: ${r.done.join(', ')}` : 'The workflow and .gitattributes are already there.');
+  console.log(r.driver
+    ? 'Slides now merge one by one in this clone. Every other clone runs `quorum repo` once too.'
+    : 'This folder is not in a git repository yet: run `git init`, then `quorum repo` again to set the merge driver up.');
+}
+
+async function cmdDiff(args) {
+  // quorum diff [rev] [folder]
+  const rev = args._[1] || 'HEAD';
+  const dir = resolve(args._[2] || '.');
+  const file = talkFile(args);
+  ensureTalk(dir, file);
+  let d;
+  try {
+    d = diffTalk(dir, rev, { file });
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+  try {
+    const { oldDir, tmp, ...plain } = d;
+    if (args.json) console.log(JSON.stringify(plain, null, 2));
+    else console.log(describe(d));
+    if (args.pictures) {
+      const path = await diffPictures(dir, d, { out: resolve(args.out || join(dir, '.quorum-snapshots', 'diff')), file });
+      if (path) console.error(`Before and after pictures: ${path}`);
+      else if (d.changed.length + d.added.length + d.removed.length) console.error(`--pictures needs Playwright: ${INSTALL_PLAYWRIGHT}`);
+    }
+  } finally {
+    cleanup(d);
+  }
+}
+
 function cmdSkill(args) {
   const to = resolve(args.to || join(homedir(), '.claude', 'skills'), 'quorum');
   mkdirSync(to, { recursive: true });
@@ -485,6 +573,11 @@ async function main() {
     case 'check': await cmdCheck(args); break;
     case 'snapshot': await cmdSnapshot(args); break;
     case 'schema': cmdSchema(args); break;
+    case 'split': cmdSplit(args); break;
+    case 'join': cmdJoin(args); break;
+    case 'merge-driver': cmdMergeDriver(args); break;
+    case 'repo': cmdRepo(args); break;
+    case 'diff': await cmdDiff(args); break;
     case 'theme': cmdTheme(args); break;
     case 'clean': cmdClean(args); break;
     case 'skill': cmdSkill(args); break;

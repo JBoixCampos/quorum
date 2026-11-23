@@ -39,6 +39,7 @@ Every block works the same way: you write it in `talk.md`, phones get the right 
 - [The talk format](format.md): every block with examples, and [your brand](format.md#your-brand): colours, logo, fonts, footer, backgrounds.
 - [Design and themes](design.md): eight themes, layouts, cards, timelines, charts, icons, transitions, result looks, reactions, and the checks that keep a talk readable.
 - [PowerPoint and PDF](powerpoint.md): export a talk as an editable `.pptx`, with interactive slides as placeholders, or a report with the votes. A way to make PowerPoint decks with an agent.
+- [Working in a repository](repository.md): one file per slide, slide by slide merging, checks on every push, `quorum diff`, and agents working on branches.
 - [Components](components.md): build your own slide pieces in JavaScript, including one that uses a local language model.
 - [Giving a talk](giving-a-talk.md): the day itself, with screenshots of the three views (the shared screen, your panel, a phone), and what to do if people cannot join.
 - [Built for agents](agents.md): install Quorum where your agent works, teach it the format, and ask it to write, check and extend your talk.

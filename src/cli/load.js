@@ -88,6 +88,13 @@ export function readTalk(dir, file = 'talk.md', options = {}) {
   talk.split = parts.split;
   talk.folder = parts.folder;
   talk.sources = parts.files;
+  // In a split talk, "line 12" would be a line of the assembled text: say which file.
+  if (parts.split) {
+    talk.warnings = talk.warnings.map((w) => w.replace(/\b([Ll])ine (\d+)/, (match, l, n) => {
+      const at = locate(parts, Number(n));
+      return at.file ? `${at.file} line ${at.line}` : match;
+    }));
+  }
   talk.warnings.push(...parts.notes);
   talk.slides.forEach((slide) => {
     const seg = parts.segments.find((s) => slide.lines[0] >= s.from && slide.lines[0] <= s.to);

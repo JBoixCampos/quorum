@@ -59,6 +59,10 @@ Tell the user they can see the talk with `quorum preview <folder>`: it opens in 
 
 `quorum live <folder>` gives the talk to a real audience. That is the user's to run, not yours.
 
+### Working in a repository
+
+When the talk is in a git repository (other people or agents work on it too): work on a branch named after the task (`agent/yeast-chart`), pull first, make small commits, run `quorum check` before pushing, and never push to `main` unless told to. If the talk is split (`slides:` in the front matter, one file per slide in `slides/`), touch only the slide files for your task: a new slide is a new file, numbered with a gap (`025-new-idea.md`). After pushing, run `quorum diff main --pictures` and look at `.quorum-snapshots/diff/diff.png`. See docs/repository.md.
+
 ### A PowerPoint file
 
 When the user wants a `.pptx` (a deck to send, or a report), write the talk the same way, check it, look at `quorum snapshot`, then run `quorum export <folder> --pptx` (add `--safe-fonts` for a file going to unknown computers, `--no-audience` to leave out the slides where the audience answers). The text, shapes, tables and charts are native and editable. Slides with a poll become a panel that says PowerPoint cannot run it and points to Quorum. After a real talk, `--results` puts the votes in the file. Read the summary the command prints (fonts, parts that became pictures) and tell the user about it. See docs/powerpoint.md.

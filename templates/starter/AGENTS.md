@@ -18,6 +18,10 @@ quorum check --json
 
 It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits with a non-zero code while there are warnings. Fix every warning before you say the talk is done, then work through the suggestions. With Playwright installed, `quorum check --visual --json` also measures each slide in a browser, and `quorum snapshot` saves a picture of every slide (and `contact.png` with all of them) in `.quorum-snapshots/` for you to look at. For a PowerPoint file, run `quorum export --pptx` (needs Playwright; `--safe-fonts` for unknown computers, `--no-audience` to leave out the slides where the audience answers). The slides with a poll become a panel that points to Quorum. The speaker sees it with `quorum preview` (a simulated audience votes, and the slides update as you edit) and gives it with `quorum live`: those are theirs to run.
 
+## In a repository
+
+If other people or agents work on this talk through git: use one branch per task (`agent/short-name`), pull before you start, commit small, run `quorum check` before pushing, and do not push to `main` unless told to. A talk can be split into one file per slide (`slides: slides/` in the front matter): then touch only the slide files your task is about, and add a slide as a new file with a gap in the numbering (`025-new-idea.md`). `quorum diff main --pictures` shows what you changed, before and after. Never commit `.quorum/`.
+
 ## The format in short
 
 ```markdown

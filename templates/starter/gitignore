@@ -3,3 +3,5 @@
 dist/
 # Pictures from quorum snapshot
 .quorum-snapshots/
+# Exports (quorum export)
+export/

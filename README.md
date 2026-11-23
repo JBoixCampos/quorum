@@ -73,6 +73,8 @@ Plus the usual slide things: steps that appear one click at a time, columns, big
 
 **`quorum build`** turns a talk into a static site that anyone can click through, with the same simulated audience. The [demo](https://jboixcampos.github.io/quorum/demo/) is one. Add `?slide=3` to its address to open it on a given slide.
 
+**Teams and agents** work in a git repository, not in a shared editor: a talk can keep one file per slide (`quorum split`), `quorum new --repo` sets up slide by slide merging and a CI workflow, and `quorum diff main --pictures` shows what a branch changed. See [Working in a repository](docs/repository.md).
+
 **`quorum export --pptx`** writes an editable PowerPoint file (native text, shapes, tables and charts, notes, transitions) and `--pdf` a PDF. The slides where the audience answers become a panel that points to Quorum, or with `--results` a report with the votes. So an agent can use Quorum to make a PowerPoint deck even when nobody votes. See [PowerPoint and PDF](docs/powerpoint.md).
 
 **`quorum export`** without options is the fallback for when nobody can join: the same talk without the slides the audience answers, ready to present from any static web server.
@@ -139,6 +141,9 @@ quorum snapshot [folder]   A picture of every slide, and a contact sheet
 quorum schema              Every theme, layout, block, class and icon (--json, --icons)
 quorum theme new <name>    Save the talk's look as themes/<name>.yaml
 quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
+quorum split / join        One file per slide in slides/, and back
+quorum diff [rev]          Which slides changed since a branch, tag or commit (--pictures)
+quorum repo [folder]       Set up git for a talk: slide by slide merging, CI workflow
 quorum build [folder]      Build a static, playable copy (simulated audience)
 quorum export [folder]     The slides without the audience parts, if nobody can join
 quorum export --pptx       An editable PowerPoint file (--pdf for a PDF, --results for the votes)
@@ -147,7 +152,7 @@ quorum skill               Install the agent skill for Claude Code (--to <folder
 
 Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json
          --visual  --icons  --no-results  --save <name>  --to <folder>
-         --pptx  --pdf  --results  --no-audience  --safe-fonts
+         --pptx  --pdf  --results  --no-audience  --safe-fonts  --pictures  --repo
 ```
 
 ## Documentation
@@ -158,6 +163,7 @@ Read it on the website, [jboixcampos.github.io/quorum/docs](https://jboixcampos.
 - [The talk format](docs/format.md): every block, with examples
 - [Design and themes](docs/design.md): themes, layouts, visual blocks, charts, motion, result looks, reactions
 - [PowerPoint and PDF](docs/powerpoint.md): export a talk, or have an agent make a PowerPoint deck
+- [Working in a repository](docs/repository.md): teams and agents on branches, with one file per slide, merging and `quorum diff`
 - [Components](docs/components.md): build your own, including one that uses a local model
 - [Giving a talk](docs/giving-a-talk.md): the day itself, on stage or on a call
 - [Built for agents](docs/agents.md): ask an AI agent to write, check and extend your talk
