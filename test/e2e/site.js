@@ -92,8 +92,12 @@ try {
     return text.includes('simulated people') && !/Slide \d+ of/.test(text);
   }));
 
-  check('the hero shows Studio and the way to start', await page.isVisible('.hero .window img') && (await page.getAttribute('.hero .button.primary', 'href')).includes('quorum-talk/generate'));
-  check('the four steps are there', (await page.locator('.steps li').count()) === 4);
+  check('the hero shows the animation and the way to start', await page.isVisible('.hero [data-scene]') && (await page.getAttribute('.hero .button.primary', 'href')) === '#start');
+  check('the hero animation plays the steps in turn', await until(async () => (await page.getAttribute('[data-scene]', 'data-step')) === '2', 12000));
+  await page.click('[data-go="3"]');
+  check('and a step can be chosen', await until(async () => (await page.getAttribute('[data-scene]', 'data-step')) === '3' && (await page.textContent('[data-count]')) !== ''));
+  check('the three steps are there', (await page.locator('#how .row.step').count()) === 3);
+  check('getting started has three steps, with the commands', (await page.locator('.startsteps li').count()) === 3 && (await page.textContent('.startsteps')).includes('npm run studio'));
   await page.locator('[data-terminal]').scrollIntoViewIfNeeded();
   check('the agent session plays to the end once it is seen', await until(async () => (await page.locator('.terminal [data-line]:not(.shown)').count()) === 0, 10000));
   await page.locator('#try').scrollIntoViewIfNeeded();
@@ -151,7 +155,7 @@ try {
   // Every page loads, with the same header.
   for (const path of ['docs/', 'docs/components/', 'docs/giving-a-talk/', 'docs/agents/', 'examples/']) {
     await docs.goto(base + path);
-    check(`${path} has the site navigation`, (await docs.$$('nav.links a')).length === 6);
+    check(`${path} has the site navigation`, (await docs.$$('nav.links a')).length === 4);
   }
   // Every example component runs live on the examples page.
   await docs.goto(`${base}examples/`);

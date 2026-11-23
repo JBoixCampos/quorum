@@ -1,60 +1,49 @@
-# Working with an agent
+# Ask your agent
 
-Quorum has no AI of its own. It works with the coding agent you already use: Claude Code, Codex, Cursor, or an agent in the cloud with access to your repository. A talk is a Markdown file and a few small JavaScript files, so the agent writes it the way it writes code: it reads the instructions, writes the files and checks its own work. You shape the result in Studio and give the talk.
-
-## Set it up
-
-A talk made from the template or with `quorum new` already has everything the agent needs:
-
-- **`AGENTS.md`** (and `CLAUDE.md`, which points to it): the format, the commands, how to check its work, how to hand you alternatives, and what never to touch. Most agents read it on their own when you open them in the folder.
-- **`package.json`** with Quorum, so `npx quorum check` works once you ran `npm install`.
-
-Nothing else to install. For an agent working outside a talk folder, two more ways in:
-
-```bash
-npx github:JBoixCampos/quorum skill                     # the skill, for Claude Code in any folder
-npx github:JBoixCampos/quorum skill --to path/to/skills # another agent's skills folder
-```
-
-or point it at [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt), the whole format in one file.
+Quorum has no AI of its own. It works with the coding agent you already use: Claude Code, Codex, Cursor, or an agent in the cloud. There is nothing to set up: every talk folder comes with an `AGENTS.md` that explains Quorum to the agent, and most agents read it on their own.
 
 ## Ask for a talk
 
-Open your agent in the talk folder and describe the talk: the subject, the room, how long, where people should take part, how it should feel.
+Open your agent in the talk folder and describe the talk: the subject, who it is for, how long, where people should take part, and how it should feel.
 
 ```text
-Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
-an estimate with a reveal, a word cloud and a questions slide. Make it look
-warm and handmade. Run `quorum check --json` until it reports no warnings,
-then `quorum snapshot` and fix anything that looks wrong.
+Make me a 20-minute talk about how bread rises, with a warm-up poll,
+a guess-the-number with a reveal, a word cloud and a questions slide.
+Make it look warm and handmade.
 ```
 
-Give it your brand too, if you have one: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg." Or a mood: "Make it look like a keynote" (the agent picks a theme such as `midnight` or `bold`).
+A few things worth adding:
 
-Keep Studio open (`npm run studio`) while it works: the slides appear and change as the agent saves them.
+- **Your brand**: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg."
+- **A mood**: "Make it look like a keynote." The agent picks a matching theme.
+- **Your material**: "Base it on notes.md" or "on the article at this link."
 
-## Ask for changes from Studio
+The agent writes the slides, checks them and fixes what it finds. Keep Studio open (`npm run studio`) while it works and you watch the slides appear.
 
-When you are in Studio and want something from the agent, select the slide or the element and press **Ask agent** (or, for whole new versions of a slide, the **Alternatives** tab). Studio writes the request for you: which file, which lines, what you want, how to check it and how to hand back alternatives. It is copied, so you paste it into the agent.
+## Ask for changes
+
+In Studio, select a slide or anything on it and press **Ask agent**, then say what you want ("make this a chart", "shorter", "turn it into a quiz"). For whole new versions of a slide, use the **Alternatives** tab instead.
+
+Studio saves the request and copies a short line for you. Paste it into your agent once:
 
 ```text
-In this Quorum talk, change the slide "Four ingredients" (id: four-ingredients),
-in talk.md, lines 38 to 58.
-The part to change:
-
-    ::: cards {.steps}
-    ...
-
-What I want: make it a chart of how much of each goes in a loaf.
-
-Edit the Markdown in place and leave the other slides alone. ...
+Work through the open Quorum requests: run `quorum requests`, claim each one, and follow AGENTS.md.
 ```
 
-The agent edits the file and Studio shows the result as soon as it is saved. Alternatives come back as files in `variants/`, and appear in the Alternatives tab for you to choose from. See [Alternatives for a slide](remix.md).
+The agent picks up every open request, changes the slides and leaves a note in Studio's **Team** tab. Alternatives appear in the Alternatives tab for you to choose from. See [Work as a team](teamwork.md) for how requests work, including with several agents, and [Alternatives for a slide](remix.md).
 
 ## Agents in the cloud
 
-An agent working on a copy of your repository (Claude Code on the web, a GitHub agent) cannot reach your Studio. It works on a branch, runs the same checks and pushes. GitHub runs the workflow on every push: the checks, a playable copy, pictures of the slides and a PowerPoint file, attached to the run. Pull the branch and Studio shows the result; `quorum diff main --pictures` shows what changed, before and after. See [Teams and repositories](repository.md).
+An agent working on a copy of your repository (Claude Code on the web, a GitHub agent) cannot see your computer. Press **Send** in Studio's Team tab so it gets your requests, and **Pull** when it is done. Each push also runs the checks on GitHub and attaches a playable copy, pictures of the slides and a PowerPoint file. See [Git and repositories](repository.md).
+
+## Agents outside a talk folder
+
+For an agent that works in another folder, install the skill, or point it at [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt), the whole format in one file:
+
+```bash
+npx github:JBoixCampos/quorum skill                     # for Claude Code, in any folder
+npx github:JBoixCampos/quorum skill --to path/to/skills # another agent's skills folder
+```
 
 ## Who does what
 
@@ -63,6 +52,7 @@ An agent working on a copy of your repository (Claude Code on the web, a GitHub 
 | Writes and edits `talk.md`, and components in `components/` | Say what the talk is for and how it should feel |
 | Picks a theme, layouts and blocks | Shape it in Studio: wording, order, pictures, polls |
 | Runs `quorum check --json` after every change, and `quorum snapshot` to look | Rehearse in Studio |
+| Takes requests from the queue, and closes them with a note | Asks from Studio, and reads the notes |
 | Writes alternatives as variants when asked | Choose between them |
 | Never presents | Present and export from Studio |
 

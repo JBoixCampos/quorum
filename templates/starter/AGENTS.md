@@ -20,7 +20,22 @@ It prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestio
 
 ## Working with the person
 
-The person shapes the talk in Quorum Studio (`npm run studio`) while you work: it edits the same files and shows your changes as soon as they are saved, so keep the talk valid at every save. When they want something from you, Studio writes a request for them to paste: it names the slide (its id and lines) and what they want. Do exactly that, run `quorum check`, and say what you changed. Presenting and exporting are theirs to do from Studio.
+The person shapes the talk in Quorum Studio (`npm run studio`) while you work: it edits the same files and shows your changes as soon as they are saved, so keep the talk valid at every save. Presenting and exporting are theirs to do from Studio.
+
+## Requests
+
+When the person wants something from you, Studio saves a request in `requests/` and they tell you to work through them. Do this:
+
+```bash
+quorum requests                              # the open requests
+quorum requests show <id>                    # where the slide is, what they want, how to check
+quorum requests claim <id> --by <your name>  # before you start: only one agent can hold a request
+quorum requests done <id> --note "what you did"   # when the work is saved
+```
+
+Do exactly what the request says, run `quorum check`, then close it with a note the person can read in Studio. If you cannot do it, `quorum requests release <id>` and say why. An agent that can run a background command can start `quorum requests --watch` to hear about new requests as they arrive.
+
+When several agents work at once: `quorum context <slide>` prints what you need to start (the slide with its hash, its neighbours, the decisions so far). Write a slide with `quorum slide set <slide> --base <hash> < slide.md`: it refuses if someone changed the slide after you read it, and then you read it again and redo your change. Record choices a later agent should know with `quorum decide "what and why" --slide <id> --by <your name>`.
 
 ## Alternatives for a slide
 

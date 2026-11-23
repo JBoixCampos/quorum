@@ -32,8 +32,13 @@ import {
   addVariant, clearVariants, findVariant, listVariants, removeVariant,
 } from '../src/cli/variants.js';
 import {
-  findSlide, joinTalk, mergeText, mergeTalks, replaceSlide, setupRepo, slideText, splitTalk,
+  findSlide, joinTalk, mergeText, mergeTalks, replaceSlide, setupRepo, slideHash, slideText, splitTalk,
 } from '../src/cli/repo.js';
+import {
+  addRequest, claimRequest, doneRequest, findRequest, listRequests, releaseRequest, removeRequest, requestPrompt, requestsSignature,
+} from '../src/cli/requests.js';
+import { addDecision, buildContext, describeContext } from '../src/cli/context.js';
+import { whereIs } from '../src/server/studio-agent.js';
 import {
   INSTALL, findChromium, lanUrl, openAppWindow, openUrl, startTunnel,
 } from '../src/cli/system.js';
@@ -50,7 +55,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) args[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick'].includes(k)) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick', 'dir', 'note', 'kind', 'base', 'interval', 'minutes'].includes(k)) {
         args[k] = argv[i + 1];
         i += 1;
       } else args[k] = true;
@@ -82,6 +87,10 @@ For agents and CI
   quorum schema [--json]      Every theme, layout, block, class and icon
   quorum remix <slide>        Other layouts for a slide (--pick <n> applies one)
   quorum variant add <slide>  Save a version of a slide for the person to choose in Studio
+  quorum requests             What the person asked for in Studio (claim, done, show, --watch)
+  quorum context <slide>      The slide, its hash, neighbours, decisions and requests, for a fresh agent
+  quorum slide get|set        Read a slide, or write it only if nobody changed it meanwhile (--base)
+  quorum decide "<text>"      Add to the talk's decision log (decisions/)
   quorum diff [rev]           Which slides changed since a branch, tag or commit (--pictures)
   quorum explore --themes     The first slides in several themes
   quorum split / join         One file per slide in slides/, and back
@@ -95,7 +104,7 @@ Options
   --port <n>  --file <name>  --out <path>  --no-open  --no-tunnel  --no-moderation
   --json  --visual  --icons  --no-results  --pictures  --pick <n>  --no-remix  --themes a,b
   --pptx  --pdf  --results  --no-audience  --safe-fonts  --repo  --save <name>  --to <folder>
-  --by <name>  --direction <text>  --from <file>  --quiet
+  --by <name>  --direction <text>  --from <file>  --quiet  --dir <folder>  --note <text>  --watch  --base <hash>
 
 Docs: https://jboixcampos.github.io/quorum/docs/
 `;
@@ -687,6 +696,143 @@ async function cmdVariant(args) {
   }
 }
 
+// quorum requests [list|show|claim|release|done|cancel|add] ...
+async function cmdRequests(args) {
+  const [, sub = 'list', ref, ...rest] = args._;
+  const file = talkFile(args);
+  const dir = resolve(args.dir || '.');
+  ensureTalk(dir, file);
+  const json = !!args.json;
+  const by = typeof args.by === 'string' ? args.by : '';
+  const row = (r) => `${r.id}  ${r.status.padEnd(7)}  ${r.slide.padEnd(22)}  ${r.kind.padEnd(12)}  ${(r.wish || '(no words)').split('\n')[0].slice(0, 70)}${r.claimedBy ? `  [${r.claimedBy}]` : ''}`;
+  const full = (r) => {
+    let where = '';
+    let title = r.slide;
+    try {
+      const talk = readTalk(dir, file, { sourceMap: true });
+      const slide = findSlide(talk, r.slide);
+      title = slide.title;
+      where = whereIs({ file }, talk, slide);
+    } catch {
+      return `${r.id}: the slide "${r.slide}" no longer exists. Ask the person, or close it with \`quorum requests done ${r.id} --note "slide gone"\`.`;
+    }
+    return requestPrompt({
+      title, id: r.slide, where, wish: r.wish, part: r.part, kind: r.kind, count: r.count, requestId: r.id,
+    });
+  };
+  try {
+    if (sub === 'list') {
+      const list = listRequests(dir, { all: !!args.all });
+      if (args.watch) {
+        const seen = new Set();
+        const announce = () => {
+          listRequests(dir, { all: false }).filter((r) => r.status === 'open' && !seen.has(r.id)).forEach((r) => {
+            seen.add(r.id);
+            console.log(`NEW REQUEST ${row(r)}\n  Next: quorum requests show ${r.id}`);
+          });
+        };
+        console.log(`Watching ${dir} for requests from Studio (Ctrl+C stops).`);
+        announce();
+        let last = requestsSignature(dir);
+        const ms = Math.max(200, Number(args.interval) || 1000);
+        setInterval(() => {
+          const now = requestsSignature(dir);
+          if (now !== last) { last = now; announce(); }
+        }, ms);
+        return;
+      }
+      if (json) console.log(JSON.stringify(list, null, 2));
+      else if (!list.length) console.log('No open requests.');
+      else console.log(list.map(row).join('\n') + (list.some((r) => r.status === 'open') ? '\nNext: quorum requests show <id>, then claim it before you start.' : ''));
+    } else if (sub === 'show') {
+      const r = findRequest(listRequests(dir), ref);
+      if (json) console.log(JSON.stringify({ ...r, prompt: full(r) }, null, 2));
+      else console.log(full(r));
+    } else if (sub === 'claim') {
+      const r = claimRequest(dir, ref, { by: by || 'an agent', minutes: args.minutes });
+      console.log(json ? JSON.stringify(r, null, 2) : `Claimed ${r.id} for ${r.claimedBy}. The claim lasts ${args.minutes || 30} minutes: close it with \`quorum requests done ${r.id} --note "..."\`.`);
+    } else if (sub === 'release') {
+      const r = releaseRequest(dir, ref);
+      console.log(`Released ${r.id}: it is open again.`);
+    } else if (sub === 'done') {
+      const r = doneRequest(dir, ref, { by, note: typeof args.note === 'string' ? args.note : '' });
+      console.log(`${r.id} is done. Studio shows it as finished.`);
+    } else if (sub === 'cancel') {
+      const r = removeRequest(dir, ref);
+      console.log(`Removed ${r.id}.`);
+    } else if (sub === 'add') {
+      const wish = [rest.join(' ')].join('').trim();
+      const talk = readTalk(dir, file);
+      const slide = findSlide(talk, ref);
+      const r = addRequest(dir, { slide: slide.id, wish, kind: args.kind || 'edit', by: by || 'you', count: Number(args.count) || 3 });
+      console.log(json ? JSON.stringify(r, null, 2) : `Saved ${r.file}. An agent in this folder finds it with \`quorum requests\`.`);
+    } else {
+      console.error('Usage: quorum requests [list|show <id>|claim <id>|release <id>|done <id>|cancel <id>|add <slide> "<wish>"] [--dir <folder>]');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+// quorum context <slide> [--json]
+function cmdContext(args) {
+  const file = talkFile(args);
+  const dir = resolve(args.dir || '.');
+  ensureTalk(dir, file);
+  try {
+    const c = buildContext(dir, file, args._[1]);
+    console.log(args.json ? JSON.stringify(c, null, 2) : describeContext(c));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+// quorum slide get <slide> [--json] | quorum slide set <slide> [--base <hash>] [--from <file>]
+function cmdSlide(args) {
+  const [, sub, ref] = args._;
+  const file = talkFile(args);
+  const dir = resolve(args.dir || '.');
+  ensureTalk(dir, file);
+  try {
+    if (!['get', 'set'].includes(sub) || !ref) throw new Error('Usage: quorum slide <get|set> <slide> [--base <hash>] [--from <file>]');
+    const slide = findSlide(readTalk(dir, file), ref);
+    const text = slideText(dir, file, slide);
+    if (sub === 'get') {
+      console.log(args.json ? JSON.stringify({ id: slide.id, hash: slideHash(text), text }, null, 2) : text.replace(/\n+$/, ''));
+      return;
+    }
+    const base = typeof args.base === 'string' ? args.base : '';
+    if (base && base !== slideHash(text)) {
+      console.error(`Not written: ${slide.id} changed since you read it (now ${slideHash(text)}, you had ${base}). Read it again with \`quorum slide get ${slide.id}\` and redo your change on top of it.`);
+      process.exit(3);
+    }
+    const source = args.from ? readFileSync(resolve(args.from), 'utf8') : readFileSync(0, 'utf8');
+    if (!source.trim()) throw new Error('Nothing to write: pipe the slide in, or use --from <file>.');
+    const where = replaceSlide(dir, file, slide, source);
+    const now = slideText(dir, file, findSlide(readTalk(dir, file), slide.id));
+    console.log(`Written to ${where}. New hash ${slideHash(now)}. Run quorum check.`);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+// quorum decide "<what and why>" [--slide <id>] [--by <name>]
+function cmdDecide(args) {
+  const dir = resolve(args.dir || '.');
+  try {
+    const slide = typeof args.slide === 'string' ? findSlide(readTalk(dir, talkFile(args)), args.slide).id : '';
+    const made = addDecision(dir, { text: args._.slice(1).join(' '), by: typeof args.by === 'string' ? args.by : 'unknown', slide });
+    console.log(`Saved ${made.file}. \`quorum context\` shows it to the next agent.`);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
 function cmdSkill(args) {
   const to = resolve(args.to || join(homedir(), '.claude', 'skills'), 'quorum');
   mkdirSync(to, { recursive: true });
@@ -724,6 +870,11 @@ async function main() {
       break;
     case 'explore': await cmdExplore(args); break;
     case 'variant': await cmdVariant(args); break;
+    case 'requests':
+    case 'request': await cmdRequests(args); break;
+    case 'context': cmdContext(args); break;
+    case 'slide': cmdSlide(args); break;
+    case 'decide': cmdDecide(args); break;
     case 'theme': cmdTheme(args); break;
     case 'clean': cmdClean(args); break;
     case 'skill': cmdSkill(args); break;

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quorum: your agent writes the talk, you shape it, the room takes part</title>
-  <meta name="description" content="Start from a template, let your coding agent write the talk, shape it in Studio, then present it live with the audience on their phones or export it to PowerPoint. Open source, runs from your laptop.">
+  <title>Quorum: make a talk with your AI agent, and let the room join in</title>
+  <meta name="description" content="Tell your coding agent what talk you want, tweak it in a visual editor, then present it with polls and questions on everyone's phone. Free and open source.">
   {{social}}
   <link rel="icon" href="favicon.svg">
   <link rel="stylesheet" href="assets/site.css">
@@ -16,15 +16,56 @@
   <main id="main">
     <div class="hero">
       <div class="wrap">
-        <p class="badge"><b>Open source</b> <span>No accounts. Runs from your laptop.</span></p>
-        <h1>Your agent writes the talk. <em>You shape it.</em></h1>
-        <p class="lede">Start from a template, ask Claude Code or any coding agent for the talk you want, then polish it in Studio. Present it live, with polls and questions on everyone's phone, or export it to PowerPoint.</p>
+        <p class="badge"><b>Free and open source</b> <span>No accounts. Runs on your laptop.</span></p>
+        <h1>Make a talk with your AI agent. <em>The room joins in.</em></h1>
+        <p class="lede">Tell Claude Code, Codex or Cursor what talk you want. Tweak it in a visual editor. Then present it, and everyone answers polls and questions from their phone.</p>
         <div class="actions">
-          <a class="button primary big" href="https://github.com/JBoixCampos/quorum-talk/generate">Use the template</a>
-          <div class="install"><code id="install-command">npx github:JBoixCampos/quorum new my-talk</code><button type="button" class="copy" data-copy="#install-command">Copy</button></div>
+          <a class="button primary big" href="#start">Get started</a>
+          <a class="button big" href="playground/">Try it in your browser</a>
         </div>
-        <figure class="window">
-          <img src="docs/images/studio.png" alt="Quorum Studio: the slides on the left, a slide with four cards in the middle, a form to edit the cards on the right" width="1600" height="920">
+        <figure class="window demo" data-demo>
+          <div class="demo-view" data-view hidden>
+            <div class="scene" data-scene data-step="1" role="img" aria-label="An animation of the three steps. An agent writes the slides, a poll is dragged into Studio, and phones vote on the poll while the results fill in.">
+              <div class="chrome"><i></i><i></i><i></i><span>Why bread rises</span><em class="pres">Present</em></div>
+              <div class="rail">
+                <div class="th on" style="--i:0"><u></u><s></s></div>
+                <div class="th" style="--i:1"><u></u><s></s></div>
+                <div class="th" style="--i:2"><u></u><s></s></div>
+                <div class="th" style="--i:3"><u></u><s></s></div>
+              </div>
+              <div class="canvas">
+                <div class="slide">
+                  <h4>Where should we go for lunch?</h4>
+                  <div class="poll">
+                    <div class="opt"><span>Tacos</span><div class="bar"><i style="--w:30%;--k:0"></i></div><b>30%</b></div>
+                    <div class="opt"><span>Ramen</span><div class="bar"><i style="--w:48%;--k:1"></i></div><b>48%</b></div>
+                    <div class="opt"><span>The long queue</span><div class="bar"><i style="--w:22%;--k:2"></i></div><b>22%</b></div>
+                  </div>
+                  <div class="count"><b data-count>0</b> answers</div>
+                </div>
+              </div>
+              <div class="panel">
+                <p class="ph">Insert</p>
+                <div class="it">Title</div>
+                <div class="it pick">Poll</div>
+                <div class="it">Chart</div>
+                <div class="it">Quiz</div>
+              </div>
+              <div class="phones"><div class="phone"><p>Where should we go for lunch?</p><span class="btn">Tacos</span><span class="btn t" style="--d:0">Ramen</span><span class="btn">The long queue</span></div><div class="phone"><p>Where should we go for lunch?</p><span class="btn t" style="--d:1">Tacos</span><span class="btn">Ramen</span><span class="btn">The long queue</span></div></div>
+              <div class="term">
+                <p class="you" style="--d:0.4">Make me a talk on why bread rises. Start with a poll and end with questions.</p>
+                <p class="ok" style="--d:1.6">Wrote 16 slides, 3 where the room answers</p>
+                <p class="ok" style="--d:2.6">Checked every slide, all of them fit</p>
+              </div>
+              <svg class="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7-6 2-2 6z" fill="#fff" stroke="#0e0f11" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="demo-steps" data-steps role="group" aria-label="The three steps" hidden>
+            <button type="button" data-go="1" style="--dur:6s"><b>1</b>Ask your agent</button>
+            <button type="button" data-go="2" style="--dur:5.6s"><b>2</b>Tweak it in Studio</button>
+            <button type="button" data-go="3" style="--dur:6.6s"><b>3</b>Present it</button>
+          </div>
+          <noscript><img src="docs/images/studio.png" alt="Quorum Studio: the slides on the left, a slide with four cards in the middle, a form to edit the cards on the right" width="1600" height="920"></noscript>
         </figure>
       </div>
     </div>
@@ -34,94 +75,46 @@
         <div class="section-head">
           <div>
             <p class="kicker">How it works</p>
-            <h2>Four steps, one folder</h2>
+            <h2>Three steps</h2>
           </div>
-          <p class="intro">A talk is a Markdown file in a git repository. Your agent writes in it, Studio edits it, and every change is a line you can read in <code>git diff</code>.</p>
+          <p class="intro">You describe the talk, you adjust what you like, and you give it. Quorum takes care of the rest.</p>
         </div>
-        <ol class="steps">
-          <li><span class="n">01</span><h3>Start</h3><p><a href="#start">Use the template</a>, or one command. You get the talk, instructions for agents and checks on every push.</p></li>
-          <li><span class="n">02</span><h3>Your agent writes it</h3><p>Claude Code, Codex or Cursor, on your computer or in the cloud, writes the slides and checks its own work.</p></li>
-          <li><span class="n">03</span><h3>You shape it</h3><p>In Studio: type on the slide, drag in polls and charts, try other layouts, ask your agent for more.</p></li>
-          <li><span class="n">04</span><h3>Present or export</h3><p>A link and a QR code for the room, your slides and your panel. Or an editable PowerPoint file.</p></li>
-        </ol>
-      </div>
-    </section>
 
-    <section id="write">
-      <div class="wrap row">
-        <div class="text">
-          <p class="kicker">02 &middot; Write</p>
-          <h2>Your agent writes it</h2>
-          <p>The talk is plain Markdown, so a coding agent writes it the way it writes code. It reads the instructions in the folder, writes the slides, runs the checker and fixes what it finds. No copying slides back and forth.</p>
-          <ul class="points">
-            <li><span><b>Nothing to set up.</b> Every talk has an <code>AGENTS.md</code> with the format and the rules.</span></li>
-            <li><span><b>It checks its own work.</b> Mistakes, poor contrast and slides that do not fit, with the slide number.</span></li>
-            <li><span><b>In the cloud too.</b> An agent with your repository pushes a branch; the checks run on GitHub.</span></li>
-          </ul>
-          <p class="more"><a href="docs/agents/">Working with an agent</a></p>
-        </div>
-        <div class="terminal typing" data-terminal aria-label="An example agent session in a talk folder">
-          <div class="bar"><i></i><i></i><i></i><span>your agent, in the talk folder</span></div>
-          <div class="body">
-            <p class="you" data-line>Make me a 15-minute talk on why bread rises, for curious non-bakers. A warm-up poll, a quiz on yeast, a chart of the timings and a questions slide.</p>
-            <p class="step" data-line>Wrote talk.md: 16 slides, 3 ask the audience</p>
-            <p class="cmd" data-line>quorum check --json</p>
-            <p class="out" data-line>"ok": false
-"issues": [ "Slide 9 does not fit: 140px too tall" ]</p>
-            <p class="step" data-line>Split slide 9 in two. Checked again: no warnings.</p>
-            <p class="step" data-line>Ready. Open it with <span class="hl">npm run studio</span></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="shape">
-      <div class="wrap row flip">
-        <div class="text">
-          <p class="kicker">03 &middot; Shape</p>
-          <h2>You shape it in Studio</h2>
-          <p>The real slide in the middle, your slides on the left, what you selected on the right. Studio edits the same files as your agent and shows its changes as they are saved.</p>
-          <ul class="points">
-            <li><span><b>Type on the slide</b>, and drag blocks, cards and pictures where you want them.</span></li>
-            <li><span><b>Drag in what the room does:</b> polls, quizzes, guesses and questions, edited with a form.</span></li>
-            <li><span><b>See it other ways.</b> Quorum lays a slide out as cards, steps or a chart, instantly. For more, Studio writes the request for your agent.</span></li>
-            <li><span><b>Undo, and git.</b> Every change is a plain edit to your files.</span></li>
-          </ul>
-          <p class="more"><a href="docs/studio/">Everything Studio does</a></p>
-        </div>
-        <figure class="shot"><img src="docs/images/studio-insert.png" alt="The Insert panel in Studio, with polls, quizzes, guesses, charts and cards to drag onto a slide" width="1600" height="920" loading="lazy"></figure>
-      </div>
-    </section>
-
-    <section id="give">
-      <div class="wrap">
-        <div class="row">
+        <div class="row step">
           <div class="text">
-            <p class="kicker">04 &middot; Give</p>
-            <h2>Present it live</h2>
-            <p><b>Present</b> in Studio starts the talk on your laptop: a public link (or your local network), the QR code on your slides, the presentation to share or project, and your panel. People answer from their phones, with no app and no account.</p>
-            <p class="more"><a href="docs/giving-a-talk/">Presenting</a></p>
+            <p class="kicker">Step 1</p>
+            <h3>Ask your agent for the talk</h3>
+            <p>Open your coding agent in the talk folder and say what you want, the way you would ask a colleague. It writes the slides, checks that they look right and fixes what it finds.</p>
           </div>
-          <figure class="shot"><img src="docs/images/studio-live.png" alt="Studio while the talk is live: the link, the phones connected and a Stop button in the top bar" width="1600" height="920" loading="lazy"></figure>
+          <div class="terminal typing" data-terminal aria-label="An example of asking an agent for a talk">
+            <div class="bar"><i></i><i></i><i></i><span>your agent, in the talk folder</span></div>
+            <div class="body">
+              <p class="you" data-line>Make me a 15-minute talk on why bread rises. Start with a poll, add a quiz on yeast and end with questions.</p>
+              <p class="step" data-line>Wrote 16 slides, 3 where the room answers</p>
+              <p class="step" data-line>Checked every slide: one did not fit, so I split it in two</p>
+              <p class="step" data-line>Ready. Open it with <span class="hl">npm run studio</span></p>
+            </div>
+          </div>
         </div>
-        <div class="trio">
-          <figure><img src="docs/images/screen.png" alt="The shared screen during a poll: live results, the number of answers, and a QR code in the corner" width="1600" height="900" loading="lazy"><figcaption><strong>What the room sees</strong>Results land as they arrive.</figcaption></figure>
-          <figure><img src="docs/images/panel.png" alt="The presenter panel: a clickable preview, the next slides, notes and questions waiting for approval" width="1600" height="820" loading="lazy"><figcaption><strong>What you see</strong>The next slides, your notes, the clock and the questions.</figcaption></figure>
-          <figure><img src="docs/images/phone.png" alt="A phone showing the same poll, with three options to tap" width="390" height="600" loading="lazy"><figcaption><strong>What each phone sees</strong>Only the question of the moment.</figcaption></figure>
-        </div>
-      </div>
-    </section>
 
-    <section id="pptx">
-      <div class="wrap row flip">
-        <div class="text">
-          <p class="kicker">04 &middot; Or export</p>
-          <h2>A PowerPoint file, too</h2>
-          <p><b>Export</b> writes a <code>.pptx</code> with real, editable text, shapes, tables and charts, your notes and your transitions. Slides where the audience answers point to Quorum, or, after the talk, show what the room answered.</p>
-          <p>So Quorum is also how your agent makes a PowerPoint deck, with nobody voting at all.</p>
-          <p class="more"><a href="docs/powerpoint/">PowerPoint and PDF</a></p>
+        <div class="row step flip">
+          <div class="text">
+            <p class="kicker">Step 2</p>
+            <h3>Tweak it in Studio</h3>
+            <p>Studio shows the real slides. Click to change a word, drag in a poll or a chart, or try a slide in another layout. For bigger changes, press <b>Ask agent</b> and your agent takes it from there.</p>
+          </div>
+          <figure class="shot"><img src="docs/images/studio-insert.png" alt="The Insert panel in Studio, with polls, quizzes, guesses, charts and cards to drag onto a slide" width="1600" height="920" loading="lazy"></figure>
         </div>
-        <figure class="shot"><img src="docs/images/pptx.png" alt="Three slides of an exported PowerPoint file: cards, a column chart and key figures" width="1600" height="400" loading="lazy"></figure>
+
+        <div class="row step">
+          <div class="text">
+            <p class="kicker">Step 3</p>
+            <h3>Present it</h3>
+            <p>Press <b>Present</b>. People scan the QR code and vote, guess and ask questions from their phones, with no app and no sign-up. Results appear on the screen as they come in.</p>
+            <p>No audience? Export the same talk as a PowerPoint file instead.</p>
+          </div>
+          <figure class="shot"><img src="docs/images/screen.png" alt="The shared screen during a poll: live results, the number of answers, and a QR code in the corner" width="1600" height="900" loading="lazy"></figure>
+        </div>
       </div>
     </section>
 
@@ -132,7 +125,7 @@
             <p class="kicker">Try it</p>
             <h2>A poll is a slide</h2>
           </div>
-          <p class="intro">This is what your agent writes, and what Studio's forms edit. Change the Markdown and the slide updates; click the slide to open voting, and 24 simulated people answer.</p>
+          <p class="intro">This is what your agent writes. Change the text and the slide updates. Click the slide to open voting, and 24 pretend people answer.</p>
         </div>
         <div class="playground" data-playground data-frame="demo/?playground=1&amp;theme=midnight">
           <textarea aria-label="Markdown of the slide">::: poll {#lunch} Where should we go for lunch?
@@ -144,23 +137,24 @@ The queue is long for a reason.
 :::
 </textarea>
         </div>
-        <p class="more"><a href="playground/">Open the full playground</a><a href="showcase/">Play the showcase talk</a></p>
+        <p class="more"><a href="playground/">Open the full playground</a><a href="showcase/">Play a whole example talk</a></p>
       </div>
     </section>
 
-    <section id="private">
+    <section id="why">
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker">Principles</p>
-            <h2>Yours, from start to finish</h2>
+            <p class="kicker">Why Quorum</p>
+            <h2>Simple for you, easy for the room</h2>
           </div>
-          <p class="intro">Your laptop is the server, your repository is the storage, and your agent is the AI. Quorum has none of its own.</p>
+          <p class="intro">Quorum has no AI and no servers of its own. It works with the agent you already use, on your own computer.</p>
         </div>
-        <div class="cards">
-          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg></span><h3>Your laptop is the server</h3><p>Present opens a public link through a tunnel, or uses your local network. Votes stay in your folder until you delete them.</p></div>
-          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/><path d="M3 3l18 18"/></svg></span><h3>Anonymous by design</h3><p>No names, no sign-up, no app. Notes and right answers never reach phones before you reveal them.</p></div>
-          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><h3>Plain files, in git</h3><p>Markdown and a few small JavaScript files. Teams and agents work on branches, and slides merge one by one.</p></div>
+        <div class="cards four">
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/></svg></span><h3>Works with your agent</h3><p>Claude Code, Codex, Cursor or any coding agent. Everything it needs to know comes with the talk.</p></div>
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span><h3>Nothing to install for the room</h3><p>People join with their phone's camera. No app, no account, no names.</p></div>
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.9-3.4 3.4-5.2 6.5-5.2s5.6 1.8 6.5 5.2"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14.5c2.2 0 3.9 1.3 4.5 3.8"/></svg></span><h3>Good with teams</h3><p>Colleagues and several agents can work on the same talk, and nobody's changes get lost. <a href="docs/teamwork/">How</a></p></div>
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><h3>Free and yours</h3><p>Open source under the MIT licence. Your talk is a file on your computer, and the votes stay there too.</p></div>
         </div>
       </div>
     </section>
@@ -170,32 +164,20 @@ The queue is long for a reason.
         <div class="section-head">
           <div>
             <p class="kicker">Get started</p>
-            <h2>Start a talk</h2>
+            <h2>Your first talk</h2>
           </div>
-          <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer. Both ways give you the same folder.</p>
+          <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer and a coding agent. It takes a couple of minutes.</p>
         </div>
-        <div class="paths">
-          <div class="path">
-            <p class="kicker">On GitHub</p>
-            <h3>Use the template</h3>
-            <p>A repository of your own, with the talk, the agent instructions and the checks. Clone it, or give it to an agent in the cloud.</p>
-<pre><span class="p">$ </span>git clone &lt;your new repository&gt;
-<span class="p">$ </span>cd my-talk
-<span class="p">$ </span>npm install
-<span class="p">$ </span>npm run studio</pre>
-            <div class="foot"><a class="button primary" href="https://github.com/JBoixCampos/quorum-talk/generate">Use the template</a></div>
-          </div>
-          <div class="path">
-            <p class="kicker">On your computer</p>
-            <h3>One command</h3>
-            <p>The same folder, made on your computer. Add <code>--repo</code> to start a git repository too.</p>
+        <ol class="startsteps">
+          <li><span class="n">1</span><h3>Make a talk folder</h3>
 <pre><span class="p">$ </span>npx github:JBoixCampos/quorum new my-talk
 <span class="p">$ </span>cd my-talk
-<span class="p">$ </span>npm install
-<span class="p">$ </span>npm run studio</pre>
-            <div class="foot"><a class="button" href="docs/">Read the guide</a></div>
-          </div>
-        </div>
+<span class="p">$ </span>npm install</pre></li>
+          <li><span class="n">2</span><h3>Ask your agent for the talk</h3><p>Open your agent in the <code>my-talk</code> folder and describe the talk: the topic, how long, and where the room should answer.</p></li>
+          <li><span class="n">3</span><h3>Open Studio</h3>
+<pre><span class="p">$ </span>npm run studio</pre><p>Tweak the slides, then press <b>Present</b>.</p></li>
+        </ol>
+        <p class="more"><a href="docs/">Read the guide</a><a href="https://github.com/JBoixCampos/quorum-talk/generate">Or start from the GitHub template</a></p>
       </div>
     </section>
   </main>
@@ -228,6 +210,7 @@ The queue is long for a reason.
     })();
   </script>
   <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/hero.js"></script>
   <script type="module" src="assets/playground.js"></script>
 </body>
 </html>
