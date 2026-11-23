@@ -32,12 +32,13 @@ const read = (...p) => readFileSync(join(ROOT, ...p), 'utf8');
 // The docs, in reading order. Every docs/*.md must be listed here.
 const DOCS = [
   { file: 'README.md', slug: '', label: 'Get started' },
-  { file: 'agents.md', slug: 'agents', label: 'Working with an agent' },
-  { file: 'studio.md', slug: 'studio', label: 'Studio' },
-  { file: 'remix.md', slug: 'remix', label: 'Alternatives for a slide' },
-  { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Presenting' },
+  { file: 'agents.md', slug: 'agents', label: 'Ask your agent' },
+  { file: 'studio.md', slug: 'studio', label: 'Edit in Studio' },
+  { file: 'giving-a-talk.md', slug: 'giving-a-talk', label: 'Present on the day' },
+  { file: 'teamwork.md', slug: 'teamwork', label: 'Work as a team' },
   { file: 'powerpoint.md', slug: 'powerpoint', label: 'PowerPoint and PDF' },
-  { file: 'repository.md', slug: 'repository', label: 'Teams and repositories' },
+  { file: 'remix.md', slug: 'remix', label: 'Alternatives for a slide' },
+  { file: 'repository.md', slug: 'repository', label: 'Git and repositories' },
   { file: 'format.md', slug: 'format', label: 'The talk format' },
   { file: 'design.md', slug: 'design', label: 'Design and themes' },
   { file: 'components.md', slug: 'components', label: 'Components' },
@@ -85,16 +86,12 @@ function docLink(from) {
 const NAV = [
   ['How it works', '#how'],
   ['Docs', 'docs/'],
-  ['Studio', 'docs/studio/'],
-  ['For agents', 'docs/agents/'],
   ['Playground', 'playground/'],
 ];
 
 // The section of the site a page belongs to, for the current link.
 function current(path, to) {
   if (to.startsWith('#')) return false;
-  if (to === 'docs/agents/' || to === 'docs/studio/') return path === to;
-  if (to === 'docs/') return path.startsWith('docs/') && path !== 'docs/agents/' && path !== 'docs/studio/';
   return path.startsWith(to);
 }
 
@@ -122,16 +119,16 @@ function footer(path) {
       <div class="grid">
         <div>
           <a class="brand" href="${to('')}"><img src="${to('favicon.svg')}" alt="">Quorum</a>
-          <p>Your agent writes the talk, you shape it, the room takes part. Open source, under the MIT license.</p>
+          <p>Make a talk with your AI agent, and let the room join in. Free and open source, under the MIT licence.</p>
         </div>
         <nav aria-label="Learn">
           <h2>Learn</h2>
           <ul>
             <li><a href="${to('docs/')}">Get started</a></li>
-            <li><a href="${to('docs/studio/')}">Studio</a></li>
-            <li><a href="${to('docs/giving-a-talk/')}">Presenting</a></li>
+            <li><a href="${to('docs/studio/')}">Edit in Studio</a></li>
+            <li><a href="${to('docs/giving-a-talk/')}">Present on the day</a></li>
+            <li><a href="${to('docs/teamwork/')}">Work as a team</a></li>
             <li><a href="${to('docs/powerpoint/')}">PowerPoint and PDF</a></li>
-            <li><a href="${to('docs/repository/')}">Teams and repositories</a></li>
             <li><a href="${to('docs/format/')}">The talk format</a></li>
           </ul>
         </nav>
@@ -147,7 +144,7 @@ function footer(path) {
         <nav aria-label="For agents">
           <h2>For agents</h2>
           <ul>
-            <li><a href="${to('docs/agents/')}">Working with an agent</a></li>
+            <li><a href="${to('docs/agents/')}">Ask your agent</a></li>
             <li><a href="${to('llms.txt')}">llms.txt</a></li>
             <li><a href="${to('llms-full.txt')}">llms-full.txt</a></li>
             <li><a href="${BLOB}agents/quorum/SKILL.md">The skill</a></li>

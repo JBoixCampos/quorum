@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-labelledby="t d">
+  <title id="t">Agents come and go, the folder remembers</title>
+  <desc id="d">Several agents start fresh, each on its own slide. Each reads what it needs from the folder, does its work and writes back, then stops. The folder keeps the requests, the decisions and the slides. A write is refused when the slide changed since the agent read it.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="#8b7bff"/></marker>
+    <style>
+      text { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #ececef; }
+      .h { font-size: 19px; font-weight: 600; }
+      .s { font-size: 14px; fill: #b5b8c0; }
+      .l { font-size: 13px; fill: #b5b8c0; }
+      .m { font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 13px; fill: #ececef; }
+      .k { font-size: 12.5px; font-weight: 600; fill: #8b7bff; }
+      .box { fill: #17181c; stroke: #363a42; stroke-width: 1.5; }
+      .hot { fill: #1e2025; stroke: #8b7bff; stroke-width: 2; }
+      .ghost { fill: none; stroke: #656974; stroke-width: 1.5; stroke-dasharray: 5 5; }
+      .ln { stroke: #8b7bff; stroke-width: 2; fill: none; }
+      .no { fill: #1e2025; stroke: #656974; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="1200" height="460" rx="18" fill="#0e0f11" stroke="#2a2d33"/>
+
+  <text class="k" x="40" y="44">Agents come and go</text>
+  <text class="k" x="470" y="44">The folder remembers</text>
+  <text class="k" x="900" y="44">No one overwrites anyone</text>
+
+  <!-- agents -->
+  <rect class="ghost" x="40" y="66" width="300" height="86" rx="14"/>
+  <text class="h" x="64" y="98">Agent A</text><text class="s" x="64" y="124">working on slide 3</text>
+  <rect class="ghost" x="40" y="176" width="300" height="86" rx="14"/>
+  <text class="h" x="64" y="208">Agent B</text><text class="s" x="64" y="234">working on slide 7</text>
+  <rect class="ghost" x="40" y="286" width="300" height="86" rx="14"/>
+  <text class="h" x="64" y="318">Agent C</text><text class="s" x="64" y="344">starts later, from nothing</text>
+  <text class="l" x="190" y="408" text-anchor="middle">each one starts, works and stops</text>
+
+  <!-- arrows -->
+  <path class="ln" d="M342 109H468" marker-end="url(#a)" marker-start="url(#a)"/>
+  <path class="ln" d="M342 219H468" marker-end="url(#a)" marker-start="url(#a)"/>
+  <path class="ln" d="M342 329H468" marker-end="url(#a)" marker-start="url(#a)"/>
+  <text class="l" x="405" y="98" text-anchor="middle">read</text>
+  <text class="l" x="405" y="132" text-anchor="middle">write</text>
+
+  <!-- the folder -->
+  <rect class="hot" x="470" y="66" width="380" height="334" rx="16"/>
+  <text class="m" x="494" y="106">quorum context 3</text>
+  <text class="s" x="494" y="130">the slide, its neighbours, the theme,</text>
+  <text class="s" x="494" y="150">the decisions so far, its open requests</text>
+  <line x1="494" y1="172" x2="826" y2="172" stroke="#2a2d33"/>
+  <text class="m" x="494" y="204">requests/</text>
+  <text class="s" x="494" y="226">what is open, who has it, what was done</text>
+  <text class="m" x="494" y="266">decisions/</text>
+  <text class="s" x="494" y="288">what was chosen, and why</text>
+  <text class="m" x="494" y="328">talk.md or slides/</text>
+  <text class="s" x="494" y="350">the slides themselves</text>
+  <text class="l" x="494" y="382">one file per entry, so writes never collide</text>
+
+  <!-- the guard -->
+  <path class="ln" d="M852 233H898" marker-end="url(#a)"/>
+  <rect class="box" x="900" y="66" width="260" height="334" rx="16"/>
+  <text class="s" x="920" y="102">Agent B reads slide 7 and</text>
+  <text class="s" x="920" y="122">gets a fingerprint of it:</text>
+  <text class="m" x="920" y="150">hash 5ced6e5cc3</text>
+  <text class="s" x="920" y="190">Meanwhile you change slide 7</text>
+  <text class="s" x="920" y="210">in Studio.</text>
+  <text class="s" x="920" y="250">Agent B writes it back with</text>
+  <text class="m" x="920" y="276">slide set 7</text>
+  <text class="m" x="920" y="296">  --base 5ced6e5cc3</text>
+  <rect class="no" x="920" y="318" width="220" height="56" rx="10"/>
+  <text class="s" x="1030" y="342" text-anchor="middle">Refused: it changed.</text>
+  <text class="s" x="1030" y="362" text-anchor="middle">Read again, redo on top.</text>
+</svg>

@@ -1,92 +1,49 @@
-# Working with an agent
+# Ask your agent
 
-Quorum has no AI of its own. It works with the coding agent you already use: Claude Code, Codex, Cursor, or an agent in the cloud with access to your repository. A talk is a Markdown file and a few small JavaScript files, so the agent writes it the way it writes code: it reads the instructions, writes the files and checks its own work. You shape the result in Studio and give the talk.
-
-## Set it up
-
-A talk made from the template or with `quorum new` already has everything the agent needs:
-
-- **`AGENTS.md`** (and `CLAUDE.md`, which points to it): the format, the commands, how to check its work, how to hand you alternatives, and what never to touch. Most agents read it on their own when you open them in the folder.
-- **`package.json`** with Quorum, so `npx quorum check` works once you ran `npm install`.
-
-Nothing else to install. For an agent working outside a talk folder, two more ways in:
-
-```bash
-npx github:JBoixCampos/quorum skill                     # the skill, for Claude Code in any folder
-npx github:JBoixCampos/quorum skill --to path/to/skills # another agent's skills folder
-```
-
-or point it at [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt), the whole format in one file.
+Quorum has no AI of its own. It works with the coding agent you already use: Claude Code, Codex, Cursor, or an agent in the cloud. There is nothing to set up: every talk folder comes with an `AGENTS.md` that explains Quorum to the agent, and most agents read it on their own.
 
 ## Ask for a talk
 
-Open your agent in the talk folder and describe the talk: the subject, the room, how long, where people should take part, how it should feel.
+Open your agent in the talk folder and describe the talk: the subject, who it is for, how long, where people should take part, and how it should feel.
 
 ```text
-Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
-an estimate with a reveal, a word cloud and a questions slide. Make it look
-warm and handmade. Run `quorum check --json` until it reports no warnings,
-then `quorum snapshot` and fix anything that looks wrong.
+Make me a 20-minute talk about how bread rises, with a warm-up poll,
+a guess-the-number with a reveal, a word cloud and a questions slide.
+Make it look warm and handmade.
 ```
 
-Give it your brand too, if you have one: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg." Or a mood: "Make it look like a keynote" (the agent picks a theme such as `midnight` or `bold`).
+A few things worth adding:
 
-Keep Studio open (`npm run studio`) while it works: the slides appear and change as the agent saves them.
+- **Your brand**: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg."
+- **A mood**: "Make it look like a keynote." The agent picks a matching theme.
+- **Your material**: "Base it on notes.md" or "on the article at this link."
 
-## Ask for changes from Studio
+The agent writes the slides, checks them and fixes what it finds. Keep Studio open (`npm run studio`) while it works and you watch the slides appear.
 
-When you are in Studio and want something from the agent, select the slide or the element and press **Ask agent** (or, for whole new versions of a slide, the **Alternatives** tab). Studio saves your request as a file in `requests/` and the **Team** tab shows the queue. You tell the agent once, with a line Studio copies for you:
+## Ask for changes
+
+In Studio, select a slide or anything on it and press **Ask agent**, then say what you want ("make this a chart", "shorter", "turn it into a quiz"). For whole new versions of a slide, use the **Alternatives** tab instead.
+
+Studio saves the request and copies a short line for you. Paste it into your agent once:
 
 ```text
 Work through the open Quorum requests: run `quorum requests`, claim each one, and follow AGENTS.md.
 ```
 
-The details (which slide, which lines, what you want, how to check it) are in the request files, so you do not paste them again. For an agent that cannot see your folder, the request's copy button gives the whole text instead.
-
-See [Requests](#requests) below for what the agent does with them.
-
-The agent edits the file and Studio shows the result as soon as it is saved. Alternatives come back as files in `variants/`, and appear in the Alternatives tab for you to choose from. See [Alternatives for a slide](remix.md).
-
-## Requests
-
-A request is one small Markdown file, `requests/r-4f2a1c.md`: a header line (the slide, what kind of request, who asked) and your words. Studio writes them, and so can anyone:
-
-```bash
-quorum requests add four-ingredients "make this a chart" --by me
-```
-
-An agent works through the queue with these commands:
-
-| Command | What it does |
-| --- | --- |
-| `quorum requests` | Lists the open requests (`--all` includes done ones, `--json` for programs) |
-| `quorum requests show <id>` | The full request: where the slide is now, what is wanted, how to check it |
-| `quorum requests claim <id> --by <name>` | Takes it. Only one agent can: a second one is told who has it. A claim lasts 30 minutes |
-| `quorum requests done <id> --note "<what you did>"` | Closes it. The note appears in Studio |
-| `quorum requests release <id>` | Gives it back without finishing |
-| `quorum requests --watch` | Stays running and prints each new request as it arrives |
-
-Agents do not poll on their own, so something has to wake them. Three ways, from the simplest:
-
-- **You tell them**: paste the one line above into the agent. It handles every open request.
-- **A watcher**: an agent that can run a command in the background (Claude Code can) starts `quorum requests --watch` and reacts to each new request without being told again.
-- **From git**: an agent in the cloud only sees what is pushed, so send your requests first with **Send** in the Team tab, then message the agent.
-
-Requests are files, so they travel with the repository: a request made on one computer reaches another person's agent after a push and a pull.
-
-## Several agents at once
-
-Agents are disposable. One that starts fresh should be able to pick up the work from the files alone, so Quorum keeps what it needs in the repository:
-
-- `quorum context <slide>` prints the slice an agent needs: the slide and its hash, the slides around it, the theme, the decisions so far and the open requests for it.
-- `quorum decide "what and why" --slide <id> --by <name>` adds to the decision log in `decisions/`, one file per entry, so two agents never write the same file. The next agent reads it through `quorum context`.
-- `quorum slide get <slide>` and `quorum slide set <slide> --base <hash>` read and write one slide. If someone changed the slide after the agent read it, `set` refuses (exit code 3) and says so, so the agent reads it again and redoes its change instead of overwriting the other work.
-
-Several agents can therefore work on different slides, or on the same talk from different computers, and a collision is caught instead of lost.
+The agent picks up every open request, changes the slides and leaves a note in Studio's **Team** tab. Alternatives appear in the Alternatives tab for you to choose from. See [Work as a team](teamwork.md) for how requests work, including with several agents, and [Alternatives for a slide](remix.md).
 
 ## Agents in the cloud
 
-An agent working on a copy of your repository (Claude Code on the web, a GitHub agent) cannot reach your Studio. It works on a branch, runs the same checks and pushes. GitHub runs the workflow on every push: the checks, a playable copy, pictures of the slides and a PowerPoint file, attached to the run. Pull the branch and Studio shows the result; `quorum diff main --pictures` shows what changed, before and after. See [Teams and repositories](repository.md).
+An agent working on a copy of your repository (Claude Code on the web, a GitHub agent) cannot see your computer. Press **Send** in Studio's Team tab so it gets your requests, and **Pull** when it is done. Each push also runs the checks on GitHub and attaches a playable copy, pictures of the slides and a PowerPoint file. See [Git and repositories](repository.md).
+
+## Agents outside a talk folder
+
+For an agent that works in another folder, install the skill, or point it at [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt), the whole format in one file:
+
+```bash
+npx github:JBoixCampos/quorum skill                     # for Claude Code, in any folder
+npx github:JBoixCampos/quorum skill --to path/to/skills # another agent's skills folder
+```
 
 ## Who does what
 

@@ -1,4 +1,4 @@
-# Studio
+# Edit in Studio
 
 Studio is where you shape a talk once your agent has written it, and where you give it or export it. It runs on your computer and edits the talk's own files: every change you make is a line in `talk.md` that `git diff` shows, and every change your agent makes appears in Studio as soon as it is saved.
 
@@ -61,7 +61,7 @@ The **Alternatives** tab shows the selected slide laid out other ways. Quorum's 
 
 ## Asking your agent
 
-Quorum has no AI of its own. **Ask agent**, on the toolbar of a selection or in the Edit tab, asks what you want ("make this a chart", "shorter", "turn it into a quiz") and saves a request in the talk's `requests/` folder. Studio copies one line for you to give your agent once: it tells the agent to work through the open requests. The details are in the files, so there is nothing long to paste. Studio shows the change as soon as the agent saves it. See [Working with an agent](agents.md).
+Quorum has no AI of its own. **Ask agent**, on the toolbar of a selection or in the Edit tab, asks what you want ("make this a chart", "shorter", "turn it into a quiz") and saves a request in the talk's `requests/` folder. Studio copies one line for you to give your agent once: it tells the agent to work through the open requests. The details are in the files, so there is nothing long to paste. Studio shows the change as soon as the agent saves it. See [Ask your agent](agents.md).
 
 ## The Team tab
 
@@ -75,7 +75,7 @@ The **Team** tab has two parts.
 - **Send** commits the talk's files (never `.quorum/`) with your message and pushes the branch. It asks you to pull first if others pushed before you.
 - **Check now** looks at the remote straight away.
 
-Studio never pulls or pushes on its own. Two people on different computers share a talk through git only: you see each other's work after a push and a pull, not while typing. See [Teams and repositories](repository.md).
+Studio never pulls or pushes on its own. Two people on different computers share a talk through git only: you see each other's work after a push and a pull, not while typing. See [Work as a team](teamwork.md) and [Git and repositories](repository.md).
 
 ## Theme
 

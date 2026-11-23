@@ -1,4 +1,4 @@
-# Working in a repository
+# Git and repositories
 
 Quorum does not run a shared editing service. A talk is a folder of plain text, so the way to work on it with other people and with agents is the way programmers do it: a git repository, one branch per task, and a pull request to bring changes back. Quorum makes that work well for decks.
 
@@ -98,4 +98,4 @@ Two people on different computers share a talk through git and nothing else. Wha
 - **Requests** (`requests/`) and the **decision log** (`decisions/`) are one file per entry, so they merge cleanly. A request made on one computer reaches the other person's agent after a push and a pull.
 - **No live view**: you see each other's changes after they push and you pull, not while they type. Studio marks slides that changed upstream so you do not edit them blind.
 
-Studio's Team tab does the fetch, pull and send steps. See [Studio](studio.md#the-team-tab). For agents working at the same time, see [Several agents at once](agents.md#several-agents-at-once).
+Studio's Team tab does the fetch, pull and send steps. See [Studio](studio.md#the-team-tab). For agents working at the same time, see [Work as a team](teamwork.md#several-agents-at-once).

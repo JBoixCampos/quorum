@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" width="1200" height="580" role="img" aria-labelledby="t d">
+  <title id="t">One folder, everyone works in it</title>
+  <desc id="d">You in Studio and your agent both edit the same talk folder. The folder syncs with a shared repository on GitHub, where colleagues and their agents do the same. Studio presents the talk to phones in the room.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="#8b7bff"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9z" fill="#8a8e98"/></marker>
+    <style>
+      text { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #ececef; }
+      .h { font-size: 20px; font-weight: 600; }
+      .s { font-size: 14px; fill: #b5b8c0; }
+      .m { font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 14px; fill: #ececef; }
+      .l { font-size: 13px; fill: #b5b8c0; }
+      .k { font-size: 12.5px; font-weight: 600; fill: #8b7bff; }
+      .box { fill: #17181c; stroke: #363a42; stroke-width: 1.5; }
+      .hot { fill: #1e2025; stroke: #8b7bff; stroke-width: 2; }
+      .ln { stroke: #8b7bff; stroke-width: 2; fill: none; }
+      .gl { stroke: #8a8e98; stroke-width: 1.8; fill: none; stroke-dasharray: 6 5; }
+    </style>
+  </defs>
+  <rect width="1200" height="580" rx="18" fill="#0e0f11" stroke="#2a2d33"/>
+
+  <!-- top row: the shared remote and colleagues -->
+  <rect class="box" x="430" y="28" width="340" height="82" rx="14"/>
+  <text class="h" x="600" y="63" text-anchor="middle">The shared repository</text>
+  <text class="s" x="600" y="87" text-anchor="middle">on GitHub, or any git remote</text>
+  <rect class="box" x="880" y="28" width="290" height="82" rx="14"/>
+  <text class="h" x="1025" y="63" text-anchor="middle">Colleagues</text>
+  <text class="s" x="1025" y="87" text-anchor="middle">their own Studio and agents</text>
+  <path class="gl" d="M880 69H772" marker-end="url(#g)" marker-start="url(#g)"/>
+  <text class="l" x="826" y="58" text-anchor="middle">pull, push</text>
+  <path class="gl" d="M600 112V150" marker-end="url(#g)" marker-start="url(#g)"/>
+  <text class="l" x="612" y="136">pull, push</text>
+
+  <!-- the folder -->
+  <rect class="hot" x="400" y="152" width="400" height="290" rx="16"/>
+  <text class="h" x="600" y="186" text-anchor="middle">Your talk folder</text>
+  <text class="s" x="600" y="208" text-anchor="middle">plain files, in git</text>
+  <text class="m" x="436" y="246">talk.md</text><text class="s" x="560" y="246">the slides</text>
+  <text class="m" x="436" y="278">requests/</text><text class="s" x="560" y="278">your requests to agents</text>
+  <text class="m" x="436" y="310">variants/</text><text class="s" x="560" y="310">other versions of a slide</text>
+  <text class="m" x="436" y="342">decisions/</text><text class="s" x="560" y="342">what was chosen, and why</text>
+  <text class="m" x="436" y="374">.quorum/</text><text class="s" x="560" y="374">votes and questions, kept local</text>
+  <text class="k" x="600" y="418" text-anchor="middle">The memory of the talk</text>
+
+  <!-- you -->
+  <rect class="box" x="40" y="214" width="290" height="166" rx="14"/>
+  <text class="h" x="185" y="256" text-anchor="middle">You</text>
+  <text class="s" x="185" y="282" text-anchor="middle">in Quorum Studio</text>
+  <text class="l" x="185" y="318" text-anchor="middle">type on slides, drag in polls,</text>
+  <text class="l" x="185" y="338" text-anchor="middle">choose between alternatives,</text>
+  <text class="l" x="185" y="358" text-anchor="middle">ask your agent for more</text>
+  <path class="ln" d="M332 297H398" marker-end="url(#a)" marker-start="url(#a)"/>
+
+  <!-- the agent -->
+  <rect class="box" x="870" y="214" width="290" height="166" rx="14"/>
+  <text class="h" x="1015" y="256" text-anchor="middle">Your agent</text>
+  <text class="s" x="1015" y="282" text-anchor="middle">Claude Code, Codex, Cursor</text>
+  <text class="l" x="1015" y="318" text-anchor="middle">on your computer or in the cloud:</text>
+  <text class="l" x="1015" y="338" text-anchor="middle">reads the requests, writes slides,</text>
+  <text class="l" x="1015" y="358" text-anchor="middle">checks them, notes what it decided</text>
+  <path class="ln" d="M868 297H802" marker-end="url(#a)" marker-start="url(#a)"/>
+
+  <!-- the room -->
+  <rect class="box" x="40" y="470" width="290" height="80" rx="14"/>
+  <text class="h" x="185" y="504" text-anchor="middle">The room</text>
+  <text class="s" x="185" y="528" text-anchor="middle">phones, no app, no account</text>
+  <path class="ln" d="M185 382V468" marker-end="url(#a)"/>
+  <text class="l" x="199" y="432">Present: a link and a QR code</text>
+</svg>
