@@ -1,0 +1,44 @@
+{
+  "name": "quorum",
+  "version": "0.1.0",
+  "description": "Presentations where the audience takes part: write your talk in Markdown, people vote, guess and ask from their phones, and everything runs from your laptop.",
+  "type": "module",
+  "bin": {
+    "quorum": "bin/quorum.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "app",
+    "templates",
+    "examples",
+    "docs/*.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=spec test/*.test.js",
+    "test:e2e": "node test/e2e/run.js",
+    "demo": "node bin/quorum.js rehearse examples/demo",
+    "build:site": "node scripts/build-site.js"
+  },
+  "keywords": [
+    "presentation",
+    "slides",
+    "markdown",
+    "audience",
+    "interactive",
+    "poll",
+    "live",
+    "qr"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JBoixCampos/quorum.git"
+  },
+  "homepage": "https://jboixcampos.github.io/quorum/"
+}

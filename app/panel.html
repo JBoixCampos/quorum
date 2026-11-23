@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quorum · Panel</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/panel.css">
+</head>
+<body class="panel">
+  <header class="p-top">
+    <div class="p-clock"><b data-clock>0:00</b><span data-pace></span></div>
+    <div class="p-status">
+      <span data-conn>Connecting…</span>
+      <span data-people>0 people</span>
+      <span data-public></span>
+    </div>
+  </header>
+
+  <main class="p-grid">
+    <section class="p-stage-col">
+      <div class="p-head"><span class="p-live">Live</span><strong data-slide-title></strong><span class="p-muted" data-step></span><span class="p-muted p-help">The preview is clickable: it works like the shared window.</span></div>
+      <div class="p-room">
+        <div class="p-views">
+          <div class="p-preview"><iframe data-preview title="Live preview of the presentation"></iframe></div>
+          <div class="p-thumbs">
+            <figure class="p-thumb" data-thumb="0"><iframe tabindex="-1" title="This slide, all steps done"></iframe><figcaption><b>This one, done</b> <span></span></figcaption></figure>
+            <figure class="p-thumb" data-thumb="1"><iframe tabindex="-1" title="Next slide"></iframe><figcaption><b>Next</b> <span></span></figcaption></figure>
+            <figure class="p-thumb" data-thumb="2"><iframe tabindex="-1" title="Slide after next"></iframe><figcaption><b>After</b> <span></span></figcaption></figure>
+          </div>
+        </div>
+      </div>
+      <div class="p-nav">
+        <button type="button" data-go="-1">← Back</button>
+        <button type="button" class="main" data-go="1">Next →</button>
+        <span class="p-muted p-next" data-next></span>
+        <button type="button" data-chat-mode>Switch to chat mode</button>
+      </div>
+      <ol class="p-sections" data-sections></ol>
+    </section>
+
+    <aside class="p-side">
+      <section>
+        <h2>Notes</h2>
+        <div class="p-notes" data-notes></div>
+      </section>
+      <section data-int-box hidden>
+        <h2 data-int-title>Interaction</h2>
+        <p class="p-muted" data-int-status></p>
+      </section>
+      <section>
+        <h2>Questions <span class="p-badge" data-pending></span></h2>
+        <div class="p-row"><button type="button" data-approve-all>Approve all pending</button></div>
+        <ul class="p-moderation" data-moderation></ul>
+      </section>
+      <details>
+        <summary>Audience link</summary>
+        <p class="p-muted">The link people open (the QR code points here). <code>quorum live</code> fills it in from the tunnel.</p>
+        <form class="p-row" data-url-form><input type="url" data-url placeholder="https://…" aria-label="Public link"><button type="submit">Save</button></form>
+      </details>
+      <details class="p-danger">
+        <summary>Reset the session</summary>
+        <p class="p-muted">Deletes every vote, question and shared state. It cannot be undone.</p>
+        <button type="button" data-reset>Reset everything</button>
+      </details>
+    </aside>
+  </main>
+  <script type="module" src="js/panel.js"></script>
+</body>
+</html>

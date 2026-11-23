@@ -1,0 +1,44 @@
+/* Quorum: shared tokens, fonts and resets. */
+
+@font-face { font-family: 'Inter Display'; src: url('../fonts/InterDisplay-Bold.woff') format('woff'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Inter Display'; src: url('../fonts/InterDisplay-SemiBold.woff') format('woff'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-Regular.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-Medium.woff') format('woff'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-SemiBold.woff') format('woff'); font-weight: 600; font-display: swap; }
+
+:root {
+  --accent: #ff6a00;
+  --font-display: 'Inter Display', 'Inter', system-ui, sans-serif;
+  --font-text: 'Inter', system-ui, sans-serif;
+  --bg: #fbfaf8;
+  --fg: #16181a;
+  --muted: #5d6468;
+  --faint: #8a9195;
+  --surface: #f0eeea;
+  --line: #e1ddd7;
+  --card: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  --on-accent: #111;
+  --good: #1f8a4c;
+  --bad: #c2362b;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+:root[data-theme="dark"] {
+  --bg: #111315;
+  --fg: #f3f1ee;
+  --muted: #a6acb0;
+  --faint: #7d8488;
+  --surface: #1d2023;
+  --line: #2c3034;
+  --card: #181b1e;
+  --accent-text: color-mix(in srgb, var(--accent) 80%, #fff);
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--bg));
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-text); -webkit-font-smoothing: antialiased; }
+button, input, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }

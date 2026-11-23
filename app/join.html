@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111315">
+  <title>Join</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/join.css">
+</head>
+<body class="join">
+  <header class="j-top">
+    <span class="j-title" data-title></span>
+    <span class="j-status" data-status></span>
+  </header>
+  <main class="j-main" data-main>
+    <div class="j-center"><div class="j-dot"></div><h1>Connecting…</h1></div>
+  </main>
+  <button type="button" class="j-fab" data-open-ask>Ask a question</button>
+  <div class="j-dialog" data-ask-dialog hidden>
+    <div class="j-sheet" role="dialog" aria-label="Ask a question">
+      <div class="j-sheet-top"><h2>Ask a question</h2><button type="button" class="j-close" data-close-ask aria-label="Close">×</button></div>
+      <form class="j-ask" data-ask-form="ask">
+        <textarea maxlength="140" rows="4" placeholder="Your question (anonymous)" data-ask-text></textarea>
+        <button type="submit" class="j-button">Send question</button>
+        <p class="j-message" data-message="ask" role="status"></p>
+      </form>
+    </div>
+  </div>
+  <script type="module" src="js/join.js"></script>
+</body>
+</html>
