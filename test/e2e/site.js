@@ -92,6 +92,10 @@ try {
     return text.includes('simulated people') && !/Slide \d+ of/.test(text);
   }));
 
+  const hero = page.frameLocator('.stage iframe');
+  check('the hero shows a live slide from the demo', await until(async () => (await hero.locator('.q-slide').textContent()).includes('Pineapple on pizza?')));
+  check('the agent session in the hero plays to the end', await until(async () => (await page.$$('.terminal [data-line]:not(.shown)')).length === 0));
+
   await page.click('[data-chip="estimate"]');
   check('a chip adds a slide and the preview follows it', await until(async () => (await slideText()).includes('How many keys does a piano have?')));
   check('the editor has the new block', (await page.inputValue('#write textarea')).includes('::: estimate {#keys}'));

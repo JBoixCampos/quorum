@@ -76,37 +76,76 @@ function docLink(from) {
 // --- the shared page template -----------------------------------------------
 
 const NAV = [
-  ['Home', ''],
   ['Docs', 'docs/'],
   ['Examples', 'examples/'],
   ['Playground', 'playground/'],
+  ['For agents', 'docs/agents/'],
 ];
 
+// The section of the site a page belongs to, for the current link.
+function current(path, to) {
+  if (to === 'docs/agents/') return path === to;
+  if (to === 'docs/') return path.startsWith('docs/') && path !== 'docs/agents/';
+  return path.startsWith(to);
+}
+
 function header(path) {
-  const section = path.split('/')[0];
-  const links = NAV.map(([label, to]) => {
-    const current = to === '' ? path === '' : to.startsWith(`${section}/`);
-    return `<a href="${href(path, to)}"${current ? ' aria-current="page"' : ''}>${label}</a>`;
-  }).join('\n      ');
-  return `<header class="wrap top">
-    <a class="brand" href="${href(path, '')}"><img src="${href(path, 'favicon.svg')}" alt="">Quorum</a>
-    <nav class="links" aria-label="Main">
-      ${links}
-      <a href="${REPO}">GitHub</a>
-    </nav>
+  const links = NAV.map(([label, to]) => `<a href="${href(path, to)}"${current(path, to) ? ' aria-current="page"' : ''}>${label}</a>`)
+    .join('\n        ');
+  return `<header class="top">
+    <div class="wrap">
+      <a class="brand" href="${href(path, '')}"><img src="${href(path, 'favicon.svg')}" alt="">Quorum</a>
+      <div class="top-right">
+        <nav class="links" aria-label="Main">
+        ${links}
+        <a href="${REPO}">GitHub</a>
+        </nav>
+        <a class="button ink" href="${href(path, '#start')}">Get started</a>
+      </div>
+    </div>
   </header>`;
 }
 
 function footer(path) {
-  return `<footer>
+  const to = (p) => href(path, p);
+  return `<footer class="site">
     <div class="wrap">
-      <span>Quorum is open source, under the MIT license.</span>
-      <nav aria-label="Footer">
-        <a href="${href(path, 'docs/')}">Docs</a>
-        <a href="${href(path, 'examples/')}">Examples</a>
-        <a href="${href(path, 'llms.txt')}">llms.txt</a>
+      <div class="grid">
+        <div>
+          <a class="brand" href="${to('')}"><img src="${to('favicon.svg')}" alt="">Quorum</a>
+          <p>Presentations, but interactive. Agent ready. Open source, under the MIT license.</p>
+        </div>
+        <nav aria-label="Learn">
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="${to('docs/')}">Overview</a></li>
+            <li><a href="${to('docs/format/')}">The talk format</a></li>
+            <li><a href="${to('docs/components/')}">Components</a></li>
+            <li><a href="${to('docs/giving-a-talk/')}">Giving a talk</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Try">
+          <h2>Try</h2>
+          <ul>
+            <li><a href="${to('playground/')}">Playground</a></li>
+            <li><a href="${to('demo/')}">Demo talk</a></li>
+            <li><a href="${to('examples/')}">Examples</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="For agents">
+          <h2>For agents</h2>
+          <ul>
+            <li><a href="${to('docs/agents/')}">Set up your agent</a></li>
+            <li><a href="${to('llms.txt')}">llms.txt</a></li>
+            <li><a href="${to('llms-full.txt')}">llms-full.txt</a></li>
+            <li><a href="${BLOB}agents/quorum/SKILL.md">The skill</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="base">
+        <span>No accounts. No cloud. No trackers.</span>
         <a href="${REPO}">github.com/JBoixCampos/quorum</a>
-      </nav>
+      </div>
     </div>
   </footer>`;
 }
@@ -220,6 +259,7 @@ function buildDocs() {
       title: doc.slug ? `${result.title} · Quorum docs` : 'Quorum docs',
       description: doc.description,
       body: `    <div class="wrap page-head">
+      <p class="kicker${doc.slug === 'agents' ? ' agent' : ''}">${doc.slug === 'agents' ? 'agent ready' : `docs / ${escapeHtml(doc.label.toLowerCase())}`}</p>
       <h1>${inline(result.title)}</h1>
     </div>
     <div class="wrap docs">
@@ -344,6 +384,7 @@ function buildExamples() {
     title: 'Examples · Quorum',
     description: 'Components you can copy into a talk: a word cloud, a language model on your laptop, a counter and the built-in countdown, QR code and embed.',
     body: `    <div class="wrap page-head">
+      <p class="kicker">examples / components</p>
       <h1>Examples</h1>
       <p class="lede">A component is one JavaScript file in your talk's <code>components/</code> folder. Copy any of these, use it from <code>talk.md</code>, and change it. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
     </div>
@@ -385,6 +426,7 @@ The queue is long for a reason.
     description: 'Write a Quorum slide in Markdown and see it live, with a simulated audience that votes.',
     scripts: ['assets/playground.js'],
     body: `    <div class="wrap page-head">
+      <p class="kicker">playground</p>
       <h1>Playground</h1>
       <p class="lede">Write Markdown on the left and the real slide appears on the right, with 24 simulated people ready to vote. Your draft stays in this browser. When you like it, copy it into <code>talk.md</code>. <a href="${href(path, 'docs/format/')}">Every block is in the format guide</a>.</p>
     </div>
@@ -410,7 +452,7 @@ function buildLanding() {
 function buildLlms() {
   const index = `# Quorum
 
-> Quorum is an open-source toolkit for presentations where the audience takes part. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components. People answer from their phones through a QR code, and everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
+> Quorum is an open-source toolkit for presentations where the audience takes part, built so AI agents can write and check them. A talk is one Markdown file (talk.md) with ::: blocks for polls, estimates, rounds, a shared sentence, questions and custom JavaScript components. People answer from their phones through a QR code, and everything runs from the speaker's laptop with the quorum command (Node 18 or newer, no dependencies).
 
 Install with \`npm install -g github:JBoixCampos/quorum\` (Node.js 18 or newer). To write or edit a talk: run \`quorum new <folder>\`, edit talk.md, and run \`quorum check <folder> --json\` until it reports no warnings. Never touch the .quorum/ folder and never share the presenter key.
 

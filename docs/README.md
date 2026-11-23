@@ -1,6 +1,6 @@
 # Quorum documentation
 
-Quorum turns a Markdown file into a presentation where the audience takes part. People scan a QR code and answer from their phones; the results land on your slides. Everything runs from your laptop.
+Quorum turns a Markdown file into a presentation where the audience takes part, and that an AI agent can write and check for you. People scan a QR code and answer from their phones; the results land on your slides. Everything runs from your laptop.
 
 ## Quick start
 
