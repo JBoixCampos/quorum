@@ -521,7 +521,20 @@ class SlideParser {
   blocks(lines) {
     const out = [];
     let i = 0;
+    // Source maps: every block remembers the lines it came from.
+    let sealFrom = 0;
+    let sealStart = null;
+    const seal = () => {
+      if (sealStart === null || !this.ctx.sourceMap) return;
+      const end = lines[Math.min(i, lines.length) - 1];
+      for (let k = sealFrom; k < out.length; k += 1) {
+        out[k] = out[k].replace(/^<([a-z][\w-]*)/i, `<$1 data-src="${sealStart}-${end ? end.n : sealStart}"`);
+      }
+    };
     while (i < lines.length) {
+      seal();
+      sealFrom = out.length;
+      sealStart = lines[i].n;
       const line = lines[i];
       const t = line.text;
       const trimmed = t.trim();
@@ -663,6 +676,7 @@ class SlideParser {
       }
       out.push(this.stepped(`<p${attrsHtml(attrs)}>${inline(textP)}</p>`));
     }
+    seal();
     return out;
   }
 
@@ -986,7 +1000,27 @@ function takeMedia(html) {
 // options.readFile(path): reads a file in the talk folder (for theme files),
 // returning its text, or null when it does not exist. Only the quorum
 // command has one; in the browser theme files are already merged.
-export function parseTalk(source, { readFile = null } = {}) {
+// A slide id from its title: "Why bread rises!" becomes "why-bread-rises".
+export function slug(text) {
+  return String(text || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/, '');
+}
+
+function uniqueId(base, index, used) {
+  let id = base || `s${index + 1}`;
+  let n = 2;
+  while (used.has(id)) { id = `${base || `s${index + 1}`}-${n}`; n += 1; }
+  used.add(id);
+  return id;
+}
+
+export function parseTalk(source, { readFile = null, sourceMap = false } = {}) {
   const warnings = [];
   const all = String(source).replace(/\r\n?/g, '\n').split('\n');
   const { meta: front, rest } = frontMatter(all);
@@ -1012,7 +1046,8 @@ export function parseTalk(source, { readFile = null } = {}) {
     if (!meta.primary) branding.primary = '';
   }
 
-  const ctx = { series: branding.series };
+  const ctx = { series: branding.series, sourceMap };
+  const usedIds = new Set();
   const slides = splitSlides(rest).map((lines, index) => {
     lines.forEach((l) => { l.n += offset; });
     const slideWarn = (m) => warnings.push(`Slide ${index + 1}, ${m.charAt(0).toLowerCase()}${m.slice(1)}`);
@@ -1041,11 +1076,14 @@ export function parseTalk(source, { readFile = null } = {}) {
       mediaHtml = taken.media;
       if (!mediaHtml) warnings.push(`Slide ${index + 1}: the layout "${layoutName}" needs an image or a video on its own line.`);
     }
-    const id = p.attrs.id || `s${index + 1}`;
+    const titleText = plain || (p.interactions[0] && p.interactions[0].title) || '';
+    const id = uniqueId(p.attrs.id ? slug(p.attrs.id) : slug(titleText), index, usedIds);
+    const filled = lines.filter((l) => l.text.trim() !== '');
     if (p.css.length) html += scopedCss(p.css.join('\n'), id);
     return {
       index,
       id,
+      lines: [filled[0].n, filled[filled.length - 1].n],
       title: plain || (p.interactions[0] && p.interactions[0].title) || `Slide ${index + 1}`,
       html,
       media: mediaHtml,

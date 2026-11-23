@@ -332,6 +332,12 @@ export function startServer({
       if (!folders.has(folder)) folders.set(folder, new Set());
       folders.get(folder).add(basename(f));
     });
+    // A split talk: every Markdown file in its slides folder.
+    if (talk.split && talk.folder) {
+      const slidesFolder = join(dir, talk.folder);
+      if (!folders.has(slidesFolder)) folders.set(slidesFolder, new Set());
+      folders.get(slidesFolder).add('*.md');
+    }
     watchers.forEach((w, folder) => {
       if (!folders.has(folder)) {
         w.close();
@@ -346,7 +352,7 @@ export function startServer({
       }
       if (!existsSync(folder)) return;
       const w = watch(folder, (event, name) => {
-        if (name && w.names.has(String(name))) onChange();
+        if (name && (w.names.has(String(name)) || (w.names.has('*.md') && String(name).endsWith('.md')))) onChange();
       });
       w.names = names;
       watchers.set(folder, w);

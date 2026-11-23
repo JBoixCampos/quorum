@@ -58,46 +58,76 @@ function pressMain() {
   return true;
 }
 
+// A browser looking at a talk with a simulated audience. One browser and
+// one page stay open, so showing many slides is fast. Used by the checks,
+// snapshots, the PowerPoint export, diffs and the variant grid.
+export async function openRenderer(dir, { file = 'talk.md', width = 1280 } = {}) {
+  const chromium = loadPlaywright();
+  if (!chromium) return null;
+  const server = await startServer({ talkDir: dir, file, port: 0, preview: true, log: () => {} });
+  const browser = await chromium.launch();
+  const errors = [];
+  const page = await browser.newPage({ viewport: { width, height: Math.round((width * 9) / 16) } });
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`http://localhost:${server.port}/present?preview=1`);
+  await page.addStyleTag({ content: '.q-preview-bar, .q-reactions { display: none !important; }' });
+  await page.waitForFunction(() => document.querySelector('[data-slide] .q-content'), null, { timeout: 15000 });
+  await wait(1500);
+  return {
+    page,
+    errors,
+    talk: () => server.talk(),
+    // Goes to a slide, at its last step (everything visible) unless told.
+    async show(index, step = null) {
+      const slide = server.talk().slides[index];
+      await page.evaluate(([i, st]) => window.quorum.go(i, st), [index, step === null ? slide.steps - 1 : step]);
+      await wait(800);
+    },
+    measure: () => page.evaluate(measure),
+    // Presses the main button until the results are shown.
+    async playResults() {
+      let presses = 0;
+      while (presses < 4 && await page.evaluate(pressMain)) {
+        presses += 1;
+        await wait(presses === 1 ? 4500 : 1000);
+      }
+      return presses;
+    },
+    picture: (path) => page.screenshot({ path }),
+    // Runs a function in the page (it must not use variables from outside).
+    evaluate: (fn, arg) => page.evaluate(fn, arg),
+    async close() {
+      await browser.close();
+      await server.close();
+    },
+  };
+}
+
 // Renders a talk. Options: file, out (a folder for pictures, or null to
 // only measure), results (play interactions), width (pictures' width).
 export async function renderTalk(dir, { file = 'talk.md', out = null, results = true, width = 1280, onSlide = () => {} } = {}) {
-  const chromium = loadPlaywright();
-  if (!chromium) return { available: false };
-  const server = await startServer({ talkDir: dir, file, port: 0, preview: true, log: () => {} });
-  const browser = await chromium.launch();
-  const report = { available: true, slides: [], pictures: [], contact: null, errors: [] };
+  const r = await openRenderer(dir, { file, width });
+  if (!r) return { available: false };
+  const report = { available: true, slides: [], pictures: [], contact: null, errors: r.errors };
   try {
-    const page = await browser.newPage({ viewport: { width, height: Math.round((width * 9) / 16) } });
-    page.on('pageerror', (e) => report.errors.push(e.message));
-    await page.goto(`http://localhost:${server.port}/present?preview=1`);
-    await page.addStyleTag({ content: '.q-preview-bar, .q-reactions { display: none !important; }' });
-    await page.waitForFunction(() => document.querySelector('[data-slide] .q-content'), null, { timeout: 15000 });
-    await wait(1500);
-    const talk = server.talk();
+    const { page } = r;
+    const talk = r.talk();
     if (out) mkdirSync(out, { recursive: true });
     for (const slide of talk.slides) {
       const n = String(slide.index + 1).padStart(2, '0');
-      await page.evaluate(([i, step]) => window.quorum.go(i, step), [slide.index, slide.steps - 1]);
-      await wait(800);
-      const entry = { slide: slide.index + 1, title: slide.title, overflow: await page.evaluate(measure) };
+      await r.show(slide.index);
+      const entry = { slide: slide.index + 1, id: slide.id, title: slide.title, overflow: await r.measure() };
       if (out) {
         const path = join(out, `slide-${n}.png`);
-        await page.screenshot({ path });
+        await r.picture(path);
         report.pictures.push(path);
       }
       if (results && slide.interaction && slide.interaction.kind !== 'questions') {
-        // Open voting, give the simulated room time to answer, then close
-        // and reveal.
-        let presses = 0;
-        while (presses < 4 && await page.evaluate(pressMain)) {
-          presses += 1;
-          await wait(presses === 1 ? 4500 : 1000);
-        }
-        const after = await page.evaluate(measure);
-        entry.overflowResults = after;
+        await r.playResults();
+        entry.overflowResults = await r.measure();
         if (out) {
           const path = join(out, `slide-${n}-results.png`);
-          await page.screenshot({ path });
+          await r.picture(path);
           report.pictures.push(path);
         }
       }
@@ -113,8 +143,7 @@ export async function renderTalk(dir, { file = 'talk.md', out = null, results = 
       writeFileSync(join(out, 'report.json'), JSON.stringify({ slides: report.slides, errors: report.errors }, null, 2));
     }
   } finally {
-    await browser.close();
-    await server.close();
+    await r.close();
   }
   return report;
 }
