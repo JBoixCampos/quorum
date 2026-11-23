@@ -151,6 +151,26 @@ function footer(path) {
   </footer>`;
 }
 
+// What WhatsApp, Slack, LinkedIn and others show for a shared link: a
+// title, a description and site/og.png (made by scripts/og-image.js).
+// They need absolute URLs, so these point at the published site.
+function social(path, title, description) {
+  const t = escapeHtml(title);
+  const d = escapeHtml(description);
+  return `<meta property="og:type" content="website">
+  <meta property="og:site_name" content="Quorum">
+  <meta property="og:title" content="${t}">
+  <meta property="og:description" content="${d}">
+  <meta property="og:url" content="${SITE_URL}${path}">
+  <meta property="og:image" content="${SITE_URL}og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Quorum: presentations, but interactive. Agent ready.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ff6a00">`;
+}
+
 function page({ path, title, description, body, scripts = [] }) {
   const to = (p) => href(path, p);
   const extra = scripts.map((s) => `\n  <script type="module" src="${to(s)}"></script>`).join('');
@@ -161,6 +181,7 @@ function page({ path, title, description, body, scripts = [] }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}">
+  ${social(path, title, description)}
   <link rel="icon" href="${to('favicon.svg')}">
   <link rel="stylesheet" href="${to('assets/site.css')}">
 </head>
@@ -509,6 +530,8 @@ The queue is long for a reason.
 
 function buildLanding() {
   const html = read('site', 'index.html')
+    .replace('{{social}}', social('', 'Quorum: presentations, but interactive. Agent ready.',
+      'Presentations where the room takes part, written in Markdown so your AI agent can write, check and extend them. Open source, runs from your laptop.'))
     .replace('{{header}}', header(''))
     .replace('{{footer}}', footer(''));
   writeFileSync(join(OUT, 'index.html'), html);

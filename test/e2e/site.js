@@ -44,7 +44,7 @@ execFileSync(process.execPath, [join(ROOT, 'scripts', 'build-site.js'), out], { 
 // quorum export of the starter talk, served next to the site.
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'export', join(ROOT, 'templates', 'starter'), '--out', join(out, 'export')], { stdio: 'ignore' });
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff': 'font/woff', '.txt': 'text/plain' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff': 'font/woff', '.txt': 'text/plain', '.png': 'image/png' };
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (!path.startsWith('/quorum/')) {
@@ -166,6 +166,19 @@ try {
   check('the counter counts', await until(async () => (await live('counter').locator('.counter').textContent()) === '1'));
   await docs.locator('#embed').scrollIntoViewIfNeeded();
   check('embed shows a page from the talk folder', await until(async () => (await live('embed').frameLocator('iframe.q-embed').locator('h1').textContent()) === 'pages/chart.html'));
+
+  // Link previews (WhatsApp, Slack...): absolute URLs and a published image.
+  for (const path of ['', 'docs/agents/', 'examples/']) {
+    await docs.goto(base + path);
+    const og = await docs.$$eval('meta[property^="og:"]', (all) => Object.fromEntries(all.map((m) => [m.getAttribute('property'), m.content])));
+    check(`${path || 'the landing'} has a link preview`, og['og:title'] && og['og:description']
+      && og['og:image'] === 'https://jboixcampos.github.io/quorum/og.png'
+      && og['og:url'] === `https://jboixcampos.github.io/quorum/${path}`, JSON.stringify(og));
+  }
+  const image = await fetch(`${base}og.png`);
+  const bytes = Buffer.from(await image.arrayBuffer());
+  // A PNG header says its size: 1200 x 630, as og:image:width and height say.
+  check('the preview image is published, 1200 x 630', image.ok && bytes.readUInt32BE(16) === 1200 && bytes.readUInt32BE(20) === 630);
 
   const llms = await docs.goto(`${base}llms.txt`);
   check('llms.txt is published', llms.ok() && (await llms.text()).includes('llms-full.txt'));

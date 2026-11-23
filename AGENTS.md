@@ -22,7 +22,7 @@ A command line tool and a small web app for presentations where the audience tak
 | `templates/starter/` | What `quorum new` copies, including its own `AGENTS.md` |
 | `docs/*.md` | The documentation. The single source of truth for the website's docs pages and `llms.txt` |
 | `docs/images/` | Screenshots used by the docs, the README and the landing page. Made by `scripts/screenshots.js` |
-| `site/` | The landing page and the website's shared CSS and JS (`assets/`) |
+| `site/` | The landing page, the website's shared CSS and JS (`assets/`) and `og.png`, the image shown when a link is shared |
 | `scripts/build-site.js` | Builds `_site/`: landing, docs, examples, playground, demo, llms.txt, llms-full.txt, then checks every internal link |
 | `agents/quorum/SKILL.md` | A skill that teaches an agent to write and check a talk and build components for it |
 | `test/` | Unit tests (`*.test.js`) and end-to-end tests (`e2e/`) |
@@ -35,6 +35,7 @@ npm run test:e2e       # server, presentation, panel and phones, then the websit
 npm run demo           # preview examples/demo in the browser
 npm run build:site     # the website in _site/; fails on a broken internal link
 node scripts/screenshots.js   # retake docs/images/*.png after a visible change (needs Playwright)
+node scripts/og-image.js      # redraw site/og.png, the link preview image (needs Playwright)
 python3 -m http.server -d _site   # look at the built site locally
 node bin/quorum.js check templates/starter --json
 ```
