@@ -231,8 +231,9 @@ export function startServer({
     if (isPresenter(req, url) || preview) {
       return send(res, 200, { ...talk, version: talkVersion });
     }
-    const { title, accent, theme, lang, font } = talk.meta;
-    return send(res, 200, { meta: { title, accent, theme, lang, font }, version: talkVersion });
+    // Branding too, so phones look like the talk (not its stylesheet).
+    const { style, ...meta } = talk.meta;
+    return send(res, 200, { meta, version: talkVersion });
   }
 
   async function serveFile(res, base, path, longCache = false) {

@@ -6,6 +6,8 @@ body.join::before { content: ''; position: fixed; inset: 0; border: 6px solid va
 body.j-your-turn::before { opacity: 1; }
 
 .j-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 20px; font-size: 14px; color: var(--muted); }
+.j-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.j-logo img { display: block; max-height: 28px; max-width: 120px; object-fit: contain; }
 .j-title { font-weight: 600; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .j-status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); margin-right: 6px; vertical-align: 1px; }
 .j-status[data-state="connected"]::before { background: var(--good); }

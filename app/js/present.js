@@ -16,6 +16,7 @@
 
 import { parseTalk } from '../shared/markdown.js';
 import { Session } from '../shared/session.js';
+import { applyBrand, logoHtml } from './brand.js';
 import { mountError, loadComponent } from './components.js';
 import { connect, esc, send } from './net.js';
 import { qrSvg } from './qr.js';
@@ -30,11 +31,14 @@ const STILL = VIEW === 'still';
 const IN_PANEL = VIEW === 'panel';
 const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
+// Where the talk folder (images, components, fonts) is served.
+const ASSETS = STATIC ? STATIC.assets : '/talk/';
 
 const stage = document.querySelector('[data-stage]');
 const slideEl = document.querySelector('[data-slide]');
 const footer = document.querySelector('[data-footer]');
 const corner = document.querySelector('[data-corner]');
+const logo = document.querySelector('[data-logo]');
 const notesEl = document.querySelector('[data-notes]');
 const bar = document.querySelector('[data-preview]');
 
@@ -75,16 +79,15 @@ async function loadTalk() {
 }
 
 function applyTheme(meta) {
-  const root = document.documentElement;
-  root.style.setProperty('--accent', meta.accent);
-  root.dataset.theme = meta.theme;
-  if (meta.font) root.style.setProperty('--font-display', meta.font);
+  applyBrand(meta, { assets: ASSETS, style: true });
+  const html = logoHtml(meta, ASSETS);
+  if (logo.innerHTML !== html) logo.innerHTML = html;
   document.title = STILL || IN_PANEL ? 'Preview' : meta.title;
 }
 
 // Relative image and video paths in talk.md live next to it.
 function fixAssets(root) {
-  const base = STATIC ? STATIC.assets : '/talk/';
+  const base = ASSETS;
   root.querySelectorAll('img[src], video[src], source[src]').forEach((n) => {
     const src = n.getAttribute('src');
     if (!/^([a-z]+:|\/|#|data:)/i.test(src)) n.setAttribute('src', base + src.replace(/^\.\//, ''));
@@ -163,9 +166,13 @@ function renderSlide() {
   if (state.mountedFor === key) return;
   state.mountedFor = key;
   unmount();
-  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}`;
+  const bg = slide.background;
+  slideEl.className = `q-slide${slide.layout ? ` layout-${slide.layout}` : ''}${bg ? ' has-bg' : ''}${bg && bg.dim ? ' bg-dim' : ''}`;
+  slideEl.style.backgroundColor = bg && bg.color ? bg.color : '';
+  slideEl.style.backgroundImage = bg && bg.image ? `url("${ASSETS}${bg.image}")` : '';
   slideEl.innerHTML = `<div class="q-content">${slide.html}</div>`;
   fixAssets(slideEl);
+  logo.hidden = !slide.logo || !logo.innerHTML;
 
   if (slide.interaction) {
     const el = slideEl.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`);
@@ -203,10 +210,9 @@ function paintFooter() {
   const slide = state.talk.slides[state.index];
   const url = state.view.publicUrl || '';
   const votes = !!slide.interaction;
+  // Only where the audience takes part: how to join, next to the QR code.
   const showJoin = votes && !slide.join && url;
-  const left = state.index === 0 ? '' : esc(state.talk.meta.title);
-  const right = showJoin ? `Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b>` : `${state.index + 1} / ${state.talk.slides.length}`;
-  const html = `<span>${left}</span><span>${right}</span>`;
+  const html = showJoin ? `<span>Join at <b>${esc(url.replace(/^https?:\/\//, ''))}</b></span>` : '';
   if (footer.innerHTML !== html) footer.innerHTML = html;
   const cornerKey = showJoin ? url : '';
   if (corner.dataset.url !== cornerKey) {

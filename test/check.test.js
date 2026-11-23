@@ -73,3 +73,22 @@ test('check --json without a talk file still prints JSON', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('check warns about missing logo, background and image files', () => {
+  const dir = talkFolder([
+    '---', 'logo: images/logo.svg', 'style: brand.css', '---', '',
+    '<!-- background: images/photo.jpg, dim -->', '# Hi', '', '![A cat](images/cat.jpg)',
+    '', '![Remote](https://example.com/a.png)', '',
+  ].join('\n'));
+  try {
+    writeFileSync(join(dir, 'brand.css'), 'h1 { color: red; }\n');
+    const result = checkTalk(dir);
+    assert.deepEqual(result.warnings, [
+      'The logo file images/logo.svg does not exist.',
+      'Slide 1: the background images/photo.jpg does not exist.',
+      'Slide 1: the image images/cat.jpg does not exist.',
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

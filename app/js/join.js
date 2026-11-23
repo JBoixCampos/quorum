@@ -1,6 +1,7 @@
 // The audience app: what a phone shows after scanning the QR code.
 // No sign-up, no names: each phone gets a random id kept in the browser.
 
+import { applyBrand, logoHtml } from './brand.js';
 import { connect, deviceId, esc, send } from './net.js';
 import { morph } from './morph.js';
 
@@ -260,12 +261,12 @@ async function start() {
   try {
     const r = await fetch('/api/talk', { cache: 'no-store' });
     const t = await r.json();
-    document.documentElement.style.setProperty('--accent', t.meta.accent);
-    document.documentElement.dataset.theme = t.meta.theme;
+    applyBrand(t.meta);
     document.title = t.meta.title;
+    document.querySelector('[data-logo]').innerHTML = logoHtml(t.meta);
     document.querySelector('[data-title]').textContent = t.meta.title;
   } catch {
-    // The talk title is only decoration.
+    // The title and branding are only decoration.
   }
   send({ type: 'join' }, { device: DEVICE });
   connect({

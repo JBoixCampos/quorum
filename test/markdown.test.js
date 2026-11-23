@@ -116,3 +116,52 @@ audience: video
   assert.equal(talk.slides[2].interaction, null);
   assert.ok(talk.warnings.some((w) => w.includes('audience: video')));
 });
+
+test('branding: colours, logo, fonts and stylesheet from the front matter', () => {
+  const talk = parseTalk([
+    '---',
+    'title: We are #1',
+    'accent: "#0b5fff"   # buttons and bars',
+    'primary: navy',
+    'secondary: rgb(0, 160, 120)',
+    'background: "#101820"',
+    'logo: ./images/logo.svg',
+    'font: fonts/Brand-Bold.woff2',
+    'text-font: Georgia, serif',
+    'style: brand.css',
+    '---',
+    '# Hi',
+  ].join('\n'));
+  assert.equal(talk.meta.title, 'We are #1');
+  assert.equal(talk.meta.accent, '#0b5fff');
+  assert.equal(talk.meta.primary, 'navy');
+  assert.equal(talk.meta.secondary, 'rgb(0, 160, 120)');
+  assert.equal(talk.meta.theme, 'dark', 'a dark background makes the theme dark');
+  assert.equal(talk.meta.logo, 'images/logo.svg');
+  assert.equal(talk.meta.fontFile, 'fonts/Brand-Bold.woff2');
+  assert.equal(talk.meta.font, '');
+  assert.equal(talk.meta.textFont, 'Georgia, serif');
+  assert.equal(talk.meta.style, 'brand.css');
+  assert.deepEqual(talk.warnings, []);
+});
+
+test('branding: values that cannot be used are dropped with a warning', () => {
+  const talk = parseTalk('---\naccent: not a colour\nlogo: ../outside.png\nstyle: https://example.com/x.css\n---\n# Hi\n');
+  assert.equal(talk.meta.accent, '#ff6a00');
+  assert.equal(talk.meta.logo, '');
+  assert.equal(talk.meta.style, '');
+  assert.equal(talk.warnings.length, 3);
+});
+
+test('slide backgrounds and hiding the logo', () => {
+  const talk = parseTalk([
+    '<!-- background: images/photo.jpg, dim -->', '<!-- logo: off -->', '# Photo',
+    '', '---', '', '<!-- background: #ffeedd -->', '# Colour',
+    '', '---', '', '# Plain',
+  ].join('\n'));
+  assert.deepEqual(talk.slides[0].background, { color: '', image: 'images/photo.jpg', dim: true });
+  assert.equal(talk.slides[0].logo, false);
+  assert.deepEqual(talk.slides[1].background, { color: '#ffeedd', image: '', dim: false });
+  assert.equal(talk.slides[2].background, null);
+  assert.equal(talk.slides[2].logo, true);
+});

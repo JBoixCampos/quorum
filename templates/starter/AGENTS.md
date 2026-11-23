@@ -48,6 +48,8 @@ Speaker notes, only for the speaker.
 ```
 
 - `---` on its own line starts a new slide. `--` starts the next step of the same slide.
+- Branding goes in the front matter: `accent:`, `primary:` (titles), `secondary:` (details), `background:`, `text:`, `logo: images/logo.svg`, `font:` and `text-font:` (a CSS font-family or a font file), `style: brand.css`. Use the speaker's brand when they give one.
+- `<!-- background: images/photo.jpg, dim -->` puts an image (or a `#colour`) behind one slide. `<!-- logo: off -->` hides the logo there.
 - `<!-- layout: center -->` centres a slide. `<!-- section: Warm-up, 5 -->` starts a section planned for 5 minutes.
 - Layout blocks: `::: columns` (columns split by `+++`), `::: stat 88` (a big number), `::: callout Title`, `::: center`.
 

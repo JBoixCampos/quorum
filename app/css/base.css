@@ -20,6 +20,11 @@
   --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg));
   --on-accent: #111;
+  /* primary: titles. secondary: details such as list markers, subheadings,
+     table headers and callout titles. Both can be set in the front matter. */
+  --primary: var(--fg);
+  --secondary: var(--accent);
+  --secondary-text: color-mix(in srgb, var(--secondary) 72%, #000);
   --good: #1f8a4c;
   --bad: #c2362b;
   --ease: cubic-bezier(.2, .7, .2, 1);
@@ -35,6 +40,17 @@
   --card: #181b1e;
   --accent-text: color-mix(in srgb, var(--accent) 80%, #fff);
   --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  --secondary-text: color-mix(in srgb, var(--secondary) 80%, #fff);
+}
+
+/* A background or text colour from the front matter: greys follow them. */
+:root.custom-colors {
+  --muted: color-mix(in srgb, var(--fg) 64%, var(--bg));
+  --faint: color-mix(in srgb, var(--fg) 46%, var(--bg));
+  --surface: color-mix(in srgb, var(--fg) 6%, var(--bg));
+  --line: color-mix(in srgb, var(--fg) 13%, var(--bg));
+  --card: color-mix(in srgb, var(--fg) 2%, var(--bg));
+  --primary: var(--fg);
 }
 
 *, *::before, *::after { box-sizing: border-box; }

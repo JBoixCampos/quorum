@@ -4,7 +4,7 @@
 
 Write your talk in Markdown. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
 
-**[Try the demo in your browser](https://jboixcampos.github.io/quorum/#demo)** (seven slides with a simulated audience), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
+**[Try the demo in your browser](https://jboixcampos.github.io/quorum/demo/)** (seven slides with a simulated audience), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
 
 ```markdown
 ::: poll {#lunch} Where should we go for lunch?
@@ -49,6 +49,8 @@ quorum live my-talk         # give it
 | `::: component` | Whatever you build | Whatever you build |
 
 Plus the usual slide things: steps that appear one click at a time, columns, big numbers, callouts, images, tables, code, speaker notes, sections with a pace clock.
+
+**Your brand**: accent, primary, secondary, background and text colours, a logo on every slide and on phones, your own fonts, image or colour backgrounds per slide, and a stylesheet for anything else. See [the talk format](docs/format.md#your-brand).
 
 **The panel** is the presenter view: a live preview you can click, the next slides, your notes, how many people are in, the questions waiting for approval, and how you are doing on time.
 

@@ -10,12 +10,37 @@ A talk is one Markdown file, `talk.md`, in a folder with anything it needs (imag
 ---
 title: How does an AI write?
 author: Your name
-accent: "#ff6a00"   # the colour of buttons, bars and highlights
 theme: light        # light or dark
 duration: 20        # minutes, for the pace clock in the panel
-font: Georgia, serif  # optional: the font for titles (any CSS font-family)
 ---
 ```
+
+Anything after ` # ` on a line is a comment.
+
+## Your brand
+
+Colours, a logo, fonts and a stylesheet go in the same place. Every one is optional.
+
+```yaml
+---
+title: How does an AI write?
+accent: "#0b5fff"            # buttons, bars, the frame around audience slides
+primary: "#101820"           # titles
+secondary: "#00a078"         # list markers, subheadings, table headers, callout titles
+background: "#f7f4ee"        # the slide background
+text: "#1d1d1b"              # body text
+logo: images/logo.svg        # top right of every slide, and on phones
+font: fonts/Brand-Bold.woff2 # titles: a font file in the talk folder...
+text-font: Georgia, serif    # ...or any CSS font-family
+style: brand.css             # your own CSS, loaded after Quorum's
+---
+```
+
+- **Colours** are `#hex`, a CSS name (`navy`) or `rgb()`. Without `primary`, titles use the text colour; without `secondary`, details use the accent. Text on buttons turns white or black to stay readable on your accent.
+- **A dark `background`** makes the theme dark on its own, unless you set `theme:`.
+- **Phones** use the same colours, fonts and logo, so the talk looks like one thing on the screen and in people's hands.
+- **Files** (logo, fonts, stylesheet, images) are paths inside the talk folder. `quorum check` warns when one is missing.
+- **`style:`** is for anything else. Slides are `.q-slide`, their content `.q-content`, the logo `.q-logo`. For example, `.q-content h1 { text-transform: none; }` or `.q-logo img { max-height: 48px; }`.
 
 ## Slides and steps
 
@@ -47,6 +72,9 @@ HTML comments at the start of a slide change how it behaves:
 <!-- layout: center -->         centre everything (good for titles and closing slides)
 <!-- id: intro -->              a stable name for the slide
 <!-- section: Warm-up, 5 -->    starts a section planned for 5 minutes (shown in the panel)
+<!-- background: images/team.jpg, dim -->   a full-slide image ("dim" darkens it, text turns white)
+<!-- background: #101820 -->    or a colour
+<!-- logo: off -->              hide the logo on this slide
 ```
 
 ## Blocks
