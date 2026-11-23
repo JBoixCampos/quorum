@@ -444,7 +444,13 @@ th { font-weight: 600; background: var(--paper-2); }
 .card .prose p { color: var(--muted); font-size: 16px; }
 .card .prose pre { font-size: 13.5px; }
 .card .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-.card .preview { align-self: start; }
+.card .preview { align-self: start; margin: 20px 0 0; }
+.card .preview:first-child { margin-top: 0; }
+.card .preview figcaption { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+.live { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font: 500 12px/1.6 var(--mono); }
+.live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .live::before { animation: none; } }
 .tag { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font: 500 12.5px/1.5 var(--mono); letter-spacing: 0; }
 
 /* Playground */

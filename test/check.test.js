@@ -104,3 +104,25 @@ test('quorum skill copies the agent skill into a skills folder', () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('check: embed takes an https url or a page in the talk folder', () => {
+  const dir = talkFolder([
+    '::: component embed\nurl: https://example.com\n:::',
+    '::: component embed\nurl: pages/chart.html\n:::',
+    '::: component embed\nurl: pages/missing.html\n:::',
+    '::: component embed\nurl: http://example.com\n:::',
+    '::: component embed\nurl: ../outside.html\n:::',
+  ].join('\n\n---\n\n'));
+  try {
+    mkdirSync(join(dir, 'pages'));
+    writeFileSync(join(dir, 'pages', 'chart.html'), '<p>Chart</p>\n');
+    const { result } = runJson(dir);
+    assert.deepEqual(result.warnings, [
+      'Slide 3: the embedded page pages/missing.html does not exist.',
+      'Slide 4: embed needs an https:// url or a file in the talk folder.',
+      'Slide 5: embed needs an https:// url or a file in the talk folder.',
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

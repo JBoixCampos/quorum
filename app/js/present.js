@@ -148,6 +148,8 @@ function context(extra = {}) {
     step: state.step,
     talk: state.talk,
     publicUrl: state.view.publicUrl || '',
+    // Where the talk folder is served, for files in it: `${assets}images/a.png`.
+    assets: ASSETS,
     // True with a simulated audience (quorum preview, a static build).
     preview: PREVIEW,
     // Older names, kept so existing components keep working.

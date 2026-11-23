@@ -39,6 +39,16 @@ export function checkTalk(dir, file = 'talk.md') {
       interactions.push({ slide: slide.index + 1, id, kind, title });
     }
     slide.components.forEach((c) => {
+      if (c.name === 'embed') {
+        const url = String((c.params && c.params.url) || '');
+        if (/^https:\/\//.test(url)) return;
+        if (!url || /^[a-z][\w+.-]*:/i.test(url) || url.startsWith('/') || url.split('/').includes('..')) {
+          warnings.push(`${where}: embed needs an https:// url or a file in the talk folder.`);
+        } else if (missing(url)) {
+          warnings.push(`${where}: the embedded page ${url} does not exist.`);
+        }
+        return;
+      }
       if (BUILT_IN_COMPONENTS.includes(c.name)) return;
       if (!existsSync(join(dir, 'components', `${c.name}.js`))) {
         warnings.push(`${where}: the component "${c.name}" has no file components/${c.name}.js.`);

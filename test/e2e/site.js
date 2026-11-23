@@ -151,6 +151,22 @@ try {
     await docs.goto(base + path);
     check(`${path} has the site navigation`, (await docs.$$('nav.links a')).length === 5);
   }
+  // Every example component runs live on the examples page.
+  await docs.goto(`${base}examples/`);
+  const cards = await docs.$$eval('.gallery .card', (all) => all.map((c) => ({ id: c.id, live: !!c.querySelector('.preview iframe') })));
+  check('every example has a live demo', cards.length >= 6 && cards.every((c) => c.live), JSON.stringify(cards));
+  const live = (id) => docs.frameLocator(`#${id} .preview iframe`);
+  await docs.locator('#next-word-explorer').scrollIntoViewIfNeeded();
+  check('the next-word explorer runs on sample probabilities', await until(async () => (await live('next-word-explorer').locator('[data-row]').count()) === 10));
+  await live('next-word-explorer').locator('[data-row="0"]').click();
+  check('and picking a word adds it', await until(async () => (await live('next-word-explorer').locator('[data-sentence]').textContent()).includes('Paris')));
+  await docs.locator('#counter').scrollIntoViewIfNeeded();
+  await until(async () => (await live('counter').locator('.counter').count()) === 1);
+  await live('counter').locator('.counter').click();
+  check('the counter counts', await until(async () => (await live('counter').locator('.counter').textContent()) === '1'));
+  await docs.locator('#embed').scrollIntoViewIfNeeded();
+  check('embed shows a page from the talk folder', await until(async () => (await live('embed').frameLocator('iframe.q-embed').locator('h1').textContent()) === 'pages/chart.html'));
+
   const llms = await docs.goto(`${base}llms.txt`);
   check('llms.txt is published', llms.ok() && (await llms.text()).includes('llms-full.txt'));
   const full = await docs.goto(`${base}llms-full.txt`);

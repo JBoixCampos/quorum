@@ -247,9 +247,11 @@ label: The slides
 :::
 
 ::: component embed
-url: https://example.com
+url: https://example.com  # or a page in the talk folder: pages/chart.html
 :::
 ```
+
+`embed` shows a web page that allows being shown in a frame, or an HTML file from your talk folder, which works without internet. `quorum check` warns if that file is missing.
 
 A component can also ask the audience something with `audience:`:
 

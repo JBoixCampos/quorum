@@ -20,7 +20,8 @@
 // answers (what the audience answered, when the block has `audience:`),
 // step, view (live session data), act() (send a session action), talk,
 // where ('screen', 'preview' or 'thumbnail'), preview (true with a
-// simulated audience), publicUrl. Older names still set: rehearse (same as
+// simulated audience), publicUrl, assets (where the talk folder is served,
+// for files in it). Older names still set: rehearse (same as
 // preview) and chatMode (always false).
 //
 // docs/components.md explains all of it with examples.
@@ -78,17 +79,24 @@ const BUILT_IN = {
     },
   },
 
-  // Another web page inside the slide: `url: https://...`.
+  // Another web page inside the slide: `url: https://...`, or a page in the
+  // talk folder (`url: pages/chart.html`), which works without internet.
   embed: {
     mount(el, ctx) {
       const url = String(ctx.params.url || '');
-      el.innerHTML = /^https:\/\//.test(url)
-        ? `<iframe class="q-embed" src="${esc(url)}" title="${esc(ctx.params.title || 'Embedded page')}" loading="lazy"></iframe>`
-        : '<p class="q-small">The embed component needs an https:// url.</p>';
+      const src = /^https:\/\//.test(url) ? url : (isTalkFile(url) ? `${ctx.assets || '/talk/'}${url}` : '');
+      el.innerHTML = src
+        ? `<iframe class="q-embed" src="${esc(src)}" title="${esc(ctx.params.title || 'Embedded page')}" loading="lazy"></iframe>`
+        : '<p class="q-small">The embed component needs an https:// url or a file in the talk folder.</p>';
       return {};
     },
   },
 };
+
+// A path inside the talk folder: no scheme, not absolute, no "..".
+export function isTalkFile(url) {
+  return /^[\w][\w./-]*$/.test(url) && !url.split('/').includes('..');
+}
 
 const cache = new Map();
 

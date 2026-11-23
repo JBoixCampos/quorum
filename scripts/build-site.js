@@ -12,7 +12,8 @@
 // The build fails if any internal link is broken.
 
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -321,7 +322,7 @@ function humanName(name) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function exampleCard(from, { name, file, markdown, tag }) {
+function exampleCard(from, { name, file, markdown, tag, slide }) {
   const result = render(markdown, { link: docLink('docs/') });
   const blocks = result.blocks.filter((b) => typeof b === 'string');
   const first = blocks.findIndex((b) => b.startsWith('<p>'));
@@ -332,16 +333,15 @@ function exampleCard(from, { name, file, markdown, tag }) {
   const rest = blocks.filter((_, i) => i !== first && i !== usageIndex)
     .map((b, i, all) => (b.startsWith('<p>') && !(all[i + 1] || '').startsWith('<pre')
       ? b.replace(/ Used in talk\.md as:<\/p>$/, '</p>').replace(/:<\/p>$/, '.</p>') : b));
-  const demoIndex = DEMO_SLIDES.findIndex((s) => new RegExp(`::: component ${name}\\b`).test(s));
   const links = [];
   if (file) links.push(`<a class="button" href="${BLOB}${file}">Source on GitHub</a>`);
   if (PLAYABLE.has(name) && usageSource) {
     links.push(`<a class="button" href="${href(from, 'playground/')}#md=${encodeURIComponent(usageSource)}">Try it in the playground</a>`);
   }
-  const preview = demoIndex >= 0
-    ? `<figure class="preview" style="margin:0">
-        <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${demoIndex}" title="The ${escapeHtml(humanName(name))} component, live" loading="lazy"></iframe></div>
-        <figcaption class="try" style="margin:8px 0 0">Live in the demo talk. Click the slide to open it to the simulated audience.</figcaption>
+  const preview = slide >= 0
+    ? `<figure class="preview">
+        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}" title="The ${escapeHtml(humanName(name))} component, live" loading="lazy"></iframe></div>
+        <figcaption><span class="live">Live</span>${escapeHtml(LIVE[name] ? LIVE[name].caption : 'With a simulated audience. Click the slide to start it.')}</figcaption>
       </figure>`
     : '';
   return `<article class="card" id="${name}">
@@ -360,9 +360,73 @@ function exampleCard(from, { name, file, markdown, tag }) {
 
 const BUILT_IN_DOCS = [
   { name: 'countdown', markdown: 'A countdown on the slide. Click it, or press the right arrow, to start and pause it. The time is shared, so your panel shows the same.\n\n```markdown\n::: component countdown\nseconds: 90\n:::\n```' },
-  { name: 'qr', markdown: 'A QR code for any link, for example to your slides or a survey.\n\n```markdown\n::: component qr\nurl: https://example.com/slides\nlabel: The slides\n:::\n```' },
-  { name: 'embed', markdown: 'Another web page inside the slide. The page must allow being shown in a frame.\n\n```markdown\n::: component embed\nurl: https://example.com\n:::\n```' },
+  { name: 'qr', markdown: `A QR code for any link, for example to your slides or a survey.\n\n\`\`\`markdown\n::: component qr\nurl: ${SITE_URL}\nlabel: This website\n:::\n\`\`\`` },
+  { name: 'embed', markdown: 'Another web page inside the slide: an `https://` link (the site must allow being shown in a frame), or an HTML file in your talk folder, which works without internet.\n\n```markdown\n::: component embed\nurl: pages/chart.html\n:::\n```' },
 ];
+
+// What each live example needs beyond its usage block: the slide's
+// Markdown when it differs, and the line under the slide.
+const LIVE = {
+  'word-cloud': { caption: 'Click the slide to open it, and the simulated audience starts answering.' },
+  counter: { caption: 'Click the number. The count is shared state.' },
+  'next-word-explorer': {
+    caption: 'Here with model: sample, a small table of made-up probabilities, so it runs without a model. Click a word or draw one.',
+    source: '::: component next-word-explorer\ntext: The capital of France is\nmodel: sample\n:::',
+  },
+  countdown: { caption: 'Click the time to start it, and again to pause it.' },
+  qr: { caption: 'Drawn in the browser, with no request to any service. Scan it to open this website.' },
+  embed: { caption: 'The page is pages/chart.html, a file in the talk folder.' },
+};
+
+// The page the embed example shows: any HTML file in a talk folder works.
+const CHART_PAGE = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A page in the talk folder</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; place-content: center; gap: 28px; padding: 40px; background: #fbfaf8; color: #16181a; font: 400 28px/1.4 system-ui, sans-serif; }
+  h1 { margin: 0; font-size: 44px; }
+  p { margin: 0; color: #5d6468; max-width: 32em; }
+  .bars { display: flex; align-items: flex-end; gap: 18px; height: 220px; }
+  .bars span { width: 64px; border-radius: 10px 10px 4px 4px; background: #ff6a00; transform-origin: bottom; animation: grow 1.2s cubic-bezier(.2,.7,.2,1) both; }
+  .bars span:nth-child(2n) { background: #ffb37a; }
+  @keyframes grow { from { transform: scaleY(0); } }
+  @media (prefers-reduced-motion: reduce) { .bars span { animation: none; } }
+</style>
+</head>
+<body>
+  <h1>pages/chart.html</h1>
+  <p>Any HTML file in your talk folder can fill a slide: a chart, a map, a small app. It works without internet.</p>
+  <div class="bars" aria-hidden="true">
+    <span style="height:35%"></span><span style="height:60%;animation-delay:.1s"></span><span style="height:45%;animation-delay:.2s"></span><span style="height:80%;animation-delay:.3s"></span><span style="height:100%;animation-delay:.4s"></span><span style="height:70%;animation-delay:.5s"></span>
+  </div>
+</body>
+</html>
+`;
+
+// One talk with a slide per example, built into examples/live/ so every card
+// can show its component working. Returns the slide index of each example.
+function buildLiveExamples(entries) {
+  const dir = mkdtempSync(join(tmpdir(), 'quorum-examples-'));
+  try {
+    mkdirSync(join(dir, 'components'));
+    mkdirSync(join(dir, 'pages'));
+    writeFileSync(join(dir, 'pages', 'chart.html'), CHART_PAGE);
+    const slides = entries.map((e) => {
+      if (e.file) cpSync(join(ROOT, e.file), join(dir, 'components', `${e.name}.js`));
+      const source = (LIVE[e.name] && LIVE[e.name].source) || (e.markdown.match(/```markdown\n([\s\S]*?)\n```/) || [])[1];
+      if (!source) throw new Error(`The example ${e.name} has no usage block to show live.`);
+      return `## ${humanName(e.name)}\n\n${source}`;
+    });
+    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum components\ntheme: light\n---\n\n${slides.join('\n\n---\n\n')}\n`);
+    execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', dir, '--out', join(OUT, 'examples', 'live')], { stdio: 'ignore' });
+    return new Map(entries.map((e, i) => [e.name, i]));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 function buildExamples() {
   const path = 'examples/';
@@ -371,13 +435,16 @@ function buildExamples() {
   const files = [...first, ...readdirSync(join(ROOT, 'examples', 'components')).filter((f) => f.endsWith('.js')).sort()
     .map((f) => `examples/components/${f}`).filter((f) => !first.includes(f))];
   const tags = { 'templates/starter/components/counter.js': 'in every new talk' };
-  const cards = files.map((file) => exampleCard(path, {
+  const own = files.map((file) => ({
     name: file.split('/').pop().replace(/\.js$/, ''),
     file,
     markdown: headerComment(read(file)),
     tag: tags[file] || (file.includes('next-word') ? 'needs a local model' : ''),
   }));
-  const builtIn = BUILT_IN_DOCS.map((b) => exampleCard(path, { ...b, tag: 'built in' }));
+  const builtInEntries = BUILT_IN_DOCS.map((b) => ({ ...b, tag: 'built in' }));
+  const slideOf = buildLiveExamples([...own, ...builtInEntries]);
+  const cards = own.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
+  const builtIn = builtInEntries.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
 
   write(path, page({
     path,
@@ -386,7 +453,7 @@ function buildExamples() {
     body: `    <div class="wrap page-head">
       <p class="kicker">examples / components</p>
       <h1>Examples</h1>
-      <p class="lede">A component is one JavaScript file in your talk's <code>components/</code> folder. Copy any of these, use it from <code>talk.md</code>, and change it. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
+      <p class="lede">A component is one JavaScript file in your talk's <code>components/</code> folder. Each one runs live below, with a simulated audience. Copy any of these, use it from <code>talk.md</code>, and change it. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
     </div>
     <div class="wrap gallery">
       ${cards.join('\n      ')}

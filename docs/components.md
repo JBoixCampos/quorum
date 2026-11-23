@@ -89,6 +89,7 @@ All three are optional. `primary()` lets a component take over the right arrow, 
 | `where` | `'screen'` (the window you share), `'preview'` (your panel) or `'thumbnail'` (the next slides in the panel). Start slow or costly work only on `'screen'` |
 | `preview` | `true` with a simulated audience: `quorum preview`, static builds, the playground. (`rehearse` is the older name, still set.) |
 | `publicUrl` | The link people use to join |
+| `assets` | Where the talk folder is served, for files in it: `ctx.assets + 'images/chart.png'` |
 
 ## Asking the audience
 
@@ -143,6 +144,8 @@ text: Photosynthesis turns light
 model: http://127.0.0.1:8081
 :::
 ```
+
+No model at hand? `model: sample` uses a small table of made-up probabilities instead, and says so on the slide. That is how it runs on the [examples page](https://jboixcampos.github.io/quorum/examples/#next-word-explorer).
 
 A few things it shows that apply to any component that calls an outside service:
 
