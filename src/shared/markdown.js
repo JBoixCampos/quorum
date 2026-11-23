@@ -577,3 +577,12 @@ export function parseTalk(source) {
     warnings,
   };
 }
+
+// Slides only: none where the audience answers. Slides with a join block
+// stay (it is often the title slide); the presentation hides the block.
+export function withoutAudience(talk) {
+  const slides = talk.slides
+    .filter((slide) => !slide.interaction)
+    .map((slide, index) => ({ ...slide, index, join: false }));
+  return { ...talk, slides };
+}

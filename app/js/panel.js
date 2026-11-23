@@ -161,7 +161,7 @@ async function checkPublic() {
   } catch {
     publicOk = false;
   }
-  el.textContent = publicOk ? 'Public link works' : 'Public link NOT responding';
+  el.textContent = publicOk ? 'Public link works' : 'Public link not responding';
   el.className = publicOk ? 'good' : 'bad';
 }
 

@@ -14,11 +14,27 @@
 quorum live my-talk
 ```
 
-This prints three things:
+It opens two windows on your laptop and prints the audience link, the one in the QR code. That gives three views of the same talk, always in sync.
 
-- **Presentation**: opens in its own window. Share or project this window, and only this one.
-- **Panel**: opens in your browser. This is for you: preview, notes, next slides, time, people and questions.
-- **Audience link**: what the QR code points to.
+### What the room sees: the presentation
+
+It opens in its own window. Share or project this window, and only this one. The QR code stays in the corner whenever the audience can answer, so latecomers can still join.
+
+![The presentation during a poll: live bars, 23 answers and a QR code in the corner](images/screen.png)
+
+### What you see: the panel
+
+It opens in your browser and is only for you: a clickable preview of the presentation, the next slides, your notes, the clock against your plan, how many people are in, the votes so far, and the questions waiting for your approval. Never share it: its link contains the presenter key.
+
+![The panel: preview, next slides, notes, vote counts and two questions waiting for approval](images/panel.png)
+
+### What each phone sees
+
+After scanning the QR code, a phone shows only what the room is asked right now, and a button to ask a question. No app, no account, no name.
+
+![A phone showing the poll with three options to tap](images/phone.png)
+
+### Driving the talk
 
 Drive the talk from either window. In the panel, click the preview or use the arrow keys; in the presentation, use the keyboard or a clicker.
 
@@ -40,15 +56,15 @@ On a call with one monitor, share the presentation window and keep the panel in 
 
 People can ask at any time from the button on their phone. New questions wait in the panel until you approve them (or approve all). On the questions slide, click one to highlight it while you answer, and click again to mark it as answered.
 
-## If the public link stops
+## If people cannot join
 
-The terminal says so, and the QR code switches to your laptop's address on the local network: people on the same wifi can still join. For a new public link, press Ctrl+C and run `quorum live my-talk` again. Votes and questions are kept.
-
-If you know there will be no internet, use `quorum live my-talk --no-tunnel` and put everyone on the same network as your laptop.
+- **The public link stops**: the terminal says so, and the QR code switches to your laptop's address on the local network, so people on the same wifi can still join. For a new public link, press Ctrl+C and run `quorum live my-talk` again. Votes and questions are kept.
+- **No internet, but one network**: `quorum live my-talk --no-tunnel`, and everyone joins on the same wifi as your laptop.
+- **Nobody can join at all**: give the talk without the audience. `quorum export my-talk` makes a copy with only the slides nobody answers (the QR code is left out too), in `my-talk/export`. Present it from any static web server, for example `python3 -m http.server -d my-talk/export`, and open the address it prints. Make one before the day, just in case.
 
 ## After the talk
 
-- The results stay in `my-talk/.quorum/state.json` until you delete them. Export what you need (the panel shows every question), then run `quorum clean my-talk`.
+- The results stay in `my-talk/.quorum/state.json` until you delete them. Copy what you need (the panel shows every question), then run `quorum clean my-talk`.
 - `quorum clean my-talk --key` also creates a new presenter key next time.
 - To share a playable version of the talk afterwards, `quorum build my-talk` makes a static site that anyone can open and click through with a simulated audience. It contains your slides and components, never the votes or questions.
 

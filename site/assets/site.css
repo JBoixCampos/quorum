@@ -177,6 +177,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .prose ul, .prose ol { margin: 0 0 18px; padding-left: 24px; }
 .prose li { margin: 0 0 8px; }
 .prose li::marker { color: var(--muted); }
+.prose img { display: block; max-width: 100%; max-height: 560px; width: auto; margin: 8px 0 24px; border: 1px solid var(--line); border-radius: 12px; }
 .prose pre { margin: 0 0 20px; font-size: 14.5px; padding: 18px 22px; }
 .prose blockquote { margin: 0 0 18px; padding: 4px 0 4px 18px; border-left: 3px solid var(--accent); color: var(--muted); }
 .try { margin: -10px 0 22px; font-size: 15px; }
@@ -262,4 +263,15 @@ th { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) {
   .hall circle { transition: none; }
   html { scroll-behavior: auto; }
+}
+
+/* One talk, three views: the shared screen, the panel and a phone */
+.views { display: grid; grid-template-columns: 1fr 1fr 0.42fr; gap: 24px; align-items: start; margin-top: 32px; }
+.views figure { margin: 0; }
+.views img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.views figcaption { margin-top: 12px; font-size: 15px; color: var(--muted); }
+.views figcaption strong { display: block; color: var(--ink); font-size: 16px; }
+@media (max-width: 820px) {
+  .views { grid-template-columns: 1fr; }
+  .views figure:last-child img { max-width: 280px; }
 }

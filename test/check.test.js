@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -88,6 +88,18 @@ test('check warns about missing logo, background and image files', () => {
       'Slide 1: the background images/photo.jpg does not exist.',
       'Slide 1: the image images/cat.jpg does not exist.',
     ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('quorum skill copies the agent skill into a skills folder', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'quorum-skill-'));
+  try {
+    const r = spawnSync(process.execPath, [CLI, 'skill', '--to', dir], { encoding: 'utf8' });
+    assert.equal(r.status, 0);
+    const skill = readFileSync(join(dir, 'quorum', 'SKILL.md'), 'utf8');
+    assert.match(skill, /^---\nname: quorum\n/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

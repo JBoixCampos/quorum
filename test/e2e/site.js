@@ -41,6 +41,8 @@ async function until(fn, ms = 6000) {
 
 const out = mkdtempSync(join(tmpdir(), 'quorum-site-'));
 execFileSync(process.execPath, [join(ROOT, 'scripts', 'build-site.js'), out], { stdio: 'ignore' });
+// quorum export of the starter talk, served next to the site.
+execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'export', join(ROOT, 'templates', 'starter'), '--out', join(out, 'export')], { stdio: 'ignore' });
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff': 'font/woff', '.txt': 'text/plain' };
 const server = createServer((req, res) => {
@@ -112,7 +114,20 @@ try {
   await demo.goto(`${base}demo/?slide=3`);
   check('?slide=3 opens the demo on its fourth slide', await until(async () => (await demo.textContent('.q-slide')).includes('When did ChatGPT come out?')));
   await demo.keyboard.press('ArrowRight');
-  check('the static demo still rehearses from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
+  check('the static demo still plays from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
+
+  // quorum export: the slides without the audience parts.
+  const exported = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  watch(exported, 'export');
+  await exported.goto(`${base}export/`);
+  check('export keeps the title slide, without its QR code', await until(() => exported.$('.q-slide h1'))
+    && !(await exported.$('[data-join], .q-join-card')));
+  const exportedTalk = await (await fetch(`${base}export/talk.json`)).json();
+  check('export has no slide where the audience answers', exportedTalk.slides.length > 0
+    && exportedTalk.slides.every((x) => !x.interaction));
+  await exported.keyboard.press('ArrowRight');
+  check('export moves on with no simulated audience', await until(async () => (await exported.textContent('.q-slide')) !== '')
+    && !(await exported.isVisible('[data-preview]')));
 
   // A "Try it" link in the docs opens the playground with that block.
   const docs = await browser.newPage({ viewport: { width: 1280, height: 900 } });

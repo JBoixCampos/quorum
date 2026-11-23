@@ -36,6 +36,13 @@ quorum live my-talk         # give it
 
 `quorum live` starts a small server, opens a public link with [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) (or ngrok) if you have it, shows the QR code on your slides, and opens two windows: the presentation, to share or project, and your panel.
 
+## One talk, three views
+
+| What the room sees | What you see | What each phone sees |
+| --- | --- | --- |
+| ![The presentation during a poll](docs/images/screen.png) | ![The presenter panel](docs/images/panel.png) | ![A phone showing the poll](docs/images/phone.png) |
+| The presentation window, shared or projected. Results land as they arrive. | Your panel: a clickable preview, the next slides, notes, the clock and questions to approve. | Only the question of the moment, after scanning the QR code. |
+
 ## What is in the box
 
 | Block | What the audience does | On screen |
@@ -57,6 +64,8 @@ Plus the usual slide things: steps that appear one click at a time, columns, big
 **`quorum preview`** shows the talk with 24 simulated people who join, vote and ask, so you see every slide the way it will look with a room. It updates as you edit `talk.md`.
 
 **`quorum build`** turns a talk into a static site that anyone can click through, with the same simulated audience. The [demo](https://jboixcampos.github.io/quorum/demo/) is one. Add `?slide=3` to its address to open it on a given slide.
+
+**`quorum export`** is the fallback for when nobody can join: the same talk without the slides the audience answers, ready to present from any static web server.
 
 ## Build on it
 
@@ -96,12 +105,12 @@ an estimate with a reveal, a word cloud and a questions slide.
 Run `quorum check --json` until it reports no warnings.
 ```
 
-What helps the agent:
+First install Quorum where the agent works (`npm install -g github:JBoixCampos/quorum`, or ask the agent to), then teach it the format. What helps the agent:
 
+- **`quorum skill`** installs the skill in [agents/quorum/SKILL.md](agents/quorum/SKILL.md) for Claude Code (`--to <folder>` for other agents): how to write and check a talk and build components for it.
 - **`quorum new` adds an [`AGENTS.md`](templates/starter/AGENTS.md)** to every talk folder: the format in short, how to check, how to write a component, and what never to touch (`.quorum/` and the presenter key).
 - **`quorum check --json`** prints `{ ok, title, slides, interactions, warnings }` and exits non-zero while there are warnings.
 - **[llms.txt](https://jboixcampos.github.io/quorum/llms.txt)** and **[llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt)**: the docs as an index and as one plain text file, generated from `docs/*.md`.
-- **A skill** in [agents/quorum/SKILL.md](agents/quorum/SKILL.md) that teaches an agent to write and check a talk and build components for it.
 - **[AGENTS.md](AGENTS.md)** at the root, for agents working on Quorum itself.
 
 More in [docs/agents.md](docs/agents.md).
@@ -114,9 +123,11 @@ quorum preview [folder]    See it with a simulated audience, as you edit
 quorum live [folder]       Give the talk (server, public link, QR code, windows)
 quorum check [folder]      Check talk.md for mistakes (--json for tools and agents)
 quorum build [folder]      Build a static, playable copy (simulated audience)
+quorum export [folder]     The slides without the audience parts, if nobody can join
 quorum clean [folder]      Delete the votes and questions of the last session
+quorum skill               Install the agent skill for Claude Code (--to <folder> for others)
 
-Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json
+Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json  --to <folder>
 ```
 
 ## Documentation

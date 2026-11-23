@@ -50,6 +50,8 @@ Every block works the same way: you write it in `talk.md`, phones get the right 
 | `quorum live [folder]` | Give the talk: server, public link, QR code, windows |
 | `quorum check [folder]` | Check `talk.md` for mistakes (`--json` for tools) |
 | `quorum build [folder]` | Build a static, playable copy with a simulated audience |
+| `quorum export [folder]` | The slides without the audience parts, for when nobody can join |
 | `quorum clean [folder]` | Delete the votes and questions of the last session |
+| `quorum skill` | Install the agent skill for Claude Code (`--to <folder>` for other agents) |
 
-Options: `--port <n>`, `--file <name>`, `--no-tunnel`, `--no-open`, `--no-moderation`, `--out <folder>`, `--json`.
+Options: `--port <n>`, `--file <name>`, `--no-tunnel`, `--no-open`, `--no-moderation`, `--out <folder>`, `--json`, `--to <folder>`.

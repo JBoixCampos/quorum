@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { inline, parseTalk } from '../src/shared/markdown.js';
+import { inline, parseTalk, withoutAudience } from '../src/shared/markdown.js';
 
 test('front matter and slides', () => {
   const t = parseTalk('---\ntitle: My talk\naccent: "#123456"\nduration: 45\n---\n# One\n\nHello\n\n---\n\n# Two\n');
@@ -164,4 +164,19 @@ test('slide backgrounds and hiding the logo', () => {
   assert.deepEqual(talk.slides[1].background, { color: '#ffeedd', image: '', dim: false });
   assert.equal(talk.slides[2].background, null);
   assert.equal(talk.slides[2].logo, true);
+});
+
+test('withoutAudience keeps only the slides nobody answers', () => {
+  const talk = parseTalk([
+    '# Title', '', '::: join', ':::', '', '---', '', '## Plain', '', '---', '',
+    '::: poll {#p} Pick', '- A', '- B', ':::', '', '---', '',
+    '::: component word-cloud', 'audience: text', ':::', '', '---', '',
+    '::: component countdown', 'seconds: 30', ':::',
+  ].join('\n'));
+  const slides = withoutAudience(talk).slides;
+  assert.deepEqual(slides.map((s) => s.title).slice(0, 2), ['Title', 'Plain']);
+  assert.equal(slides.length, 3);
+  assert.deepEqual(slides.map((s) => s.index), [0, 1, 2]);
+  assert.equal(slides[0].join, false);
+  assert.equal(slides[2].components[0].name, 'countdown');
 });

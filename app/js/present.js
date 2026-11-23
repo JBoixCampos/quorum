@@ -8,7 +8,9 @@
 //   /present?preview=1          `quorum preview`: everything runs here, with a
 //                               simulated audience, and nothing is sent
 //
-// A static build (`quorum build`) is always a preview. It also accepts:
+// A static build (`quorum build`) is always a preview; `quorum export`
+// builds one without the audience slides and without a simulated audience.
+// Both accept:
 //
 //   ?slide=3                    start on that slide (counted from 0)
 //   ?playground=1               wait for Markdown from the page that embeds
@@ -31,6 +33,8 @@ const STILL = VIEW === 'still';
 const IN_PANEL = VIEW === 'panel';
 const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
+// `quorum export`: the slides alone, with no audience at all.
+const AUDIENCE = !STATIC || STATIC.audience !== false;
 // Where the talk folder (images, components, fonts) is served.
 const ASSETS = STATIC ? STATIC.assets : '/talk/';
 
@@ -57,6 +61,8 @@ const state = {
 
 let session = null;
 let simulator = null;
+// The slide a thumbnail shows (?slide=N, then whatever the panel asks).
+let stillSlide = Number(params.get('slide') || 0);
 
 // --- scaling the 1920x1080 stage to the window ------------------------------
 
@@ -179,6 +185,10 @@ function renderSlide() {
     if (el) state.mounted.push({ type: 'interaction', handle: mountInteraction(el, slide.interaction, context()) });
   }
   slideEl.querySelectorAll('[data-join]').forEach((el) => {
+    if (!AUDIENCE) {
+      el.remove();
+      return;
+    }
     state.mounted.push({ type: 'join', handle: mountJoin(el, context()) });
   });
   slide.components.forEach((spec) => {
@@ -328,7 +338,10 @@ window.quorum = {
   previous,
   go: (i, step = 0) => go(i, step),
   show(index) {
-    // Thumbnails: one slide with every step shown.
+    // Thumbnails: one slide with every step shown. The panel may ask for
+    // another slide before the talk has loaded: remember it for then.
+    stillSlide = index;
+    if (!state.talk) return;
     state.index = index;
     state.step = state.talk.slides[index] ? state.talk.slides[index].steps - 1 : 0;
     refresh();
@@ -382,7 +395,7 @@ function loadSource(markdown) {
   // Keep the votes of interactions that are still there.
   session = new Session(talk, session ? session.toJSON() : null, { moderation: false });
   if (simulator) simulator.session = session;
-  else simulator = new Simulator(session, () => refreshLocalView());
+  else if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
   state.index = Math.min(state.index, talk.slides.length - 1);
   return talk;
 }
@@ -426,13 +439,13 @@ async function start() {
   if (IN_PANEL) document.documentElement.classList.add('in-panel');
   if (STILL) {
     document.documentElement.classList.add('still');
-    window.quorum.show(Number(params.get('slide') || 0));
+    window.quorum.show(stillSlide);
   }
 
   if (PREVIEW) {
     session = new Session(talk, null, { moderation: false });
     if (!STATIC) session.apply({ type: 'url', url: location.origin }, { presenter: true });
-    simulator = new Simulator(session, () => refreshLocalView());
+    if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
     refreshLocalView();
     // A static build can be opened on a given slide: ?slide=3
     if (STATIC && !STILL && params.has('slide')) {

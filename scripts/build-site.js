@@ -63,6 +63,8 @@ function docLink(from) {
     if (/^(https?:|mailto:|#)/.test(link)) return link;
     const [path, fragment] = link.split('#');
     const repoPath = posix.normalize(posix.join('docs', path));
+    // Screenshots and other images are copied to the same place.
+    if (repoPath.startsWith('docs/images/')) return href(from, repoPath);
     const doc = DOCS.find((d) => `docs/${d.file}` === repoPath);
     if (doc) return href(from, docPath(doc) + (fragment ? `#${fragment}` : ''));
     const example = repoPath.match(/^examples\/components\/([\w-]+)\.js$/);
@@ -453,6 +455,7 @@ rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 cpSync(join(ROOT, 'site'), OUT, { recursive: true });
 cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
+cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'demo'), '--out', join(OUT, 'demo')], { stdio: 'inherit' });
 // The playground renders through the demo build: give it every example.
