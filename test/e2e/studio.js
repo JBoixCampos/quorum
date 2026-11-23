@@ -3,7 +3,7 @@
 // presents and exports from it. Needs Playwright.
 
 import {
-  cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
+  cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { request } from 'node:http';
 import { createRequire } from 'node:module';
@@ -183,12 +183,24 @@ try {
   await tab('alternatives');
   check('alternatives show other layouts by Quorum', await until(async () => (await page.$$('.alt')).length >= 4));
   await page.locator('[data-side] textarea').first().fill('more visual');
-  await page.locator('button', { hasText: 'Copy the request' }).click();
-  check('the request for the agent is shown and copied', await until(async () => (await page.textContent('.prompt')).includes('quorum variant add one-loaf-step-by-step')));
-  check('the request says what was asked', (await page.textContent('.prompt')).includes('more visual'));
+  await page.locator('button', { hasText: 'Ask your agent' }).click();
+  check('the request is saved and the instruction for the agent is shown', await until(async () => (await page.textContent('.prompt')).includes('quorum requests')));
+  const saved = readdirSync(join(dir, 'requests')).filter((f) => f.endsWith('.md'));
+  check('the request is a file in requests/', saved.length === 1 && readFileSync(join(dir, 'requests', saved[0]), 'utf8').includes('more visual'));
   const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
-  check('and it is on the clipboard', clip.includes('one-loaf-step-by-step'));
-  await page.click('.dialog .primary');
+  check('and the instruction is on the clipboard', clip.includes('quorum requests'));
+  await page.click('.dialog .actions .ghost:last-child');
+  // the Team tab shows the queue, and follows the agent as it claims and closes the request
+  await tab('team');
+  check('the Team tab lists the request as open', await until(async () => /open/.test(await page.textContent('[data-side] .req')) && (await page.textContent('[data-side] .req')).includes('more visual')));
+  const reqs = await import('../../src/cli/requests.js');
+  const reqId = saved[0].slice(0, -3);
+  reqs.claimRequest(dir, reqId, { by: 'claude' });
+  check('a claim by the agent shows as working', await until(async () => (await page.textContent('[data-side] .req')).includes('working: claude'), 12000));
+  reqs.doneRequest(dir, reqId, { note: 'three alternatives saved' });
+  check('closing it shows the note', await until(async () => (await page.textContent('[data-side] .req')).includes('three alternatives saved'), 12000));
+  check('Sync says this folder is not a repository', (await page.textContent('[data-side]')).includes('not a git repository'));
+  await tab('alternatives');
   // the agent answers by writing a variant file
   const variant = join(dir, 'variants', 'one-loaf-step-by-step');
   cpSync(join(ROOT, 'templates', 'starter', 'talk.md'), join(dir, 'unused.md'));

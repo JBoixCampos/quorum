@@ -88,3 +88,14 @@ Several agents, or several people with their own agents, can work on one talk th
 - Do not commit `.quorum/` (votes, questions and the presenter key) or `.quorum-snapshots/`. The starter `.gitignore` already leaves them out.
 
 `quorum preview` reloads when files change on disk, so `git pull` while it runs shows the others' work straight away.
+
+## Working from several computers
+
+Two people on different computers share a talk through git and nothing else. What holds up:
+
+- **Different slides**: the slide by slide merge combines them without conflicts, as long as each of you pulls before pushing.
+- **The same slide**: a normal merge conflict on that slide. Studio's **Pull** undoes a pull that would conflict and tells you, so nothing is left half merged.
+- **Requests** (`requests/`) and the **decision log** (`decisions/`) are one file per entry, so they merge cleanly. A request made on one computer reaches the other person's agent after a push and a pull.
+- **No live view**: you see each other's changes after they push and you pull, not while they type. Studio marks slides that changed upstream so you do not edit them blind.
+
+Studio's Team tab does the fetch, pull and send steps. See [Studio](studio.md#the-team-tab). For agents working at the same time, see [Several agents at once](agents.md#several-agents-at-once).

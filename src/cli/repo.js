@@ -8,6 +8,7 @@
 // `{#id}` on a heading or block, or else the title.
 
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
@@ -347,6 +348,14 @@ export function slideText(dir, file, slide) {
   if (slide.file && slide.file !== file) return readFileSync(join(dir, slide.file), 'utf8').replace(/\r\n?/g, '\n').replace(/\n+$/, '\n');
   const lines = readFileSync(join(dir, file), 'utf8').replace(/\r\n?/g, '\n').split('\n');
   return `${lines.slice(slide.lines[0] - 1, slide.lines[1]).join('\n')}\n`;
+}
+
+// A short fingerprint of a slide's text. An agent reads it with the slide and
+// hands it back when it writes (`quorum slide set --base`): the write is
+// refused when someone changed the slide in between.
+export function slideHash(text) {
+  const clean = `${String(text).replace(/\r\n?/g, '\n').replace(/\n+$/, '')}\n`;
+  return createHash('sha1').update(clean).digest('hex').slice(0, 10);
 }
 
 // Writes new text for one slide into its file, leaving the rest alone.

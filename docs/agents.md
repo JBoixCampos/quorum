@@ -35,22 +35,54 @@ Keep Studio open (`npm run studio`) while it works: the slides appear and change
 
 ## Ask for changes from Studio
 
-When you are in Studio and want something from the agent, select the slide or the element and press **Ask agent** (or, for whole new versions of a slide, the **Alternatives** tab). Studio writes the request for you: which file, which lines, what you want, how to check it and how to hand back alternatives. It is copied, so you paste it into the agent.
+When you are in Studio and want something from the agent, select the slide or the element and press **Ask agent** (or, for whole new versions of a slide, the **Alternatives** tab). Studio saves your request as a file in `requests/` and the **Team** tab shows the queue. You tell the agent once, with a line Studio copies for you:
 
 ```text
-In this Quorum talk, change the slide "Four ingredients" (id: four-ingredients),
-in talk.md, lines 38 to 58.
-The part to change:
-
-    ::: cards {.steps}
-    ...
-
-What I want: make it a chart of how much of each goes in a loaf.
-
-Edit the Markdown in place and leave the other slides alone. ...
+Work through the open Quorum requests: run `quorum requests`, claim each one, and follow AGENTS.md.
 ```
 
+The details (which slide, which lines, what you want, how to check it) are in the request files, so you do not paste them again. For an agent that cannot see your folder, the request's copy button gives the whole text instead.
+
+See [Requests](#requests) below for what the agent does with them.
+
 The agent edits the file and Studio shows the result as soon as it is saved. Alternatives come back as files in `variants/`, and appear in the Alternatives tab for you to choose from. See [Alternatives for a slide](remix.md).
+
+## Requests
+
+A request is one small Markdown file, `requests/r-4f2a1c.md`: a header line (the slide, what kind of request, who asked) and your words. Studio writes them, and so can anyone:
+
+```bash
+quorum requests add four-ingredients "make this a chart" --by me
+```
+
+An agent works through the queue with these commands:
+
+| Command | What it does |
+| --- | --- |
+| `quorum requests` | Lists the open requests (`--all` includes done ones, `--json` for programs) |
+| `quorum requests show <id>` | The full request: where the slide is now, what is wanted, how to check it |
+| `quorum requests claim <id> --by <name>` | Takes it. Only one agent can: a second one is told who has it. A claim lasts 30 minutes |
+| `quorum requests done <id> --note "<what you did>"` | Closes it. The note appears in Studio |
+| `quorum requests release <id>` | Gives it back without finishing |
+| `quorum requests --watch` | Stays running and prints each new request as it arrives |
+
+Agents do not poll on their own, so something has to wake them. Three ways, from the simplest:
+
+- **You tell them**: paste the one line above into the agent. It handles every open request.
+- **A watcher**: an agent that can run a command in the background (Claude Code can) starts `quorum requests --watch` and reacts to each new request without being told again.
+- **From git**: an agent in the cloud only sees what is pushed, so send your requests first with **Send** in the Team tab, then message the agent.
+
+Requests are files, so they travel with the repository: a request made on one computer reaches another person's agent after a push and a pull.
+
+## Several agents at once
+
+Agents are disposable. One that starts fresh should be able to pick up the work from the files alone, so Quorum keeps what it needs in the repository:
+
+- `quorum context <slide>` prints the slice an agent needs: the slide and its hash, the slides around it, the theme, the decisions so far and the open requests for it.
+- `quorum decide "what and why" --slide <id> --by <name>` adds to the decision log in `decisions/`, one file per entry, so two agents never write the same file. The next agent reads it through `quorum context`.
+- `quorum slide get <slide>` and `quorum slide set <slide> --base <hash>` read and write one slide. If someone changed the slide after the agent read it, `set` refuses (exit code 3) and says so, so the agent reads it again and redoes its change instead of overwriting the other work.
+
+Several agents can therefore work on different slides, or on the same talk from different computers, and a collision is caught instead of lost.
 
 ## Agents in the cloud
 
@@ -63,6 +95,7 @@ An agent working on a copy of your repository (Claude Code on the web, a GitHub 
 | Writes and edits `talk.md`, and components in `components/` | Say what the talk is for and how it should feel |
 | Picks a theme, layouts and blocks | Shape it in Studio: wording, order, pictures, polls |
 | Runs `quorum check --json` after every change, and `quorum snapshot` to look | Rehearse in Studio |
+| Takes requests from the queue, and closes them with a note | Asks from Studio, and reads the notes |
 | Writes alternatives as variants when asked | Choose between them |
 | Never presents | Present and export from Studio |
 

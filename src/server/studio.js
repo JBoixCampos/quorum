@@ -12,11 +12,17 @@ import { basename, extname, join } from 'node:path';
 
 import { candidatesFor } from '../cli/explore.js';
 import { findVariant, listVariants, removeVariant } from '../cli/variants.js';
+import {
+  INSTRUCTION, findRequest, listRequests, releaseRequest, removeRequest, requestsSignature,
+} from '../cli/requests.js';
+import {
+  fetchRemote, incomingSlides, pullChanges, sendChanges, syncStatus,
+} from '../cli/sync.js';
 import { assemble, frontMatterOf, reader } from '../cli/load.js';
 import { StudioError, Workspace } from '../cli/studio-ops.js';
 import { schema } from '../shared/design.js';
 import { parseTalk } from '../shared/markdown.js';
-import { agentRequest } from './studio-agent.js';
+import { agentRequest, promptForRequest } from './studio-agent.js';
 import { createControls } from './studio-live.js';
 
 const IMAGE_TYPES = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
@@ -78,6 +84,51 @@ export function createStudio({
     }
   }, 2000);
   variantsTimer.unref();
+
+  // Requests saved or closed by an agent (or arriving with a pull) change the queue.
+  let requestsSeen = requestsSignature(dir);
+  const requestsTimer = setInterval(() => {
+    const sign = requestsSignature(dir);
+    if (sign !== requestsSeen) {
+      requestsSeen = sign;
+      notify();
+    }
+  }, 1500);
+  requestsTimer.unref();
+
+  // What others pushed: look at the remote once a minute (it only looks: a
+  // person pulls). Slides that changed upstream are worked out once per new
+  // remote commit, not on every request.
+  let syncBusy = false;
+  let incomingFor = '';
+  let incomingList = [];
+  function remoteNow() {
+    const st = syncStatus(dir, file, { incoming: false });
+    if (st.git && st.behind > 0) {
+      if (incomingFor !== st.remoteHead) {
+        incomingFor = st.remoteHead;
+        incomingList = incomingSlides(dir, file);
+      }
+      st.incoming = incomingList;
+    }
+    return st;
+  }
+  let remoteSeen = JSON.stringify([remoteNow().remoteHead]);
+  const remoteTimer = setInterval(() => {
+    const st = remoteNow();
+    if (syncBusy || !st.git || !st.upstream) return;
+    try {
+      fetchRemote(dir);
+    } catch {
+      return; // offline: try again in a minute
+    }
+    const sign = JSON.stringify([remoteNow().remoteHead]);
+    if (sign !== remoteSeen) {
+      remoteSeen = sign;
+      notify();
+    }
+  }, 60000);
+  remoteTimer.unref();
 
   // Called after the talk was loaded again, from any cause.
   function notify() {
@@ -141,6 +192,8 @@ export function createStudio({
         asks: !!s.interaction || s.components.some((c) => c.params && c.params.audience),
       })),
       schema: schema(),
+      requests: listRequests(dir).filter((r) => r.status !== 'done' || Date.now() - Date.parse(r.doneAt || r.at) < 86400000).slice(-30),
+      instruction: INSTRUCTION,
       components: existsSync(join(dir, 'components')) ? readdirSync(join(dir, 'components')).filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3)) : [],
     };
   }
@@ -241,6 +294,41 @@ export function createStudio({
       } else if (route === 'agent' && req.method === 'POST') {
         const body = await readJson(req, 100000);
         send(res, 200, { ok: true, ...agentRequest(workspace, body) });
+      } else if (route === 'requests' && req.method === 'POST') {
+        // A request was cancelled, or put back in the queue after a stuck claim.
+        const body = await readJson(req, 10000);
+        if (body.action === 'prompt') {
+          send(res, 200, { ok: true, prompt: promptForRequest(workspace, findRequest(listRequests(dir), String(body.id || ''))) });
+          return true;
+        }
+        if (body.action === 'cancel') removeRequest(dir, String(body.id || ''));
+        else if (body.action === 'release') releaseRequest(dir, String(body.id || ''));
+        else throw new StudioError('Say what to do with the request.');
+        notify();
+        send(res, 200, { ok: true });
+      } else if (route === 'sync' && req.method === 'GET') {
+        send(res, 200, { ok: true, ...remoteNow() });
+      } else if (route === 'sync' && req.method === 'POST') {
+        const body = await readJson(req, 10000);
+        if (syncBusy) throw new StudioError('Another sync is running. Wait a moment.');
+        syncBusy = true;
+        try {
+          if (body.action === 'fetch') fetchRemote(dir);
+          else if (body.action === 'pull') {
+            pullChanges(dir);
+            reload();
+          } else if (body.action === 'send') {
+            sendChanges(dir, { message: String(body.message || '') });
+          } else throw new StudioError('Say what to do: fetch, pull or send.');
+        } catch (error) {
+          if (error instanceof StudioError) throw error;
+          throw new StudioError(error.message);
+        } finally {
+          syncBusy = false;
+        }
+        remoteSeen = JSON.stringify([remoteNow().remoteHead]);
+        notify();
+        send(res, 200, { ok: true, ...remoteNow() });
       } else if (route === 'variant' && req.method === 'POST') {
         // A variant was used or dismissed: remove its file.
         const body = await readJson(req, 10000);
@@ -263,6 +351,8 @@ export function createStudio({
 
   async function close() {
     clearInterval(variantsTimer);
+    clearInterval(requestsTimer);
+    clearInterval(remoteTimer);
     await controls.close();
   }
 

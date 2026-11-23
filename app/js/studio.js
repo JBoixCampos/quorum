@@ -34,6 +34,7 @@ const S = {
   live: null,
   options: null,
   asked: null,
+  sync: null,
 };
 
 const el = {
@@ -154,6 +155,7 @@ async function refresh({ select = null, side = true } = {}) {
   placeFloat();
   updateWhere();
   loadProblems();
+  loadSync();
 }
 
 async function loadText() {
@@ -328,6 +330,8 @@ let thumbObserver = null;
 function renderRail(stale) {
   const list = slides();
   const problemSlides = new Set(S.problems.problems.map((p) => p.slide).filter(Boolean));
+  const askedSlides = new Set(((S.state && S.state.requests) || []).filter((r) => r.status !== 'done').map((r) => r.slide));
+  const incomingSlides = new Set(((S.sync && S.sync.incoming) || []).map((x) => x.id));
   const existing = new Map(all('.slide', el.rail).map((n) => [n.dataset.key, n]));
   const nodes = [];
   list.forEach((slide, i) => {
@@ -354,6 +358,8 @@ function renderRail(stale) {
     flags.replaceChildren(...[
       slide.asks ? h('span', { class: 'flag', 'data-tip': 'The audience answers on this slide', html: `${icon('vote')}` }) : null,
       problemSlides.has(i + 1) ? h('span', { class: 'flag warn', 'data-tip': 'Something to fix here', html: icon('triangle-alert') }) : null,
+      askedSlides.has(slide.id) ? h('span', { class: 'flag', 'data-tip': 'Your agent has a request for this slide', html: icon('sparkles') }) : null,
+      incomingSlides.has(slide.id) ? h('span', { class: 'flag new', 'data-tip': 'Someone pushed a change to this slide: pull it in the Team tab', html: icon('git-branch') }) : null,
     ].filter(Boolean));
     nodes.push(item);
   });
@@ -478,6 +484,7 @@ const TABS = [
   { id: 'format', label: 'Edit', icon: 'pencil' },
   { id: 'alternatives', label: 'Alternatives', icon: 'sparkles' },
   { id: 'theme', label: 'Theme', icon: 'palette' },
+  { id: 'team', label: 'Team', icon: 'list-checks' },
 ];
 
 function renderTabs() {
@@ -501,7 +508,7 @@ function renderSide(force = false) {
   if (!S.state) return;
   if (!force && typingInSide()) { sideDirty = true; return; }
   sideDirty = false;
-  const body = { insert: insertTab, format: formatTab, alternatives: alternativesTab, theme: themeTab }[S.tab]();
+  const body = { insert: insertTab, format: formatTab, alternatives: alternativesTab, theme: themeTab, team: teamTab }[S.tab]();
   el.side.replaceChildren(...[body].flat().filter(Boolean));
 }
 
@@ -839,9 +846,9 @@ function alternativesTab() {
   const wish = h('textarea', { placeholder: 'What you want, for example: more visual, a chart, fewer words. Leave it empty for three different directions.' });
   return [
     group(h('span', { html: `${icon('sparkles')}<span>From your agent</span>` }),
-      h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Studio writes the request; your agent (Claude Code, Codex, Cursor, or one in the cloud) writes the alternatives into this folder, and they appear here.'),
+      h('p', { class: 'hint', style: 'margin-bottom:10px' }, 'Studio saves the request in this folder; your agent (Claude Code, Codex, Cursor, or one in the cloud) writes the alternatives, and they appear here.'),
       wish,
-      h('div', { class: 'row', style: 'margin-top:8px' }, btn('primary sm', [ic('clipboard-copy'), 'Copy the request'], () => askAgent('alternatives', wish.value))),
+      h('div', { class: 'row', style: 'margin-top:8px' }, btn('primary sm', [ic('sparkles'), 'Ask your agent'], () => askAgent('alternatives', wish.value))),
       S.asked && S.asked.slide === slide.id && !agents.length ? h('div', { class: 'waiting', style: 'margin-top:12px', html: `${icon('loader-circle', 'i spin')}<span>Waiting for your agent. Its alternatives show up here.</span>` }) : null,
       agents.length ? h('div', { class: 'alts', style: 'margin-top:12px' }, agents.map(card)) : null),
     group(h('span', {}, 'Other layouts ', h('span', { class: 'muted' }, 'by Quorum, instant')),
@@ -860,7 +867,7 @@ async function askAgent(kind, wish = '') {
     openModal('Ask your agent', h('div', {},
       h('p', {}, S.selected ? `About the ${S.selected.label.toLowerCase()} you selected on "${slide.title}".` : `About the slide "${slide.title}".`),
       area,
-      h('div', { class: 'actions' }, btn('ghost', 'Cancel', closeModal), btn('primary', [ic('clipboard-copy'), 'Copy the request'], async () => { text = area.value; await showRequest(kind, text); }))));
+      h('div', { class: 'actions' }, btn('ghost', 'Cancel', closeModal), btn('primary', [ic('clipboard-copy'), 'Save the request'], async () => { text = area.value; await showRequest(kind, text); }))));
     setTimeout(() => area.focus(), 50);
     return;
   }
@@ -870,17 +877,104 @@ async function askAgent(kind, wish = '') {
 async function showRequest(kind, text) {
   const slide = current();
   const data = await api('agent', { method: 'POST', body: { kind, slide: slide.id, range: kind === 'edit' && S.selected ? S.selected.range : null, text } });
-  let copied = false;
-  try {
-    await navigator.clipboard.writeText(data.prompt);
-    copied = true;
-  } catch { /* the page may not be allowed to write to the clipboard */ }
+  const copy = (value) => navigator.clipboard.writeText(value).then(() => toast('Copied.')).catch(() => toast('Select the text and copy it.'));
   S.asked = { slide: slide.id, at: Date.now() };
-  openModal(copied ? 'Copied: paste it to your agent' : 'Give this to your agent', h('div', {},
-    h('p', {}, 'Paste it into Claude Code, Codex, Cursor or the agent working on your repository. It edits the files in this folder; Studio shows the result as soon as they are saved (after a pull, for an agent in the cloud). Undo works on it too.'),
-    h('pre', { class: 'prompt' }, data.prompt),
-    h('div', { class: 'actions' }, btn('ghost', [ic('copy'), 'Copy again'], () => navigator.clipboard.writeText(data.prompt).then(() => toast('Copied.')).catch(() => toast('Select the text and copy it.'))), btn('primary', 'Done', closeModal))));
-  if (kind === 'alternatives' && S.tab === 'alternatives') renderSide();
+  await refresh({ side: false });
+  openModal('Request saved', h('div', {},
+    h('p', {}, `Saved as ${data.file}. An agent working in this folder finds it with \`quorum requests\`; for an agent in the cloud, send it from the Team tab first. Tell your agent once:`),
+    h('pre', { class: 'prompt' }, data.instruction),
+    h('div', { class: 'actions' }, btn('primary', [ic('clipboard-copy'), 'Copy the instruction'], () => copy(data.instruction))),
+    h('p', { class: 'hint', style: 'margin-top:14px' }, 'An agent that cannot see this folder needs the full request instead:'),
+    h('div', { class: 'actions' }, btn('ghost', [ic('copy'), 'Copy the full request'], () => copy(data.prompt)), btn('ghost', 'Done', closeModal))));
+  try {
+    await navigator.clipboard.writeText(data.instruction);
+  } catch { /* the page may not be allowed to write to the clipboard */ }
+  S.tab = kind === 'alternatives' ? 'alternatives' : S.tab;
+  renderSide();
+}
+
+// --- Team: the queue for your agent, and sync with others ------------------------------------------------
+
+const ago = (iso) => {
+  const t = Date.parse(iso);
+  if (!t) return '';
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  return m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+};
+
+async function loadSync() {
+  try {
+    S.sync = await api('sync');
+    renderRail(false);
+    if (S.tab === 'team') renderSide();
+  } catch { /* Studio is not reachable right now; the next try will do */ }
+}
+
+async function syncDo(action, extra = {}, doing = 'Working') {
+  say(`${doing}...`);
+  try {
+    S.sync = await api('sync', { method: 'POST', body: { action, ...extra } });
+    say(action === 'pull' ? 'Pulled' : (action === 'send' ? 'Sent' : 'Checked'));
+    if (action === 'pull') await refresh({});
+    else renderSide();
+    renderRail(false);
+  } catch (error) {
+    say('Sync did not work', 'error');
+    toast(error.message, { error: true });
+    loadSync();
+  }
+}
+
+function teamTab() {
+  const state = S.state;
+  const list = state.requests || [];
+  const open = list.filter((r) => r.status !== 'done');
+  const finished = list.filter((r) => r.status === 'done').reverse().slice(0, 5);
+  const title = (id) => { const x = slides().find((sl) => sl.id === id); return x ? x.title : `${id} (gone)`; };
+  const copy = (value) => navigator.clipboard.writeText(value).then(() => toast('Copied.')).catch(() => toast('Select the text and copy it.'));
+  const row = (r) => h('div', { class: `req ${r.status}` },
+    h('div', { class: 'req-top' },
+      h('span', { class: `pill ${r.status}` }, r.status === 'claimed' ? `working: ${r.claimedBy}` : r.status),
+      h('b', { onclick: () => { const i = slides().findIndex((x) => x.id === r.slide); if (i >= 0) selectSlide(i); } }, title(r.slide)),
+      r.status === 'done' ? null : h('button', { type: 'button', class: 'ib sm', 'data-tip': 'Copy the full request', html: icon('copy'), onclick: () => api('requests', { method: 'POST', body: { action: 'prompt', id: r.id } }).then((d) => copy(d.prompt)).catch((e) => toast(e.message, { error: true })) }),
+      r.status === 'claimed' ? h('button', { type: 'button', class: 'ib sm', 'data-tip': 'Put it back in the queue', html: icon('undo-2'), onclick: () => api('requests', { method: 'POST', body: { action: 'release', id: r.id } }).then(() => refresh({ side: false }).then(renderSide)) }) : null,
+      r.status === 'done' ? null : h('button', { type: 'button', class: 'ib sm', 'data-tip': 'Cancel this request', html: icon('x'), onclick: () => api('requests', { method: 'POST', body: { action: 'cancel', id: r.id } }).then(() => refresh({ side: false }).then(renderSide)) })),
+    h('p', {}, r.kind === 'alternatives' ? `Alternatives${r.wish ? `: ${r.wish}` : ''}` : (r.wish || 'Improve it.')),
+    h('small', {}, r.status === 'done' ? `${r.doneBy ? `${r.doneBy}: ` : ''}${r.note || 'done'} (${ago(r.doneAt)})` : `${r.id}, asked ${ago(r.at)}`));
+  const requests = group(h('span', { html: `${icon('sparkles')}<span>Requests for your agent</span>` }),
+    h('p', { class: 'hint' }, 'Ask agent saves a request here. Your agent finds the queue with `quorum requests` and closes each one when it is done.'),
+    open.length ? h('div', { class: 'row', style: 'margin-top:8px' }, btn('primary sm', [ic('clipboard-copy'), 'Copy the instruction'], () => copy(state.instruction))) : null,
+    list.length ? h('div', { class: 'reqs' }, [...open, ...finished].map(row)) : h('p', { class: 'hint', style: 'margin-top:10px' }, 'No requests yet. Select a slide and press Ask agent.'));
+
+  const y = S.sync;
+  const sync = [group(h('span', { html: `${icon('git-branch')}<span>Sync with others</span>` }))];
+  if (!y) sync[0].append(h('p', { class: 'hint' }, 'Looking...'));
+  else if (!y.git) sync[0].append(h('p', { class: 'hint' }, 'This folder is not a git repository, so there is nothing to sync. `quorum repo` sets one up so several people and agents can work on the same talk.'));
+  else {
+    const box = h('div', { class: 'syncbox' },
+      h('div', {}, `Branch ${y.branch}${y.upstream ? ` (follows ${y.upstream})` : ': not on a remote yet'}`),
+      y.changed.length ? h('div', {}, `${y.changed.length} file${y.changed.length === 1 ? '' : 's'} changed here, not yet sent.`) : null,
+      y.ahead ? h('div', {}, `${y.ahead} saved change${y.ahead === 1 ? '' : 's'} not pushed yet.`) : null,
+      y.behind ? h('div', {}, `${y.behind} new change${y.behind === 1 ? '' : 's'} from others.`) : (y.upstream ? h('div', {}, 'You have everything others pushed (as of the last check).') : null),
+      y.incoming && y.incoming.length ? h('ul', { class: 'incoming' }, y.incoming.map((x) => h('li', {}, `${x.title} (${x.what}${x.reasons.length ? `: ${x.reasons.join(', ')}` : ''})`))) : null,
+      y.merging ? h('div', {}, 'A merge is waiting to be finished in a terminal.') : null,
+      h('div', { class: 'row' },
+        btn('outline sm', [ic('download'), 'Pull'], () => syncDo('pull', {}, 'Pulling'), { disabled: !y.behind || y.merging }),
+        btn('outline sm', 'Send', () => {
+          const msg = h('input', { type: 'text', placeholder: 'A few words about what you changed', value: '' });
+          openModal('Send your changes', h('div', {},
+            h('p', {}, `Commits the talk's files (not .quorum/) and pushes branch ${y.branch}.`),
+            msg,
+            h('div', { class: 'actions' }, btn('ghost', 'Cancel', closeModal), btn('primary', 'Send', () => { closeModal(); syncDo('send', { message: msg.value }, 'Sending'); }))));
+          setTimeout(() => msg.focus(), 50);
+        }, { disabled: (!y.changed.length && !y.ahead && y.upstream) || y.behind > 0 || y.merging }),
+        btn('ghost sm', 'Check now', () => syncDo('fetch', {}, 'Checking'), { disabled: !y.upstream })),
+      y.behind > 0 && y.ahead + y.changed.length > 0 ? h('div', { class: 'hint' }, 'Pull before you send: others pushed first.') : null);
+    sync[0].append(box);
+  }
+  return [requests, ...sync];
 }
 
 // --- Theme ---------------------------------------------------------------------------------------------
@@ -1386,6 +1480,7 @@ async function start() {
     say(`Saved to ${current() ? current().file : S.state.file}`);
     fit();
     watchDisk();
+    setInterval(loadSync, 20000);
     S.live = await api('live');
     paintLive();
     if (S.live.running) pollLive();

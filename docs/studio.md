@@ -61,7 +61,21 @@ The **Alternatives** tab shows the selected slide laid out other ways. Quorum's 
 
 ## Asking your agent
 
-Quorum has no AI of its own. **Ask agent**, on the toolbar of a selection or in the Edit tab, asks what you want ("make this a chart", "shorter", "turn it into a quiz") and writes a request for your agent with the file, the lines and how to check the result. It is copied: paste it into Claude Code, Codex, Cursor or the agent working on your repository. Studio shows the change as soon as the agent saves it. See [Working with an agent](agents.md).
+Quorum has no AI of its own. **Ask agent**, on the toolbar of a selection or in the Edit tab, asks what you want ("make this a chart", "shorter", "turn it into a quiz") and saves a request in the talk's `requests/` folder. Studio copies one line for you to give your agent once: it tells the agent to work through the open requests. The details are in the files, so there is nothing long to paste. Studio shows the change as soon as the agent saves it. See [Working with an agent](agents.md).
+
+## The Team tab
+
+The **Team** tab has two parts.
+
+**Requests for your agent** is the queue. Each request shows whether it is open, being worked on (and by whom) or done, with the agent's note when it finishes. A small star on a slide in the list means a request is waiting for it. You can copy the full text of a request for an agent that cannot see your folder, put a stuck one back in the queue, or cancel one.
+
+**Sync with others** is for talks in a git repository. It shows your branch, what you changed but did not send, and what others pushed. Studio looks at the remote once a minute (it only looks; nothing changes on your disk) and marks the slides that changed upstream with a branch icon, so you know before you edit them.
+
+- **Pull** brings in what others pushed, slide by slide. If you and someone else changed the same slide, nothing is merged and Studio says so, so you can ask your agent to resolve it.
+- **Send** commits the talk's files (never `.quorum/`) with your message and pushes the branch. It asks you to pull first if others pushed before you.
+- **Check now** looks at the remote straight away.
+
+Studio never pulls or pushes on its own. Two people on different computers share a talk through git only: you see each other's work after a push and a pull, not while typing. See [Teams and repositories](repository.md).
 
 ## Theme
 
@@ -118,4 +132,4 @@ Studio has no data of its own. Each action is an edit to `talk.md`, or to the fi
 
 ## Safety
 
-Studio can write files and start a live talk, so it is strict about who may ask. It only listens on this computer, needs the key in every request, and refuses requests that name another host or come from another website. It writes only inside the talk's folder (pictures go in `images/`, only picture files up to 15 MB). It never runs code from the talk, and it never runs your agent: you paste the request yourself.
+Studio can write files and start a live talk, so it is strict about who may ask. It only listens on this computer, needs the key in every request, and refuses requests that name another host or come from another website. It writes only inside the talk's folder (pictures go in `images/`, only picture files up to 15 MB). It never runs code from the talk, and it never runs your agent: your agent reads the requests itself. Sync only runs `git fetch`, `pull`, `commit` and `push` in the talk's folder, when you press the buttons (and `git fetch` once a minute).
