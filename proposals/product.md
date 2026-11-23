@@ -1,6 +1,14 @@
 # Proposal: Quorum as one product, with one workflow
 
-Status: proposal. Nothing here is implemented yet.
+Status: implemented. The guide starts at [Get started](../docs/README.md).
+
+Where the implementation differs from this proposal:
+
+- **The AI in Studio** only writes the request ("Ask agent", and "Copy the request" in Alternatives) for the person to paste into their agent. Studio never runs an agent CLI and never holds an API key.
+- **Studio is dark only**, and the website, the presenter panel and the link preview use the same style.
+- **The template repository** is made from `templates/starter` by `scripts/template-repo.js`; it still has to be published as `JBoixCampos/quorum-talk` and marked as a template on GitHub.
+- **Inline editing** covers headings and paragraphs with plain text, bold, italics, code and links; everything else opens its Markdown.
+- `quorum` alone opens Studio in a talk folder, and `quorum present` is the new name of `quorum live` (both work).
 
 ## The problem
 
