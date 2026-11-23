@@ -102,6 +102,7 @@ A talk should look good, not only work. Quorum gives an agent what it needs to g
 | `quorum snapshot` | A picture of every slide in `.quorum-snapshots/`, and `contact.png` with the whole talk on one image. An agent that can see images looks at it the way the speaker will |
 | `quorum theme from logo.svg` | Colours and a theme from the speaker's logo |
 | `quorum diff main --json` | The slides that changed since a branch, tag or commit; `--pictures` saves before and after pictures. See [Working in a repository](repository.md) |
+| `quorum studio` | Opens an editor for the person: they adjust slides by hand while you keep editing the same files (their changes and yours show up in both). See [Studio](studio.md) |
 | `quorum remix <slide>` | One slide in other layouts on one numbered picture; `--pick <n>` applies one. See [Remixing slides](remix.md) |
 | `quorum variant add <slide>` | Saves your own version of a slide in `variants/`, so it shows up next to Quorum's remixes (`--by`, `--direction`) |
 | `quorum export --pptx` | An editable PowerPoint file (also `--pdf`). Slides where the audience answers become a placeholder that points to Quorum; `--results` puts the real votes in. See [PowerPoint and PDF](powerpoint.md) |

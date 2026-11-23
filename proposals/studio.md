@@ -1,6 +1,16 @@
 # Proposal: Quorum Studio, a canvas, PowerPoint and layout exploration
 
-Status: proposal. Nothing here is implemented yet.
+Status: implemented. The guides are [Studio](../docs/studio.md), [PowerPoint and PDF](../docs/powerpoint.md), [Working in a repository](../docs/repository.md) and [Remixing slides](../docs/remix.md).
+
+Where the implementation differs from this proposal:
+
+- **Interactive slides in PowerPoint** become a placeholder in the slide's design that says PowerPoint cannot run the part and points to Quorum, instead of showing the question with a QR code. `--results` still puts the real votes in. The export also works as a way for an agent to make a PowerPoint deck with no audience at all.
+- **Remixing has no scores.** The proposal scored variants (balance, fit, variety). Looking at the numbers showed they told you nothing, so `quorum remix <slide>` shows a numbered picture of the options and you choose; only real problems (does not fit, failed checks) are flagged. `--best` does not exist.
+- **Commands:** `quorum remix <slide>` (and `--pick`), `quorum variant`, `quorum explore --themes`, instead of `quorum explore --slide`.
+- **Studio** is one person on one computer. It has undo and redo for the session, but no command bar and no "ask an agent" box: agents work on the same files, and the editor shows their changes as they happen. `quorum mcp` was not built.
+- **Merging** also covers the front matter, key by key.
+- **Free positioning** is `layout: canvas` with `{x= y= w= h=}`; `quorum check` warns about elements outside the slide and overlaps.
+- Fixed on the way: the bold section divider was empty, the editorial section number was clipped, and the overflow measure missed content pushed above the top edge.
 
 ## Why
 

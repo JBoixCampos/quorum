@@ -69,3 +69,27 @@ test('a slides folder outside the talk is refused', () => {
   const talk = readTalk(dir);
   assert.ok(talk.warnings.some((w) => w.includes('must be a folder inside')));
 });
+
+test('canvas slides: positions are checked, and so are overlaps and the edges', () => {
+  const head = '---\ntitle: T\n---\n\n<!-- layout: canvas -->\n\n';
+  const ok = parseTalk(`${head}## Title {x=5 y=5 w=60 h=15}\n\nText {x=5 y=30 w=40 h=20}\n`);
+  assert.deepEqual(ok.warnings, []);
+  assert.match(ok.slides[0].html, /style="position:absolute;left:5%;top:5%;width:60%;height:15%"/);
+  const out = parseTalk(`${head}Text {x=80 y=5 w=40 h=10}\n`);
+  assert.match(out.warnings.join(' '), /sticks out of the slide/);
+  const over = parseTalk(`${head}One {x=5 y=5 w=40 h=20}\n\nTwo {x=20 y=10 w=40 h=20}\n`);
+  assert.match(over.warnings.join(' '), /overlap/);
+  const wrong = parseTalk('# A\n\nText {x=5 y=5 w=10 h=10}\n');
+  assert.match(wrong.warnings.join(' '), /only with <!-- layout: canvas -->/);
+  const bad = parseTalk(`${head}Text {x=left y=5}\n`);
+  assert.match(bad.warnings.join(' '), /should be a number/);
+  const picture = parseTalk(`${head}![A loaf](a.jpg){x=0 y=30 w=55 h=70}\n`);
+  assert.match(picture.slides[0].html, /<figure class="q-positioned" style="position:absolute;left:0%;top:30%;width:55%;height:70%"><img/);
+});
+
+test('with a source map, list items and cards carry their own lines', () => {
+  const html = parseTalk('- a\n- b\n\n::: cards\n### X\nx\n\n+++\n\n### Y\ny\n:::\n', { sourceMap: true }).slides[0].html;
+  assert.match(html, /<li data-src="1-1">a<\/li><li data-src="2-2">b<\/li>/);
+  assert.match(html, /<div class="q-card" data-src="5-6">/);
+  assert.match(html, /<div class="q-card" data-src="10-11">/);
+});

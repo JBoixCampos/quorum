@@ -61,6 +61,7 @@ const HELP = `Quorum ${VERSION}: presentations where the audience takes part.
 
 Usage:
   quorum new <folder>        Create a new talk
+  quorum studio [folder]     Edit a talk on a canvas: drag, type, rearrange, remix, undo
   quorum preview [folder]    See it with a simulated audience, as you edit
   quorum live [folder]       Give the talk (server, public link, QR code, windows)
   quorum check [folder]      Check talk.md for mistakes and design problems
@@ -325,6 +326,17 @@ async function startFor(args, options = {}) {
     console.error(error.code === 'EADDRINUSE' ? `Port ${port} is busy. Try --port ${port + 1}.` : error.message);
     process.exit(1);
   }
+}
+
+async function cmdStudio(args) {
+  const { file, server } = await startFor(args, { preview: true, studio: true });
+  const talk = server.talk();
+  console.log(`\nStudio for "${talk.meta.title}" (${talk.slides.length} slides).
+  Open:  ${server.urls.studio}
+  Every change you make is written to ${file} (or its slide files): \`git diff\` shows it.
+  This page is only for this computer, and its address holds a key: do not share it.
+  Ctrl+C to stop.\n`);
+  if (!args['no-open']) openUrl(server.urls.studio);
 }
 
 async function cmdPreview(args) {
@@ -716,6 +728,7 @@ async function main() {
     case 'preview':
     case 'rehearse': await cmdPreview(args); break; // "rehearse" is the old name
     case 'live': await cmdLive(args); break;
+    case 'studio': await cmdStudio(args); break;
     default:
       console.log(HELP);
       if (cmd && cmd !== 'help') process.exit(1);

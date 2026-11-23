@@ -76,7 +76,23 @@ function attrsHtml(a, base = '') {
   if (a.kv.width) style.push(`width:${cssSize(a.kv.width)}`);
   if (a.kv.height) style.push(`height:${cssSize(a.kv.height)}`);
   if (a.kv.color && colorValue(a.kv.color)) style.push(`color:${colorValue(a.kv.color)}`);
+  // layout: canvas, free positions: percentages of the slide.
+  if (a.kv.x !== undefined || a.kv.y !== undefined) {
+    style.push('position:absolute');
+    if (a.kv.x !== undefined) style.push(`left:${cssPercent(a.kv.x)}`);
+    if (a.kv.y !== undefined) style.push(`top:${cssPercent(a.kv.y)}`);
+    if (a.kv.w !== undefined) style.push(`width:${cssPercent(a.kv.w)}`);
+    if (a.kv.h !== undefined) style.push(`height:${cssPercent(a.kv.h)}`);
+  }
   return `${classes ? ` class="${escapeHtml(classes)}"` : ''}${a.id ? ` data-morph="${escapeHtml(a.id)}"` : ''}${style.length ? ` style="${escapeHtml(style.join(';'))}"` : ''}`;
+}
+
+const CANVAS_KEYS = ['x', 'y', 'w', 'h'];
+
+// A position or size on a canvas slide: "40" or "40%" is a share of the slide.
+function cssPercent(v) {
+  const n = Number.parseFloat(String(v));
+  return Number.isFinite(n) ? `${n}%` : '0%';
 }
 
 function cssSize(v) {
@@ -402,9 +418,9 @@ function titleAndId(rest, kind) {
 
 function listItems(body) {
   return body
-    .map((l) => l.text.match(/^\s*[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/))
-    .filter(Boolean)
-    .map((m) => ({ text: m[2].trim(), checked: m[1] === 'x' || m[1] === 'X' }));
+    .map((l) => ({ m: l.text.match(/^\s*[-*+]\s+(?:\[([ xX])\]\s+)?(.*)$/), n: l.n }))
+    .filter((x) => x.m)
+    .map(({ m, n }) => ({ text: m[2].trim(), checked: m[1] === 'x' || m[1] === 'X', n }));
 }
 
 // "1857: Pasteur explains it" -> ['1857', 'Pasteur explains it']
@@ -478,11 +494,28 @@ class SlideParser {
       if (!CLASSES[c]) this.at(line, `".${c}" is not a class Quorum knows. Use one of: ${Object.keys(CLASSES).join(', ')}.`);
     });
     Object.entries(a.kv).forEach(([k, v]) => {
-      if (!ATTRIBUTES[k] || (keys && !keys.includes(k))) {
+      if (!ATTRIBUTES[k] || (keys && !keys.includes(k) && !CANVAS_KEYS.includes(k))) {
         this.at(line, `"${k}=" does not apply here.${keys ? ` Use: ${keys.join(', ')}.` : ''}`);
       }
       if (k === 'icon' && !iconName(v)) this.at(line, `There is no icon called "${v}". \`quorum schema --icons\` lists them.`);
+      if (CANVAS_KEYS.includes(k) && !/^-?\d+(\.\d+)?%?$/.test(String(v).trim())) this.at(line, `"${k}=${v}" should be a number: a share of the slide (x=10 y=20 w=40 h=30).`);
     });
+    if (CANVAS_KEYS.some((k) => a.kv[k] !== undefined)) {
+      this.root.canvas = this.root.canvas || [];
+      const n = (k) => (a.kv[k] === undefined ? null : Number.parseFloat(a.kv[k]));
+      this.root.canvas.push({ line: line.n, x: n('x'), y: n('y'), w: n('w'), h: n('h') });
+    }
+  }
+
+  // The lines of an element as a source map ("12-14"), when asked for.
+  srcOf(lines) {
+    if (!this.ctx.sourceMap) return '';
+    const filled = lines.filter((l) => l.text.trim() !== '');
+    return filled.length ? ` data-src="${filled[0].n}-${filled[filled.length - 1].n}"` : '';
+  }
+
+  srcAt(n) {
+    return this.ctx.sourceMap && n ? ` data-src="${n}-${n}"` : '';
   }
 
   // Inline syntax that can be wrong: icon names, image attributes.
@@ -666,6 +699,14 @@ class SlideParser {
       this.checkInline(textP, first);
       const onlyMedia = textP.trim().match(/^!\[[^\]]*\]\([^)]+\)(\{[^}]*\})?$/);
       if (onlyMedia) {
+        // On a canvas the picture is positioned: x, y, w and h go on its figure.
+        const pos = textP.trim().match(/^(!\[[^\]]*\]\([^)]+\))\{([^}]*)\}$/);
+        const posAttrs = pos ? parseAttrs(pos[2]) : null;
+        if (posAttrs && CANVAS_KEYS.some((k) => posAttrs.kv[k] !== undefined)) {
+          const kv = Object.fromEntries(CANVAS_KEYS.filter((k) => posAttrs.kv[k] !== undefined).map((k) => [k, posAttrs.kv[k]]));
+          out.push(this.stepped(`<figure${attrsHtml({ id: '', classes: [], kv }, 'q-positioned')}>${inline(pos[1])}</figure>`));
+          continue;
+        }
         out.push(this.stepped(`<figure>${inline(textP.trim())}</figure>`));
         continue;
       }
@@ -725,7 +766,7 @@ class SlideParser {
       flushSub();
       if (html.length) html[html.length - 1] += '</li>';
       const box = m[3] ? `<span class="q-check${m[3] !== ' ' ? ' on' : ''}" aria-hidden="true"></span>` : '';
-      html.push(`<li>${box}${inline(m[4])}`);
+      html.push(`<li${this.srcOf([line])}>${box}${inline(m[4])}`);
       open = true;
     });
     flushSub();
@@ -809,7 +850,7 @@ class SlideParser {
       const parts = SlideParser.parts(body);
       const html = parts.map((p, k) => {
         const s = this.itemStep(k, each);
-        return `<div class="q-card${s.cls}"${s.attr}>${this.child(p).blocks(p).join('')}</div>`;
+        return `<div class="q-card${s.cls}"${s.attr}${this.srcOf(p)}>${this.child(p).blocks(p).join('')}</div>`;
       }).join('');
       return this.stepped(`<div${attrsHtml(attrs, 'q-cards')} style="--cols:${parts.length}">${html}</div>`, start);
     }
@@ -820,7 +861,7 @@ class SlideParser {
       const vs = attrs.kv.vs || 'vs';
       const html = parts.slice(0, 2).map((p, k) => {
         const s = this.itemStep(k, each);
-        return `<div class="q-compare-side${s.cls}"${s.attr}>${this.child(p).blocks(p).join('')}</div>`;
+        return `<div class="q-compare-side${s.cls}"${s.attr}${this.srcOf(p)}>${this.child(p).blocks(p).join('')}</div>`;
       });
       return this.stepped(`<div${attrsHtml(attrs, 'q-compare')}>${html[0] || ''}<span class="q-vs">${escapeHtml(vs)}</span>${html[1] || ''}</div>`, start);
     }
@@ -833,7 +874,7 @@ class SlideParser {
       const html = items.map((it, k) => {
         const [when, what] = splitPair(it.text);
         const s = this.itemStep(k, each);
-        return `<li class="q-tl-item${s.cls}"${s.attr}><span class="q-tl-dot"></span>${when ? `<span class="q-tl-when">${inline(when)}</span>` : ''}<span class="q-tl-what">${inline(what)}</span></li>`;
+        return `<li class="q-tl-item${s.cls}"${s.attr}${this.srcAt(it.n)}><span class="q-tl-dot"></span>${when ? `<span class="q-tl-when">${inline(when)}</span>` : ''}<span class="q-tl-what">${inline(what)}</span></li>`;
       }).join('');
       return this.stepped(`<ol${attrsHtml(attrs, 'q-timeline')} style="--n:${items.length}">${html}</ol>`, start);
     }
@@ -843,7 +884,7 @@ class SlideParser {
       const html = items.map((it, k) => {
         const [head, text] = splitPair(it.text);
         const s = this.itemStep(k, each);
-        return `<li class="q-process-item${s.cls}"${s.attr}><span class="q-process-n">${k + 1}</span><div>${head ? `<p class="q-process-head">${inline(head)}</p>` : ''}<p class="q-process-text">${inline(text)}</p></div></li>`;
+        return `<li class="q-process-item${s.cls}"${s.attr}${this.srcAt(it.n)}><span class="q-process-n">${k + 1}</span><div>${head ? `<p class="q-process-head">${inline(head)}</p>` : ''}<p class="q-process-text">${inline(text)}</p></div></li>`;
       }).join('');
       return this.stepped(`<ol${attrsHtml(attrs, 'q-process')} style="--n:${items.length}">${html}</ol>`, start);
     }
@@ -855,7 +896,7 @@ class SlideParser {
         const [value, label] = splitPair(it.text);
         const n = leadingNumber(value || label);
         const s = this.itemStep(k, each);
-        return `<div class="q-kpi${s.cls}"${s.attr}><p class="q-kpi-value"${n !== null ? ` data-count="${n}"` : ''}>${inline((value || label) + unit)}</p>${value ? `<p class="q-kpi-label">${inline(label)}</p>` : ''}</div>`;
+        return `<div class="q-kpi${s.cls}"${s.attr}${this.srcAt(it.n)}><p class="q-kpi-value"${n !== null ? ` data-count="${n}"` : ''}>${inline((value || label) + unit)}</p>${value ? `<p class="q-kpi-label">${inline(label)}</p>` : ''}</div>`;
       }).join('');
       return this.stepped(`<div${attrsHtml(attrs, 'q-kpis')} style="--cols:${items.length}">${html}</div>`, start);
     }
@@ -990,7 +1031,8 @@ class SlideParser {
 const MEDIA_LAYOUTS = ['split', 'full'];
 
 function takeMedia(html) {
-  const m = html.match(/<figure>(?:(?!<\/figure>)[\s\S])*?<(?:img|video)[\s\S]*?<\/figure>/);
+  // The figure may carry a source map (data-src) in the studio.
+  const m = html.match(/<figure(?: data-src="[\d-]+")?>(?:(?!<\/figure>)[\s\S])*?<(?:img|video)[\s\S]*?<\/figure>/);
   if (!m) return { html, media: '' };
   return { html: html.slice(0, m.index) + html.slice(m.index + m[0].length), media: m[0] };
 }
@@ -1077,6 +1119,25 @@ export function parseTalk(source, { readFile = null, sourceMap = false } = {}) {
       if (!mediaHtml) warnings.push(`Slide ${index + 1}: the layout "${layoutName}" needs an image or a video on its own line.`);
     }
     const titleText = plain || (p.interactions[0] && p.interactions[0].title) || '';
+    if (p.canvas && p.canvas.length) {
+      const at = (m) => warnings.push(`Slide ${index + 1}: ${m}`);
+      const boxes = p.canvas;
+      if (layoutName !== 'canvas') at('x=, y=, w= and h= place things freely only with <!-- layout: canvas -->.');
+      boxes.forEach((b) => {
+        if ([b.x, b.y].some((v) => v !== null && (v < 0 || v > 100)) || (b.x !== null && b.w !== null && b.x + b.w > 100.5) || (b.y !== null && b.h !== null && b.y + b.h > 100.5)) {
+          at(`line ${b.line}: this element sticks out of the slide (x, y, w and h are shares of the slide, from 0 to 100).`);
+        }
+      });
+      const sized = boxes.filter((b) => [b.x, b.y, b.w, b.h].every((v) => v !== null));
+      for (let i = 0; i < sized.length; i += 1) {
+        for (let j = i + 1; j < sized.length; j += 1) {
+          const [a, c] = [sized[i], sized[j]];
+          const ox = Math.min(a.x + a.w, c.x + c.w) - Math.max(a.x, c.x);
+          const oy = Math.min(a.y + a.h, c.y + c.h) - Math.max(a.y, c.y);
+          if (ox > 0 && oy > 0 && (ox * oy) / Math.min(a.w * a.h, c.w * c.h) > 0.25) at(`lines ${a.line} and ${c.line} overlap. Move one of them.`);
+        }
+      }
+    }
     const id = uniqueId(p.attrs.id ? slug(p.attrs.id) : slug(titleText), index, usedIds);
     const filled = lines.filter((l) => l.text.trim() !== '');
     if (p.css.length) html += scopedCss(p.css.join('\n'), id);

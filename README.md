@@ -73,6 +73,10 @@ Plus the usual slide things: steps that appear one click at a time, columns, big
 
 **`quorum build`** turns a talk into a static site that anyone can click through, with the same simulated audience. The [demo](https://jboixcampos.github.io/quorum/demo/) is one. Add `?slide=3` to its address to open it on a given slide.
 
+**Studio**: `quorum studio my-talk` opens an editor for one person: the real slide in the middle, your slides on the left, the options of what you selected on the right. Click to select, double click to edit the text, drag to rearrange, drop a picture on the slide, place things freely with the `canvas` layout, remix a slide and undo. Every change is an edit to your Markdown files. See [Studio](docs/studio.md).
+
+![Studio: slides on the left, the slide in the middle with a paragraph selected, its style on the right](docs/images/studio.png)
+
 **Remix**: `quorum remix four-ingredients` draws a slide six other ways (cards, steps, a timeline, a chart, a split with a picture...) on one picture, and `--pick 3` uses the third. Agents can add their own versions as files in `variants/`. See [Remixing slides](docs/remix.md).
 
 **Teams and agents** work in a git repository, not in a shared editor: a talk can keep one file per slide (`quorum split`), `quorum new --repo` sets up slide by slide merging and a CI workflow, and `quorum diff main --pictures` shows what a branch changed. See [Working in a repository](docs/repository.md).
@@ -143,6 +147,7 @@ quorum snapshot [folder]   A picture of every slide, and a contact sheet
 quorum schema              Every theme, layout, block, class and icon (--json, --icons)
 quorum theme new <name>    Save the talk's look as themes/<name>.yaml
 quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
+quorum studio [folder]     Edit a talk on a canvas: click, type, drag, remix, undo
 quorum remix <slide>       Other layouts for one slide, as a picture to choose from (--pick <n>)
 quorum variant ...         Versions of one slide kept in variants/ (add, list, pick)
 quorum explore --themes    The first slides of the talk in several themes
@@ -169,6 +174,7 @@ Read it on the website, [jboixcampos.github.io/quorum/docs](https://jboixcampos.
 - [Design and themes](docs/design.md): themes, layouts, visual blocks, charts, motion, result looks, reactions
 - [PowerPoint and PDF](docs/powerpoint.md): export a talk, or have an agent make a PowerPoint deck
 - [Working in a repository](docs/repository.md): teams and agents on branches, with one file per slide, merging and `quorum diff`
+- [Studio](docs/studio.md): edit a talk on a canvas, with undo, free positioning and remix
 - [Remixing slides](docs/remix.md): one slide, six other layouts, choose one
 - [Components](docs/components.md): build your own, including one that uses a local model
 - [Giving a talk](docs/giving-a-talk.md): the day itself, on stage or on a call

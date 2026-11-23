@@ -167,6 +167,7 @@ export const PRESETS = {
 // Slide layouts: <!-- layout: name --> or <!-- layout: name, option -->.
 export const LAYOUTS = {
   center: 'Everything centred.',
+  canvas: 'Free positions: give each element {x=10 y=20 w=40 h=30}, shares of the slide, and drag them in `quorum studio`.',
   title: 'An opening slide: a large title, a subtitle and the author.',
   section: 'A section divider in the accent colour, with the section number (from <!-- section: -->).',
   split: 'Content on one side, the first image (or video) on the other half, edge to edge. "split, right" puts the image on the right.',
@@ -259,6 +260,10 @@ export const ATTRIBUTES = {
   vs: 'Compare: the word in the middle (default "vs").',
   color: 'Badges and headings: a colour (accent, secondary or #hex).',
   per: 'Pictogram charts: how much one icon is worth.',
+  x: 'layout canvas: the left edge, as a share of the slide (0 to 100).',
+  y: 'layout canvas: the top edge, as a share of the slide.',
+  w: 'layout canvas: the width, as a share of the slide.',
+  h: 'layout canvas: the height, as a share of the slide.',
 };
 
 export const STEP_EFFECTS = ['fade', 'fly', 'zoom', 'blur', 'drop', 'highlight'];

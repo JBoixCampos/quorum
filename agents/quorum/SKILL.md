@@ -59,6 +59,10 @@ Tell the user they can see the talk with `quorum preview <folder>`: it opens in 
 
 `quorum live <folder>` gives the talk to a real audience. That is the user's to run, not yours.
 
+### Studio
+
+The user can open `quorum studio <folder>` to adjust the talk by hand: click, type, drag, drop pictures, remix, undo. It edits the same files you do, and shows changes you make on disk as they happen, so you can keep working while it is open. It is theirs to run. `<!-- layout: canvas -->` with `{x= y= w= h=}` on each element (shares of the slide, 0 to 100) places things freely; use flowing layouts unless the user asks for exact placement. See docs/studio.md.
+
 ### Offering alternatives for a slide
 
 When the user is unsure about a slide, or asks for options, do not rewrite it once: give them several. Run `quorum remix <slide>` to see Quorum's own layouts (cards, steps, a timeline, a chart, a split with a picture...) and tell them to look at `.quorum-snapshots/explore/<slide>/options.png`. For real alternatives, write two to five variants, each with a different direction ("data first", "one image and one sentence", "playful", "minimal"): save each with `quorum variant add <slide> --by <you> --direction "<what it tries>" < variant.md`. If you can start sub-agents, give each one a direction and let them write in parallel. A variant is one slide (no `---` line). Never pick for the user unless they ask: they choose with `quorum remix <slide> --pick <n>`. Give the slide an explicit id first (`<!-- id: name -->`) if its title may change. See docs/remix.md.

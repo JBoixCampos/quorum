@@ -34,7 +34,11 @@ const params = new URLSearchParams(location.search);
 const STATIC = window.QUORUM_STATIC || null; // set by `quorum build`
 const KEY = params.get('key') || '';
 const VIEW = params.get('view') || '';
-const STILL = VIEW === 'still';
+// "studio" is the editor's canvas: one slide, every step shown, with a source map.
+const STILL = VIEW === 'still' || VIEW === 'studio';
+const STUDIO = VIEW === 'studio';
+// The editor's thumbnails and canvas: no simulated audience, no polling.
+const NOSIM = params.get('nosim') === '1';
 const IN_PANEL = VIEW === 'panel';
 const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
@@ -89,7 +93,8 @@ fit();
 // --- loading the talk --------------------------------------------------------
 
 async function loadTalk() {
-  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'preview=1'}`;
+  const extra = ['map', 'override'].filter((k) => params.get(k)).map((k) => `&${k}=${encodeURIComponent(params.get(k))}`).join('');
+  const url = STATIC ? STATIC.talk : `/api/talk?${KEY ? `key=${encodeURIComponent(KEY)}` : 'preview=1'}${extra}`;
   const r = await fetch(url, { cache: 'no-store' });
   if (!r.ok) throw new Error(r.status === 403 ? 'Wrong presenter key.' : `Could not load the talk (${r.status}).`);
   return r.json();
@@ -413,6 +418,18 @@ function syncFromServer() {
 }
 
 window.quorum = {
+  // The editor changed the talk: read it again and draw the same slide.
+  async reloadTalk() {
+    const talk = await loadTalk();
+    talk.version = (state.talk ? state.talk.version || 0 : 0) + 1;
+    state.talk = talk;
+    applyTheme(talk.meta);
+    session = new Session(talk, null, { moderation: false });
+    refreshLocalView();
+    state.index = Math.min(state.index, talk.slides.length - 1);
+    window.quorum.show(state.index);
+    return talk.slides.length;
+  },
   next,
   previous,
   go: (i, step = 0) => go(i, step),
@@ -516,6 +533,7 @@ async function start() {
   state.talk = talk;
   applyTheme(talk.meta);
   if (IN_PANEL) document.documentElement.classList.add('in-panel');
+  if (STUDIO) document.documentElement.classList.add('in-studio');
   if (STILL) {
     document.documentElement.classList.add('still');
     window.quorum.show(stillSlide);
@@ -524,7 +542,7 @@ async function start() {
   if (PREVIEW) {
     session = new Session(talk, null, { moderation: false });
     if (!STATIC) session.apply({ type: 'url', url: location.origin }, { presenter: true });
-    if (AUDIENCE) simulator = new Simulator(session, () => refreshLocalView());
+    if (AUDIENCE && !NOSIM) simulator = new Simulator(session, () => refreshLocalView());
     refreshLocalView();
     // A static build can be opened on a given slide: ?slide=3
     if (STATIC && !STILL && params.has('slide')) {

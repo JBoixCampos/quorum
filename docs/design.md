@@ -114,6 +114,7 @@ It turns sugar into gas, and the gluten traps it.
 | `big-number` | The first heading becomes one huge figure |
 | `grid` | Images or cards in an even grid under the title |
 | `compare` | Columns with a divider between them |
+| `canvas` | Free positions: `{x=10 y=20 w=40 h=30}` on each element, as shares of the slide. Drag them in [Studio](studio.md) |
 | `center` | Everything centred |
 | `closing` | The last slide |
 
