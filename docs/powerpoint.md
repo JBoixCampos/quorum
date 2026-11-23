@@ -66,7 +66,7 @@ clean, look at it with `quorum snapshot`, then run
 `quorum export --pptx --safe-fonts`.
 ```
 
-The agent writes `talk.md`, checks it with `quorum check --json` (contrast, density, slides that do not fit), looks at the pictures from `quorum snapshot`, and exports. You open the file in PowerPoint and change what you want. When the deck should also work live, add a `::: poll` and run `quorum live`.
+The agent writes `talk.md`, checks it with `quorum check --json` (contrast, density, slides that do not fit), looks at the pictures from `quorum snapshot`, and exports. You open the file in PowerPoint and change what you want. When the deck should also work live, add a poll in Studio and press **Present**.
 
 ## How it works, and what to expect
 

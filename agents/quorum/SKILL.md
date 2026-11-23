@@ -61,7 +61,7 @@ Tell the user they can see the talk with `quorum preview <folder>`: it opens in 
 
 ### Studio
 
-The user can open `quorum studio <folder>` to adjust the talk by hand: click, type, drag, drop pictures, remix, undo. It edits the same files you do, and shows changes you make on disk as they happen, so you can keep working while it is open. It is theirs to run. `<!-- layout: canvas -->` with `{x= y= w= h=}` on each element (shares of the slide, 0 to 100) places things freely; use flowing layouts unless the user asks for exact placement. See docs/studio.md.
+The user shapes the talk in Quorum Studio (`npm run studio` in the folder, or `quorum studio <folder>`): they type on slides, drag in polls and charts, try layouts, rehearse, present and export from there. It edits the same files you do and shows your changes as soon as they are saved, so keep the talk valid at every save. When they want something from you, Studio writes a request for them to paste: it names the slide (id and lines) and what they want; do exactly that and run `quorum check`. Presenting and exporting are theirs. `<!-- layout: canvas -->` with `{x= y= w= h=}` on each element (shares of the slide, 0 to 100) places things freely; use flowing layouts unless the user asks for exact placement. See docs/studio.md.
 
 ### Offering alternatives for a slide
 

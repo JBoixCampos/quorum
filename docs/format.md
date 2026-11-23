@@ -1,6 +1,6 @@
 # The talk format
 
-A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while `quorum preview` or `quorum live` is running and the slides update on their own; votes already cast are kept.
+A talk is one Markdown file, `talk.md`, in a folder with anything it needs (images, components). Edit it while Studio, `quorum preview` or a live talk is running and the slides update on their own; votes already cast are kept.
 
 `quorum check` reads the file and lists anything that looks wrong, with the slide number.
 

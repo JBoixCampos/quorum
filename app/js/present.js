@@ -482,6 +482,10 @@ function showError(message) {
 const EMPTY = '<!-- layout: center -->\n\nWrite some Markdown to see a slide here.';
 
 function loadSource(markdown) {
+  // The website's playgrounds draw slides in its own theme when the
+  // Markdown does not choose one (?theme=midnight).
+  const theme = PLAYGROUND && /^[a-z]+$/.test(params.get('theme') || '') ? params.get('theme') : '';
+  if (theme && !/^\s*---\s*\n/.test(String(markdown || ''))) markdown = `---\ntheme: ${theme}\n---\n\n${markdown || ''}`;
   let talk = parseTalk(String(markdown || ''));
   // Only front matter, or nothing at all: show a hint instead of no slide.
   if (!talk.slides.length) talk = parseTalk(`${markdown || ''}\n\n${EMPTY}`);

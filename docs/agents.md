@@ -1,38 +1,26 @@
-# Built for agents
+# Working with an agent
 
-A Quorum talk is a Markdown file and a few small JavaScript files. An AI agent can write it, check it and build new interactions for it, the same way it edits code. You stay the speaker: you look at the result, ask for changes and give the talk.
+Quorum has no AI of its own. It works with the coding agent you already use: Claude Code, Codex, Cursor, or an agent in the cloud with access to your repository. A talk is a Markdown file and a few small JavaScript files, so the agent writes it the way it writes code: it reads the instructions, writes the files and checks its own work. You shape the result in Studio and give the talk.
 
-## 1. Install Quorum
+## Set it up
 
-The agent runs the `quorum` command, so it must be installed on the computer where the agent works. You need [Node.js](https://nodejs.org) 18 or newer (`node --version` tells you).
+A talk made from the template or with `quorum new` already has everything the agent needs:
 
-```bash
-npm install -g github:JBoixCampos/quorum
-quorum --version
-```
+- **`AGENTS.md`** (and `CLAUDE.md`, which points to it): the format, the commands, how to check its work, how to hand you alternatives, and what never to touch. Most agents read it on their own when you open them in the folder.
+- **`package.json`** with Quorum, so `npx quorum check` works once you ran `npm install`.
 
-You can also ask the agent to do it: "Install Quorum with `npm install -g github:JBoixCampos/quorum` and check that `quorum --version` works." It will ask your permission before it runs the command.
-
-If `npm install -g` fails with a permission error, use a Node version manager such as [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) instead of the system Node, or follow [npm's guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally).
-
-## 2. Teach your agent the format
-
-The agent needs to know how a talk is written. Any one of these is enough.
-
-**Install the skill**, for Claude Code and other agents that support skills. It teaches the agent to write and check a talk and build components for it, in any folder. Start a new agent session afterwards so it loads the skill.
+Nothing else to install. For an agent working outside a talk folder, two more ways in:
 
 ```bash
-quorum skill                         # Claude Code: ~/.claude/skills/quorum
-quorum skill --to path/to/skills     # another agent's skills folder
+npx github:JBoixCampos/quorum skill                     # the skill, for Claude Code in any folder
+npx github:JBoixCampos/quorum skill --to path/to/skills # another agent's skills folder
 ```
 
-**Start from a talk folder.** `quorum new my-talk` creates the folder with an `AGENTS.md` that explains the format, the commands and the rules in short. Most coding agents read `AGENTS.md` on their own when you open them in that folder.
+or point it at [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt), the whole format in one file.
 
-**Point it at the docs.** [llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt) has the whole format and component reference in one file. [llms.txt](https://jboixcampos.github.io/quorum/llms.txt) is a short index.
+## Ask for a talk
 
-## 3. Ask for a talk
-
-Open your agent (Claude Code, or any coding agent that can read files and run commands) in an empty folder or in a talk folder, and ask:
+Open your agent in the talk folder and describe the talk: the subject, the room, how long, where people should take part, how it should feel.
 
 ```text
 Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
@@ -43,18 +31,42 @@ then `quorum snapshot` and fix anything that looks wrong.
 
 Give it your brand too, if you have one: "Use our colours, #0b5fff and #00a078, and the logo in images/logo.svg." Or a mood: "Make it look like a keynote" (the agent picks a theme such as `midnight` or `bold`).
 
-## 4. Look at it and ask for changes
+Keep Studio open (`npm run studio`) while it works: the slides appear and change as the agent saves them.
 
-Run `quorum preview my-talk` in a terminal of your own. It opens the talk in your browser with a simulated audience, and the slides update every time the agent saves `talk.md`. Ask for changes in plain words: "make the warm-up shorter", "add a slide where people vote on the next experiment", "write a component that shows the answers as a bar chart".
+## Ask for changes from Studio
+
+When you are in Studio and want something from the agent, select the slide or the element and press **Ask agent** (or, for whole new versions of a slide, the **Alternatives** tab). Studio writes the request for you: which file, which lines, what you want, how to check it and how to hand back alternatives. It is copied, so you paste it into the agent.
+
+```text
+In this Quorum talk, change the slide "Four ingredients" (id: four-ingredients),
+in talk.md, lines 38 to 58.
+The part to change:
+
+    ::: cards {.steps}
+    ...
+
+What I want: make it a chart of how much of each goes in a loaf.
+
+Edit the Markdown in place and leave the other slides alone. ...
+```
+
+The agent edits the file and Studio shows the result as soon as it is saved. Alternatives come back as files in `variants/`, and appear in the Alternatives tab for you to choose from. See [Alternatives for a slide](remix.md).
+
+## Agents in the cloud
+
+An agent working on a copy of your repository (Claude Code on the web, a GitHub agent) cannot reach your Studio. It works on a branch, runs the same checks and pushes. GitHub runs the workflow on every push: the checks, a playable copy, pictures of the slides and a PowerPoint file, attached to the run. Pull the branch and Studio shows the result; `quorum diff main --pictures` shows what changed, before and after. See [Teams and repositories](repository.md).
+
+## Who does what
 
 | The agent | You |
 | --- | --- |
-| Writes and edits `talk.md` | Look at it with `quorum preview` |
-| Picks a theme, layouts and blocks | Say what it should feel like |
-| Writes components in `components/` | Decide what the audience should do |
-| Runs `quorum check --json` after every change, and `quorum snapshot` to look | Give the talk with `quorum live` |
+| Writes and edits `talk.md`, and components in `components/` | Say what the talk is for and how it should feel |
+| Picks a theme, layouts and blocks | Shape it in Studio: wording, order, pictures, polls |
+| Runs `quorum check --json` after every change, and `quorum snapshot` to look | Rehearse in Studio |
+| Writes alternatives as variants when asked | Choose between them |
+| Never presents | Present and export from Studio |
 
-`quorum live` is yours to run, not the agent's: it opens a public link and the windows you present from.
+Presenting is yours, not the agent's: it opens a public link and the windows you present from.
 
 ## Checking a talk
 

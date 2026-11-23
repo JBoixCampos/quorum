@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quorum: presentations, but interactive. Agent ready.</title>
-  <meta name="description" content="Presentations where the room takes part, written in Markdown so your AI agent can write, check and extend them. People vote, guess and ask from their phones. Open source, runs from your laptop.">
+  <title>Quorum: your agent writes the talk, you shape it, the room takes part</title>
+  <meta name="description" content="Start from a template, let your coding agent write the talk, shape it in Studio, then present it live with the audience on their phones or export it to PowerPoint. Open source, runs from your laptop.">
   {{social}}
   <link rel="icon" href="favicon.svg">
   <link rel="stylesheet" href="assets/site.css">
@@ -16,92 +16,125 @@
   <main id="main">
     <div class="hero">
       <div class="wrap">
-        <div class="hero-text">
-          <p class="badge"><b>Open source</b> <span>One Markdown file. Phones join with a QR code.</span></p>
-          <h1>
-            <span class="line">Presentations,</span>
-            <span class="line"><span class="but">but interactive.</span></span>
-            <span class="ready">Agent ready<span class="caret" aria-hidden="true"></span></span>
-          </h1>
-          <p class="lede">The room votes, guesses, writes and asks from their phones, and the results land on your slides. The talk is plain Markdown, so your coding agent can write it, check it and build new interactions for it.</p>
-          <div class="actions">
-            <div class="install"><code id="install-command">npm install -g github:JBoixCampos/quorum</code><button type="button" class="copy" data-copy="#install-command">Copy</button></div>
-            <a class="button primary big" href="#write">Write a slide</a>
-            <a class="button big" href="#agents">Hand it to your agent</a>
-          </div>
+        <p class="badge"><b>Open source</b> <span>No accounts. Runs from your laptop.</span></p>
+        <h1>Your agent writes the talk. <em>You shape it.</em></h1>
+        <p class="lede">Start from a template, ask Claude Code or any coding agent for the talk you want, then polish it in Studio. Present it live, with polls and questions on everyone's phone, or export it to PowerPoint.</p>
+        <div class="actions">
+          <a class="button primary big" href="https://github.com/JBoixCampos/quorum-talk/generate">Use the template</a>
+          <div class="install"><code id="install-command">npx github:JBoixCampos/quorum new my-talk</code><button type="button" class="copy" data-copy="#install-command">Copy</button></div>
         </div>
-
-        <div class="stage">
-          <div class="terminal typing" data-terminal aria-label="An example agent session that writes and checks a talk">
-            <div class="bar"><i></i><i></i><i></i><span>your agent, in a talk folder</span></div>
-            <div class="body">
-              <p class="you" data-line>Make me a 5-minute Quorum talk on how an AI writes: a warm-up poll, a word cloud, an estimate with a reveal and a questions slide.</p>
-              <p class="step" data-line>Wrote talk.md (7 slides)</p>
-              <p class="step" data-line>Wrote components/word-cloud.js</p>
-              <p class="cmd" data-line>quorum check how-ai-writes --json</p>
-              <p class="out" data-line>{ <span class="k">"ok"</span>: <span class="ok">true</span>, <span class="k">"slides"</span>: 7,
-  <span class="k">"interactions"</span>: [ warmup, feeling,
-    chatgpt, sentence, questions ],
-  <span class="k">"warnings"</span>: [] }</p>
-              <p class="step" data-line>Checked: no warnings. Run <span class="s">quorum preview how-ai-writes</span> to see it with a simulated audience.</p>
-            </div>
-          </div>
-          <div>
-            <div class="stage-slide">
-              <div class="screen"><iframe src="demo/?slide=1" title="A live slide from the demo talk, with a simulated audience" loading="lazy"></iframe></div>
-              <div class="stage-phone"><img src="docs/images/phone.png" alt="The same poll on a phone, with three options to tap" width="390" height="600" loading="lazy"></div>
-            </div>
-            <p class="stage-note"><b>This slide is live.</b> Click it to open voting and 24 simulated people answer. The terminal shows the kind of session an agent runs; the check output is the real one for this demo.</p>
-          </div>
-        </div>
+        <figure class="window">
+          <img src="docs/images/studio.png" alt="Quorum Studio: the slides on the left, a slide with four cards in the middle, a form to edit the cards on the right" width="1600" height="920">
+        </figure>
       </div>
     </div>
 
-    <section class="pillars" aria-label="Two ideas">
-      <div class="wrap pillar-grid">
-        <article class="pillar">
-          <p class="kicker">interactive</p>
-          <div class="visual"><svg class="hall" viewBox="0 0 860 300" role="img" aria-label="An auditorium seen from above, filling up with people" data-hall></svg></div>
-          <h2>The room takes part</h2>
-          <p>People scan a QR code and answer from their phones. No app, no sign-up. Results land on the slide as they arrive.</p>
-          <ul>
-            <li>Polls, quizzes, estimates, rounds and a sentence the room writes together</li>
-            <li>Anonymous questions with upvotes, approved by you</li>
-            <li>A simulated audience while you rehearse</li>
-          </ul>
-          <a class="foot" href="#write">Write a slide and play it</a>
-        </article>
-        <article class="pillar agent">
-          <p class="kicker agent">agent ready</p>
-          <div class="visual"><div class="check-demo"><span class="c">quorum check my-talk --json</span>
-{
-  <span class="k">"ok"</span>: <span class="ok">true</span>,
-  <span class="k">"title"</span>: "How bread rises",
-  <span class="k">"slides"</span>: 14,
-  <span class="k">"warnings"</span>: []
-}</div></div>
-          <h2>Your agent writes it</h2>
-          <p>A talk is a Markdown file and a few small JavaScript files. Any coding agent can write it, check its own work and build interactions nobody has built yet.</p>
-          <ul>
-            <li>A skill for Claude Code and an <code>AGENTS.md</code> in every talk</li>
-            <li>The whole reference in one file: <code>llms-full.txt</code></li>
-            <li>A checker that answers in JSON and fails until the talk is right</li>
-          </ul>
-          <a class="foot" href="#agents">See how an agent works with it</a>
-        </article>
+    <section id="how">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">How it works</p>
+            <h2>Four steps, one folder</h2>
+          </div>
+          <p class="intro">A talk is a Markdown file in a git repository. Your agent writes in it, Studio edits it, and every change is a line you can read in <code>git diff</code>.</p>
+        </div>
+        <ol class="steps">
+          <li><span class="n">01</span><h3>Start</h3><p><a href="#start">Use the template</a>, or one command. You get the talk, instructions for agents and checks on every push.</p></li>
+          <li><span class="n">02</span><h3>Your agent writes it</h3><p>Claude Code, Codex or Cursor, on your computer or in the cloud, writes the slides and checks its own work.</p></li>
+          <li><span class="n">03</span><h3>You shape it</h3><p>In Studio: type on the slide, drag in polls and charts, try other layouts, ask your agent for more.</p></li>
+          <li><span class="n">04</span><h3>Present or export</h3><p>A link and a QR code for the room, your slides and your panel. Or an editable PowerPoint file.</p></li>
+        </ol>
       </div>
     </section>
 
     <section id="write">
+      <div class="wrap row">
+        <div class="text">
+          <p class="kicker">02 &middot; Write</p>
+          <h2>Your agent writes it</h2>
+          <p>The talk is plain Markdown, so a coding agent writes it the way it writes code. It reads the instructions in the folder, writes the slides, runs the checker and fixes what it finds. No copying slides back and forth.</p>
+          <ul class="points">
+            <li><span><b>Nothing to set up.</b> Every talk has an <code>AGENTS.md</code> with the format and the rules.</span></li>
+            <li><span><b>It checks its own work.</b> Mistakes, poor contrast and slides that do not fit, with the slide number.</span></li>
+            <li><span><b>In the cloud too.</b> An agent with your repository pushes a branch; the checks run on GitHub.</span></li>
+          </ul>
+          <p class="more"><a href="docs/agents/">Working with an agent</a></p>
+        </div>
+        <div class="terminal typing" data-terminal aria-label="An example agent session in a talk folder">
+          <div class="bar"><i></i><i></i><i></i><span>your agent, in the talk folder</span></div>
+          <div class="body">
+            <p class="you" data-line>Make me a 15-minute talk on why bread rises, for curious non-bakers. A warm-up poll, a quiz on yeast, a chart of the timings and a questions slide.</p>
+            <p class="step" data-line>Wrote talk.md: 16 slides, 3 ask the audience</p>
+            <p class="cmd" data-line>quorum check --json</p>
+            <p class="out" data-line>"ok": false
+"issues": [ "Slide 9 does not fit: 140px too tall" ]</p>
+            <p class="step" data-line>Split slide 9 in two. Checked again: no warnings.</p>
+            <p class="step" data-line>Ready. Open it with <span class="hl">npm run studio</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="shape">
+      <div class="wrap row flip">
+        <div class="text">
+          <p class="kicker">03 &middot; Shape</p>
+          <h2>You shape it in Studio</h2>
+          <p>The real slide in the middle, your slides on the left, what you selected on the right. Studio edits the same files as your agent and shows its changes as they are saved.</p>
+          <ul class="points">
+            <li><span><b>Type on the slide</b>, and drag blocks, cards and pictures where you want them.</span></li>
+            <li><span><b>Drag in what the room does:</b> polls, quizzes, guesses and questions, edited with a form.</span></li>
+            <li><span><b>See it other ways.</b> Quorum lays a slide out as cards, steps or a chart, instantly. For more, Studio writes the request for your agent.</span></li>
+            <li><span><b>Undo, and git.</b> Every change is a plain edit to your files.</span></li>
+          </ul>
+          <p class="more"><a href="docs/studio/">Everything Studio does</a></p>
+        </div>
+        <figure class="shot"><img src="docs/images/studio-insert.png" alt="The Insert panel in Studio, with polls, quizzes, guesses, charts and cards to drag onto a slide" width="1600" height="920" loading="lazy"></figure>
+      </div>
+    </section>
+
+    <section id="give">
+      <div class="wrap">
+        <div class="row">
+          <div class="text">
+            <p class="kicker">04 &middot; Give</p>
+            <h2>Present it live</h2>
+            <p><b>Present</b> in Studio starts the talk on your laptop: a public link (or your local network), the QR code on your slides, the presentation to share or project, and your panel. People answer from their phones, with no app and no account.</p>
+            <p class="more"><a href="docs/giving-a-talk/">Presenting</a></p>
+          </div>
+          <figure class="shot"><img src="docs/images/studio-live.png" alt="Studio while the talk is live: the link, the phones connected and a Stop button in the top bar" width="1600" height="920" loading="lazy"></figure>
+        </div>
+        <div class="trio">
+          <figure><img src="docs/images/screen.png" alt="The shared screen during a poll: live results, the number of answers, and a QR code in the corner" width="1600" height="900" loading="lazy"><figcaption><strong>What the room sees</strong>Results land as they arrive.</figcaption></figure>
+          <figure><img src="docs/images/panel.png" alt="The presenter panel: a clickable preview, the next slides, notes and questions waiting for approval" width="1600" height="820" loading="lazy"><figcaption><strong>What you see</strong>The next slides, your notes, the clock and the questions.</figcaption></figure>
+          <figure><img src="docs/images/phone.png" alt="A phone showing the same poll, with three options to tap" width="390" height="600" loading="lazy"><figcaption><strong>What each phone sees</strong>Only the question of the moment.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="pptx">
+      <div class="wrap row flip">
+        <div class="text">
+          <p class="kicker">04 &middot; Or export</p>
+          <h2>A PowerPoint file, too</h2>
+          <p><b>Export</b> writes a <code>.pptx</code> with real, editable text, shapes, tables and charts, your notes and your transitions. Slides where the audience answers point to Quorum, or, after the talk, show what the room answered.</p>
+          <p>So Quorum is also how your agent makes a PowerPoint deck, with nobody voting at all.</p>
+          <p class="more"><a href="docs/powerpoint/">PowerPoint and PDF</a></p>
+        </div>
+        <figure class="shot"><img src="docs/images/pptx.png" alt="Three slides of an exported PowerPoint file: cards, a column chart and key figures" width="1600" height="400" loading="lazy"></figure>
+      </div>
+    </section>
+
+    <section id="try">
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker">interactive</p>
+            <p class="kicker">Try it</p>
             <h2>A poll is a slide</h2>
           </div>
-          <p class="intro">No second tab, no separate account, no copy of your questions somewhere else. Write the Markdown on the left and the real slide appears on the right. Add a block with a button, then click the slide to open voting.</p>
+          <p class="intro">This is what your agent writes, and what Studio's forms edit. Change the Markdown and the slide updates; click the slide to open voting, and 24 simulated people answer.</p>
         </div>
-        <div class="playground" data-playground data-frame="demo/?playground=1">
+        <div class="playground" data-playground data-frame="demo/?playground=1&amp;theme=midnight">
           <textarea aria-label="Markdown of the slide">::: poll {#lunch} Where should we go for lunch?
 - Tacos
 - Ramen
@@ -111,144 +144,7 @@ The queue is long for a reason.
 :::
 </textarea>
         </div>
-        <div class="under">
-          <span>The same code that runs your talk, running in your browser.</span>
-          <span><a href="playground/">Open the full playground</a> &middot; <a href="demo/">Play the demo talk</a></span>
-        </div>
-        <div class="blocks">
-          <div><h3><code>poll</code> <span>and</span> <code>multi</code></h3><p>Live bars. Mark a right answer and it stays hidden until you reveal it.</p></div>
-          <div><h3><code>estimate</code></h3><p>Everyone guesses a number. Every guess becomes a dot, then the average, then the truth.</p></div>
-          <div><h3><code>rounds</code></h3><p>The same question over a list, one result per round.</p></div>
-          <div><h3><code>sentence</code></h3><p>The room writes a sentence one word at a time, like a language model picking the next token.</p></div>
-          <div><h3><code>questions</code></h3><p>Anonymous questions with upvotes. You approve them before they reach the screen.</p></div>
-          <div><h3><code>component</code></h3><p>Anything else, in a JavaScript file next to your talk. Your agent can write it.</p></div>
-        </div>
-        <p class="more"><a href="docs/format/">Every block, with examples</a></p>
-      </div>
-    </section>
-
-    <section id="agents" class="band">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker agent">agent ready</p>
-            <h2>Your agent writes it. You give it.</h2>
-          </div>
-          <p class="intro">Quorum is built so an agent can do the authoring the way it edits code: read the format, write the files, check its own work. You stay the speaker.</p>
-        </div>
-
-        <ol class="loop">
-          <li><span class="who">you</span><h3>Ask</h3><p>Describe the talk, the room and where people should take part.</p></li>
-          <li><span class="who">agent</span><h3>Write</h3><p>It writes <code>talk.md</code> and any components the talk needs.</p><code>talk.md</code></li>
-          <li><span class="who">agent</span><h3>Check</h3><p>It runs the checker and fixes every warning, slide by slide.</p><code>quorum check --json</code></li>
-          <li><span class="who">you</span><h3>Preview</h3><p>You watch it update with a simulated audience and ask for changes.</p><code>quorum preview</code></li>
-          <li class="you"><span class="who">you</span><h3>Present</h3><p>A public link, a QR code and your panel. The live talk is yours to run.</p><code>quorum live</code></li>
-        </ol>
-
-        <div class="agent-grid">
-          <div>
-            <div class="prompt">
-              <p class="label">a prompt to start from</p>
-              <p id="agent-prompt">Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll, an estimate with a reveal, a word cloud and a questions slide. Run <code>quorum check --json</code> until it reports no warnings.</p>
-              <div class="row">
-                <button type="button" class="button" data-copy="#agent-prompt">Copy the prompt</button>
-                <span>Paste it into Claude Code or any coding agent once Quorum is installed.</span>
-              </div>
-            </div>
-<pre><span class="file">terminal</span><span class="ok">$</span> npm install -g github:JBoixCampos/quorum
-<span class="ok">$</span> quorum skill            <span class="c"># Claude Code, every folder</span>
-<span class="ok">$</span> quorum skill --to path  <span class="c"># another agent's skills</span></pre>
-          </div>
-          <ul class="features">
-            <li><h3>quorum skill</h3><p>Teaches Claude Code to write and check a talk and build components for it, in any folder.</p></li>
-            <li><h3>AGENTS.md</h3><p><code>quorum new</code> puts the format, the commands and the rules in every talk folder.</p></li>
-            <li><h3>llms-full.txt</h3><p>The whole format and component reference in one file. <a href="llms-full.txt">Full</a> or <a href="llms.txt">index</a>.</p></li>
-            <li><h3>check --json</h3><p>Every problem with its slide number, and a non-zero exit until there are none.</p></li>
-            <li><h3>components/*.js</h3><p>Plain ES modules with a small API: <code>mount(el, ctx)</code>. No build step to get wrong.</p></li>
-            <li><h3>.quorum/</h3><p>Votes and presenter keys live here, and agents are told never to touch it.</p></li>
-          </ul>
-        </div>
-        <p class="more"><a href="docs/agents/">Set up your agent, step by step</a></p>
-      </div>
-    </section>
-
-    <section id="build">
-      <div class="wrap split">
-        <div>
-          <p class="kicker">interactive + agent ready</p>
-          <h2>Build what nobody has built yet</h2>
-          <p class="intro">Add <code>audience:</code> to a component and every phone gets a text box, a number field or a list of options. Your code, or your agent's, gets the answers. Quorum handles the rest: opening and closing, one answer per phone, simulated answers in the preview, and keeping the screen and your panel in sync.</p>
-          <p class="intro">The examples include a word cloud and a next-word explorer that asks a language model on your own laptop for its ten most likely words, so the room can watch it think.</p>
-          <p class="more" style="margin-top:8px"><a href="docs/components/">How components work</a> <a href="examples/">See the examples</a></p>
-        </div>
-<pre><span class="file">talk.md</span><span class="k">::: component</span> word-cloud
-audience: text
-prompt: One word: how do you feel about AI?
-<span class="k">:::</span><span class="file next">components/word-cloud.js</span>export default {
-  mount(el, ctx) {
-    const paint = (c) =&gt; {
-      el.textContent = c.answers.values.join(' ');
-    };
-    paint(ctx);
-    return { update: paint };
-  },
-};</pre>
-      </div>
-    </section>
-
-    <section id="views">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">interactive</p>
-            <h2>One talk, three views</h2>
-          </div>
-          <p class="intro"><code>quorum live</code> opens two windows on your laptop. You share the presentation, keep the panel to yourself, and everyone in the room answers on their phone. All three stay in sync.</p>
-        </div>
-        <div class="views">
-          <figure>
-            <img src="docs/images/screen.png" alt="The shared screen during a poll: live bars, 23 answers, and a QR code in the corner" width="1600" height="900" loading="lazy">
-            <figcaption><strong>What the room sees</strong>The presentation, on a projector or in a call. Results land as they arrive.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/images/panel.png" alt="The presenter panel: a clickable preview, the next slides, notes, vote counts and questions waiting for approval" width="1600" height="820" loading="lazy">
-            <figcaption><strong>What you see</strong>A clickable preview, the next slides, your notes, the clock and the questions to approve.</figcaption>
-          </figure>
-          <figure>
-            <img src="docs/images/phone.png" alt="A phone showing the same poll with three options to tap" width="390" height="600" loading="lazy">
-            <figcaption><strong>What each phone sees</strong>Only the question of the moment. No app, no account.</figcaption>
-          </figure>
-        </div>
-        <p class="more"><a href="docs/giving-a-talk/">How to give a talk</a></p>
-      </div>
-    </section>
-
-    <section id="brand">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">your brand</p>
-            <h2>Your slides, your brand</h2>
-          </div>
-          <p class="intro">Colours, logo, fonts, footer and backgrounds are a few lines at the top of <code>talk.md</code>, so your agent can apply them too. Phones follow the same brand.</p>
-        </div>
-        <div class="brand-demo">
-<pre><span class="file">talk.md</span><span class="k">---</span>
-title: Harbor Labs roadmap
-background: <span class="s">"#0f1b2d"</span>
-primary: <span class="s">"#ffffff"</span>
-accent: <span class="s">"#ffb703"</span>
-secondary: <span class="s">"#8ecae6"</span>
-logo: images/logo.svg
-font: Georgia, serif
-footer: Harbor Labs · {section} | {n} / {total}
-<span class="k">---</span>
-
-<span class="c">&lt;!-- background: images/team.jpg, dim --&gt;</span>
-<span class="c">&lt;!-- footer: off --&gt;</span></pre>
-          <img src="docs/images/brand.png" alt="The same kind of poll with the Harbor Labs brand: dark blue background, yellow bars, serif titles, a logo and a custom footer" width="1600" height="900" loading="lazy">
-        </div>
-        <p class="more"><a href="docs/format/#your-brand">Every brand setting</a> <a href="https://github.com/JBoixCampos/quorum/tree/main/examples/brand">The example talk</a></p>
+        <p class="more"><a href="playground/">Open the full playground</a><a href="showcase/">Play the showcase talk</a></p>
       </div>
     </section>
 
@@ -256,63 +152,48 @@ footer: Harbor Labs · {section} | {n} / {total}
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker">private by design</p>
-            <h2>No accounts, no cloud</h2>
+            <p class="kicker">Principles</p>
+            <h2>Yours, from start to finish</h2>
           </div>
-          <p class="intro">Your laptop is the server. Nothing about your talk or your audience leaves the room unless you put it there.</p>
+          <p class="intro">Your laptop is the server, your repository is the storage, and your agent is the AI. Quorum has none of its own.</p>
         </div>
-        <div class="facts">
-          <div>
-            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="22" height="14" rx="2"/><path d="M2 25h28"/></svg>
-            <h3>Your laptop is the server</h3>
-            <p>One command starts it, opens a public link through a tunnel and puts the QR code on your slides. Votes stay in your talk folder until you delete them.</p>
-          </div>
-          <div>
-            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="12" r="5"/><path d="M6 27c1.5-5 5.5-8 10-8s8.5 3 10 8"/><path d="M4 4l24 24"/></svg>
-            <h3>Anonymous by design</h3>
-            <p>No names, no sign-up, no app. Each phone gets a random id so it votes once. Notes and right answers never reach phones before you reveal them.</p>
-          </div>
-          <div>
-            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a17 17 0 0 1 24 0"/><path d="M8 17.5a11 11 0 0 1 16 0"/><path d="M12 22a5 5 0 0 1 8 0"/><circle cx="16" cy="26" r="1"/></svg>
-            <h3>Ready for any room</h3>
-            <p>No public link? People on the same wifi still join. Nobody can join at all? <code>quorum export</code> gives you the talk without the audience slides.</p>
-          </div>
+        <div class="cards">
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg></span><h3>Your laptop is the server</h3><p>Present opens a public link through a tunnel, or uses your local network. Votes stay in your folder until you delete them.</p></div>
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/><path d="M3 3l18 18"/></svg></span><h3>Anonymous by design</h3><p>No names, no sign-up, no app. Notes and right answers never reach phones before you reveal them.</p></div>
+          <div><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><h3>Plain files, in git</h3><p>Markdown and a few small JavaScript files. Teams and agents work on branches, and slides merge one by one.</p></div>
         </div>
       </div>
     </section>
 
-    <section id="start" class="start">
+    <section id="start">
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker">get started</p>
-            <h2>Two ways in</h2>
+            <p class="kicker">Get started</p>
+            <h2>Start a talk</h2>
           </div>
-          <p class="intro">Either way you need <a href="https://nodejs.org">Node.js</a> 18 or newer, and the result is the same folder: a <code>talk.md</code> you can read, edit and keep in git.</p>
+          <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer. Both ways give you the same folder.</p>
         </div>
         <div class="paths">
           <div class="path">
-            <p class="kicker agent">with your agent</p>
-            <h3>Ask for a talk</h3>
-            <p>Install Quorum and the skill once, then describe the talk you want.</p>
-<pre><span class="ok">$</span> npm install -g github:JBoixCampos/quorum
-<span class="ok">$</span> quorum skill
-
-<span class="k">&gt;</span> Make me a Quorum talk about ...
-  Run quorum check --json until it reports
-  no warnings.</pre>
-            <div class="foot"><a class="button ink" href="docs/agents/">Set up your agent</a></div>
+            <p class="kicker">On GitHub</p>
+            <h3>Use the template</h3>
+            <p>A repository of your own, with the talk, the agent instructions and the checks. Clone it, or give it to an agent in the cloud.</p>
+<pre><span class="p">$ </span>git clone &lt;your new repository&gt;
+<span class="p">$ </span>cd my-talk
+<span class="p">$ </span>npm install
+<span class="p">$ </span>npm run studio</pre>
+            <div class="foot"><a class="button primary" href="https://github.com/JBoixCampos/quorum-talk/generate">Use the template</a></div>
           </div>
           <div class="path">
-            <p class="kicker">by hand</p>
-            <h3>Write it yourself</h3>
-            <p>Start from a talk that shows every feature, and watch it change as you edit.</p>
-<pre><span class="ok">$</span> npm install -g github:JBoixCampos/quorum
-
-<span class="ok">$</span> quorum new my-talk      <span class="c"># every feature</span>
-<span class="ok">$</span> quorum preview my-talk  <span class="c"># simulated room</span>
-<span class="ok">$</span> quorum live my-talk     <span class="c"># give it</span></pre>
-            <div class="foot"><a class="button primary" href="docs/">Read the docs</a><a class="button" href="playground/">Open the playground</a></div>
+            <p class="kicker">On your computer</p>
+            <h3>One command</h3>
+            <p>The same folder, made on your computer. Add <code>--repo</code> to start a git repository too.</p>
+<pre><span class="p">$ </span>npx github:JBoixCampos/quorum new my-talk
+<span class="p">$ </span>cd my-talk
+<span class="p">$ </span>npm install
+<span class="p">$ </span>npm run studio</pre>
+            <div class="foot"><a class="button" href="docs/">Read the guide</a></div>
           </div>
         </div>
       </div>
@@ -323,80 +204,27 @@ footer: Harbor Labs · {section} | {n} / {total}
 
   <script>
     (function () {
+      // The agent session: its lines appear one after another once seen.
       var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      // The auditorium: seats on curved rows facing a stage, filling up once
-      // it scrolls into view.
-      var svg = document.querySelector('[data-hall]');
-      var ns = 'http://www.w3.org/2000/svg';
-      var cx = 430;
-      var cy = 330;
-      var seats = [];
-      for (var row = 0; row < 9; row += 1) {
-        var r = 92 + row * 26;
-        var spread = 1.02 + row * 0.035;
-        var count = Math.round((r * spread * 2) / 19);
-        for (var i = 0; i < count; i += 1) {
-          var a = -Math.PI / 2 - spread + (2 * spread * i) / (count - 1);
-          var c = document.createElementNS(ns, 'circle');
-          c.setAttribute('cx', (cx + r * Math.cos(a)).toFixed(1));
-          c.setAttribute('cy', (cy + r * Math.sin(a)).toFixed(1));
-          c.setAttribute('r', '6.2');
-          svg.appendChild(c);
-          seats.push(c);
-        }
-      }
-      var stage = document.createElementNS(ns, 'rect');
-      stage.setAttribute('class', 'stage-bar');
-      stage.setAttribute('x', cx - 70);
-      stage.setAttribute('y', 284);
-      stage.setAttribute('width', 140);
-      stage.setAttribute('height', 10);
-      stage.setAttribute('rx', 5);
-      svg.appendChild(stage);
-
-      // A fixed pattern, so the page looks the same every time.
-      var seed = 7;
-      function random() {
-        seed = (seed * 16807) % 2147483647;
-        return seed / 2147483647;
-      }
-      var order = seats.map(function (s) { return { s: s, k: random() }; })
-        .sort(function (x, y) { return x.k - y.k; })
-        .slice(0, Math.round(seats.length * 0.72));
-      function fill() {
-        order.forEach(function (o, n) {
-          if (still) o.s.classList.add('in');
-          else setTimeout(function () { o.s.classList.add('in'); }, 200 + n * 2400 / order.length);
-        });
-      }
-
-      // The agent session: its lines appear one after another.
       var term = document.querySelector('[data-terminal]');
       var lines = term.querySelectorAll('[data-line]');
       function type() {
         lines.forEach(function (line, n) {
           if (still) line.classList.add('shown');
-          else setTimeout(function () { line.classList.add('shown'); }, 300 + n * 650);
+          else setTimeout(function () { line.classList.add('shown'); }, 200 + n * 650);
         });
       }
-
-      function once(el, run) {
-        if (still || !('IntersectionObserver' in window)) {
-          run();
-          return;
-        }
-        var seen = new IntersectionObserver(function (entries) {
-          if (entries.some(function (e) { return e.isIntersecting; })) {
-            seen.disconnect();
-            run();
-          }
-        }, { threshold: 0.3 });
-        seen.observe(el);
+      if (still || !('IntersectionObserver' in window)) {
+        type();
+        return;
       }
-      once(svg, fill);
-      // The terminal is part of the hero: it plays as soon as the page loads.
-      type();
+      var seen = new IntersectionObserver(function (entries) {
+        if (entries.some(function (e) { return e.isIntersecting; })) {
+          seen.disconnect();
+          type();
+        }
+      }, { threshold: 0.3 });
+      seen.observe(term);
     })();
   </script>
   <script type="module" src="assets/site.js"></script>

@@ -1,12 +1,32 @@
 # Quorum
 
-**Presentations, but interactive. Agent ready.**
+**Your agent writes the talk. You shape it. The room takes part.**
 
-Write your talk in Markdown, or ask your coding agent to. People scan a QR code and vote, guess numbers, write a sentence together, send questions and play with whatever you build. Results land on your slides as they arrive. Everything runs from your laptop: no accounts, no cloud service, no app to install.
+Start from a template, ask Claude Code or any coding agent for the talk you want, then fix and polish it in Studio. Give it live, with polls, quizzes and questions on everyone's phone, or export it to PowerPoint. Everything runs from your laptop: no accounts, no cloud service, no app for the audience.
 
-Because a talk is a plain Markdown file and a few small JavaScript files, an agent can write it, design it, check it with `quorum check --json`, look at it with `quorum snapshot` and build new interactions for it. See [Built for agents](docs/agents.md).
+![Quorum Studio: the slides on the left, a slide with four cards in the middle, a form to edit the cards on the right](docs/images/studio.png)
 
-**[Try the demo in your browser](https://jboixcampos.github.io/quorum/demo/)** (seven slides with a simulated audience), see the **[showcase](https://jboixcampos.github.io/quorum/showcase/)** (themes, layouts, charts and motion), or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)** and see it live.
+**[See how it works](https://jboixcampos.github.io/quorum/)**, play the **[showcase talk](https://jboixcampos.github.io/quorum/showcase/)** with a simulated audience, or write a slide in the **[playground](https://jboixcampos.github.io/quorum/playground/)**.
+
+## How it works
+
+| | Who | What happens |
+| --- | --- | --- |
+| **1. Start** | you | **[Use the template](https://github.com/JBoixCampos/quorum-talk/generate)** on GitHub, or `npx github:JBoixCampos/quorum new my-talk`. You get `talk.md`, instructions for agents and checks on every push |
+| **2. Write** | your agent | Claude Code, Codex, Cursor or an agent in the cloud writes the slides, runs `quorum check` and fixes what it finds |
+| **3. Shape** | you, in Studio | Type on the slide, drag in polls and charts, try other layouts, ask your agent for alternatives |
+| **4. Give** | you, in Studio | **Present** opens a link and QR code for the room, the slides and your panel. **Export** writes an editable PowerPoint file |
+
+```bash
+npx github:JBoixCampos/quorum new my-talk
+cd my-talk
+npm install
+npm run studio
+```
+
+You need [Node.js](https://nodejs.org) 18 or newer. The talk is plain Markdown in a git repository: your agent and Studio edit the same files, each sees the other's changes as they are saved, and `git diff` always shows what changed.
+
+## A poll is a slide
 
 ```markdown
 ::: poll {#lunch} Where should we go for lunch?
@@ -18,38 +38,11 @@ The queue is long for a reason.
 :::
 ```
 
-That is a whole slide. Press → to open voting, → to close it and show the results, → to reveal the answer.
-
-## Why
-
-Slides went from overhead projectors to PowerPoint to the browser, and the audience stayed in the same place: watching. Audience response tools exist, but they live in a separate tab, with their own account, their own design and their own copy of your questions. Quorum puts the interaction *inside* the presentation. A poll is a slide. A guessing game is a slide. A model running on your laptop that the audience steers is a slide.
-
-## Quick start
-
-You need [Node.js](https://nodejs.org) 18 or newer.
-
-```bash
-npm install -g github:JBoixCampos/quorum
-
-quorum new my-talk          # a starter talk that shows every feature
-quorum preview my-talk      # see it with a simulated audience, as you edit
-quorum live my-talk         # give it
-```
-
-`quorum live` starts a small server, opens a public link with [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) (or ngrok) if you have it, shows the QR code on your slides, and opens two windows: the presentation, to share or project, and your panel.
-
-## One talk, three views
-
-| What the room sees | What you see | What each phone sees |
-| --- | --- | --- |
-| ![The presentation during a poll](docs/images/screen.png) | ![The presenter panel](docs/images/panel.png) | ![A phone showing the poll](docs/images/phone.png) |
-| The presentation window, shared or projected. Results land as they arrive. | Your panel: a clickable preview, the next slides, notes, the clock and questions to approve. | Only the question of the moment, after scanning the QR code. |
-
-## What is in the box
+That is a whole slide: the format your agent writes, and the block Studio's poll form edits. Press → to open voting, → to close it and show the results, → to reveal the answer.
 
 | Block | What the audience does | On screen |
 | --- | --- | --- |
-| `::: poll` | Pick one option | Live bars, optional right answer |
+| `::: poll` | Pick one option, or the right one in a quiz | Live bars, a donut, a race... and the answer when you reveal it |
 | `::: multi` | Pick several | Live bars |
 | `::: estimate` | Guess a number | Every guess as a dot, the average, then the real answer |
 | `::: rounds` | The same question over a list | One result per round |
@@ -57,33 +50,38 @@ quorum live my-talk         # give it
 | `::: questions` | Ask and upvote, anonymously | Approved questions, most voted first |
 | `::: component` | Whatever you build | Whatever you build |
 
-Plus the usual slide things: steps that appear one click at a time, columns, big numbers, callouts, images, tables, code, speaker notes, sections with a pace clock.
+Plus everything a talk needs to look designed: eight themes, layouts (split with a picture, full bleed, section dividers, statements, quotes, big numbers, a free canvas), cards, timelines, steps, key figures, charts from your numbers, icons, highlighted code, transitions and speaker notes. See [Design and themes](docs/design.md).
 
-**A look in one line**: eight themes (`theme: midnight`, `editorial`, `bold`, `paper`, `studio`, `signal`, `terminal`, `clean`), layouts that compose a slide (split with a picture, full bleed, section dividers, statements, quotes, big numbers, an agenda), visual blocks (cards with icons, timelines, processes, key figures, comparisons, charts from your numbers), highlighted code, transitions that morph titles from slide to slide, results drawn as bars, columns, donuts, pictograms, races or bubbles, and emoji reactions from phones. Every option is a name that `quorum check` validates, so an agent can use all of it. See [Design and themes](docs/design.md).
+## Studio
 
-![One slide in each of the eight themes](docs/images/themes.png)
+`npm run studio` (or just `quorum` in a talk folder) opens the editor:
 
-**Your brand**: accent, primary, secondary, background and text colours, a logo on every slide and on phones, your own fonts, your own footer, image or colour backgrounds per slide, and a stylesheet for anything else. See [the talk format](docs/format.md#your-brand) and the [example](examples/brand/talk.md).
+- **Edit**: double click to type on the slide, drag blocks and cards to move them, drop pictures from your desktop, style with one click, place things freely on a canvas slide.
+- **Insert**: polls, quizzes, guesses, questions, charts, cards, steps and pictures, to click or drag onto a slide or between slides. Interactive blocks have a form: the options of a poll, the right answer, the numbers of a chart.
+- **Alternatives**: the slide laid out other ways by Quorum, instantly, and versions written by your agent when you ask for them.
+- **Ask your agent**: Quorum has no AI of its own. Studio writes the request (which slide, which lines, what you want) for you to paste into your agent, and shows the result when it is saved.
+- **Checks, rehearse, present, export**, from the top bar.
 
-![A poll in a talk with its own brand: dark background, yellow bars, serif titles, a logo and a custom footer](docs/images/brand.png)
+See [Studio](docs/studio.md).
 
-**The panel** is the presenter view: a live preview you can click, the next slides, your notes, how many people are in, the questions waiting for approval, and how you are doing on time.
+## Present it live
 
-**`quorum preview`** shows the talk with 24 simulated people who join, vote and ask, so you see every slide the way it will look with a room. It updates as you edit `talk.md`.
+| What the room sees | What you see | What each phone sees |
+| --- | --- | --- |
+| ![The presentation during a poll](docs/images/screen.png) | ![The presenter panel](docs/images/panel.png) | ![A phone showing the poll](docs/images/phone.png) |
+| The presentation window, shared or projected. Results land as they arrive. | Your panel: a clickable preview, the next slides, notes, the clock and questions to approve. | Only the question of the moment, after scanning the QR code. |
 
-**`quorum build`** turns a talk into a static site that anyone can click through, with the same simulated audience. The [demo](https://jboixcampos.github.io/quorum/demo/) is one. Add `?slide=3` to its address to open it on a given slide.
+**Present** in Studio starts a small server on your laptop, opens a public link with [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/) (or ngrok) if you have it, or uses your local network, puts the QR code on your slides and opens the two windows. See [Presenting](docs/giving-a-talk.md).
 
-**Studio**: `quorum studio my-talk` opens an editor for one person: the real slide in the middle, your slides on the left, the options of what you selected on the right. Click to select, double click to edit the text, drag to rearrange, drop a picture on the slide, place things freely with the `canvas` layout, remix a slide and undo. Every change is an edit to your Markdown files. See [Studio](docs/studio.md).
+## Or export it to PowerPoint
 
-![Studio: slides on the left, the slide in the middle with a paragraph selected, its style on the right](docs/images/studio.png)
+**Export** writes an editable `.pptx`: real text, shapes, tables and charts (with their data), your notes, transitions and click steps. Slides where the audience answers become a panel that points to Quorum, or, after the talk, a chart of what the room answered. So Quorum is also how an agent makes a PowerPoint deck, with nobody voting at all. See [PowerPoint and PDF](docs/powerpoint.md).
 
-**Remix**: `quorum remix four-ingredients` draws a slide six other ways (cards, steps, a timeline, a chart, a split with a picture...) on one picture, and `--pick 3` uses the third. Agents can add their own versions as files in `variants/`. See [Remixing slides](docs/remix.md).
+![Three slides of an exported PowerPoint file: cards, a column chart and key figures](docs/images/pptx.png)
 
-**Teams and agents** work in a git repository, not in a shared editor: a talk can keep one file per slide (`quorum split`), `quorum new --repo` sets up slide by slide merging and a CI workflow, and `quorum diff main --pictures` shows what a branch changed. See [Working in a repository](docs/repository.md).
+## Teams and agents in the cloud
 
-**`quorum export --pptx`** writes an editable PowerPoint file (native text, shapes, tables and charts, notes, transitions) and `--pdf` a PDF. The slides where the audience answers become a panel that points to Quorum, or with `--results` a report with the votes. So an agent can use Quorum to make a PowerPoint deck even when nobody votes. See [PowerPoint and PDF](docs/powerpoint.md).
-
-**`quorum export`** without options is the fallback for when nobody can join: the same talk without the slides the audience answers, ready to present from any static web server.
+A talk is a git repository, so teams work the way programmers do: branches and pull requests. One file per slide (`quorum split`) and a merge driver that merges slide by slide keep parallel work from colliding; every push runs the checks and keeps a playable copy and a PowerPoint file; `quorum diff main --pictures` shows what a branch changed, before and after. See [Teams and repositories](docs/repository.md).
 
 ## Build on it
 
@@ -113,76 +111,59 @@ Quorum takes care of the rest: opening and closing, the QR code, one answer per 
 
 The [examples](https://jboixcampos.github.io/quorum/examples/) include a word cloud and a **next-word explorer** that asks a language model running on your laptop (through [llama.cpp](https://github.com/ggml-org/llama.cpp)) for the ten most likely next words, so the audience can watch a model think and steer it. See [docs/components.md](docs/components.md).
 
-## Built for agents
+## For agents
 
-A talk is plain text and small JavaScript files, so an AI agent can write it, check it and build new interactions for it. You look at it with `quorum preview`, ask for changes and give it. Ask yours:
-
-```text
-Make me a 20-minute Quorum talk about how bread rises, with a warm-up poll,
-an estimate with a reveal, a word cloud and a questions slide. Make it look
-warm and handmade. Run `quorum check --json` until it reports no warnings,
-then `quorum snapshot` and fix anything that looks wrong.
-```
-
-First install Quorum where the agent works (`npm install -g github:JBoixCampos/quorum`, or ask the agent to), then teach it the format. What helps the agent:
-
-- **`quorum skill`** installs the skill in [agents/quorum/](agents/quorum/SKILL.md) for Claude Code (`--to <folder>` for other agents): how to write, design and check a talk and build components for it, with a library of [slide patterns](agents/quorum/patterns.md).
-- **`quorum new` adds an [`AGENTS.md`](templates/starter/AGENTS.md)** to every talk folder: the format in short, how to check, how to write a component, and what never to touch (`.quorum/` and the presenter key).
-- **`quorum check --json`** prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits non-zero while there are warnings: mistakes, contrast problems and (with `--visual`) slides that do not fit. Suggestions point at design problems: too many words, too many plain slides in a row.
+- Every talk has an **[`AGENTS.md`](templates/starter/AGENTS.md)** (and a `CLAUDE.md` that points to it): the format, how to check, how to write a component, how to hand back alternatives, and what never to touch.
+- **`quorum check --json`** prints `{ ok, title, slides, theme, interactions, warnings, issues, suggestions }` and exits non-zero while there are warnings. With `--visual` it measures every slide in a browser.
 - **`quorum schema --json`** lists every theme, setting, layout, block, class, chart and icon, so the agent never guesses a name.
-- **`quorum snapshot`** saves a picture of every slide and a contact sheet, for agents that can look at images.
-- **[llms.txt](https://jboixcampos.github.io/quorum/llms.txt)** and **[llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt)**: the docs as an index and as one plain text file, generated from `docs/*.md`.
-- **[AGENTS.md](AGENTS.md)** at the root, for agents working on Quorum itself.
+- **`quorum snapshot`** saves a picture of every slide, for agents that can look at images.
+- **`quorum variant add <slide>`** saves a version of a slide for the person to choose in Studio.
+- **`quorum skill`** installs the skill in [agents/quorum/](agents/quorum/SKILL.md) for Claude Code, with a library of [slide patterns](agents/quorum/patterns.md).
+- **[llms.txt](https://jboixcampos.github.io/quorum/llms.txt)** and **[llms-full.txt](https://jboixcampos.github.io/quorum/llms-full.txt)**: the docs as an index and as one file.
 
-More in [docs/agents.md](docs/agents.md).
+See [Working with an agent](docs/agents.md).
 
 ## Commands
 
-```
-quorum new <folder>        Create a new talk
-quorum preview [folder]    See it with a simulated audience, as you edit
-quorum live [folder]       Give the talk (server, public link, QR code, windows)
-quorum check [folder]      Check talk.md for mistakes and design problems (--json, --visual)
-quorum snapshot [folder]   A picture of every slide, and a contact sheet
-quorum schema              Every theme, layout, block, class and icon (--json, --icons)
-quorum theme new <name>    Save the talk's look as themes/<name>.yaml
-quorum theme from <logo>   Propose colours and a theme from an SVG or PNG logo
-quorum studio [folder]     Edit a talk on a canvas: click, type, drag, remix, undo
-quorum remix <slide>       Other layouts for one slide, as a picture to choose from (--pick <n>)
-quorum variant ...         Versions of one slide kept in variants/ (add, list, pick)
-quorum explore --themes    The first slides of the talk in several themes
-quorum split / join        One file per slide in slides/, and back
-quorum diff [rev]          Which slides changed since a branch, tag or commit (--pictures)
-quorum repo [folder]       Set up git for a talk: slide by slide merging, CI workflow
-quorum build [folder]      Build a static, playable copy (simulated audience)
-quorum export [folder]     The slides without the audience parts, if nobody can join
-quorum export --pptx       An editable PowerPoint file (--pdf for a PDF, --results for the votes)
-quorum clean [folder]      Delete the votes and questions of the last session
-quorum skill               Install the agent skill for Claude Code (--to <folder> for others)
+Studio does most of this; the commands are there for agents, CI and terminals. `quorum help` lists them all.
 
-Options: --port <n>  --file <name>  --no-tunnel  --no-open  --no-moderation  --out <folder>  --json
-         --visual  --icons  --no-results  --save <name>  --to <folder>
-         --pptx  --pdf  --results  --no-audience  --safe-fonts  --pictures  --repo  --pick  --no-remix  --themes
+```
+For you
+  quorum                     Open Studio (in a talk folder)
+  quorum new <folder>        Start a talk: talk.md, AGENTS.md, package.json, CI (--repo: git too)
+  quorum studio [folder]     Edit, rehearse, present and export
+  quorum present [folder]    Give the talk live: public link, QR code, windows
+  quorum preview [folder]    The talk with a simulated audience
+  quorum export --pptx       A PowerPoint file (--pdf, --results, --no-audience, --safe-fonts)
+
+For agents and CI
+  quorum check [--json] [--visual]   Mistakes, contrast, slides that do not fit
+  quorum snapshot             A picture of every slide, and a contact sheet
+  quorum schema [--json]      Every theme, layout, block, class and icon
+  quorum remix <slide>        Other layouts for a slide (--pick <n> applies one)
+  quorum variant add <slide>  Save a version of a slide for the person to choose
+  quorum diff [rev]           Which slides changed since a branch, tag or commit (--pictures)
+  quorum split / join         One file per slide in slides/, and back
+  quorum repo                 Slide by slide merging in this clone, and the CI workflow
+  quorum build                A static, playable copy of the talk
 ```
 
 ## Documentation
 
 Read it on the website, [jboixcampos.github.io/quorum/docs](https://jboixcampos.github.io/quorum/docs/), or here:
 
-- [Overview and quick start](docs/README.md)
-- [The talk format](docs/format.md): every block, with examples
-- [Design and themes](docs/design.md): themes, layouts, visual blocks, charts, motion, result looks, reactions
-- [PowerPoint and PDF](docs/powerpoint.md): export a talk, or have an agent make a PowerPoint deck
-- [Working in a repository](docs/repository.md): teams and agents on branches, with one file per slide, merging and `quorum diff`
-- [Studio](docs/studio.md): edit a talk on a canvas, with undo, free positioning and remix
-- [Remixing slides](docs/remix.md): one slide, six other layouts, choose one
-- [Components](docs/components.md): build your own, including one that uses a local model
-- [Giving a talk](docs/giving-a-talk.md): the day itself, on stage or on a call
-- [Built for agents](docs/agents.md): ask an AI agent to write, check and extend your talk
+- [Get started](docs/README.md): the workflow in four steps
+- [Working with an agent](docs/agents.md): what to ask, how it checks its work, agents in the cloud
+- [Studio](docs/studio.md): editing, inserting, forms, alternatives, presenting and exporting
+- [Alternatives for a slide](docs/remix.md): Quorum's own layouts and versions from your agent
+- [Presenting](docs/giving-a-talk.md): the day itself, on stage or on a call
+- [PowerPoint and PDF](docs/powerpoint.md): the export, and decks made by agents
+- [Teams and repositories](docs/repository.md): branches, one file per slide, merging, checks on every push
+- Reference: [the talk format](docs/format.md), [design and themes](docs/design.md), [components](docs/components.md)
 
-## How it works
+## Under the hood
 
-`quorum live` runs a small Node server on your laptop (no dependencies) and a tunnel gives it a public address. Phones talk to it with plain HTTP long polling, which goes through tunnels, corporate proxies and conference wifi better than WebSockets. The same session code runs on the server and in the browser, which is how the preview and the static demo work without a server.
+Presenting runs a small Node server on your laptop (no dependencies) and a tunnel gives it a public address. Phones talk to it with plain HTTP long polling, which goes through tunnels, corporate proxies and conference wifi better than WebSockets. The same session code runs on the server and in the browser, which is how the preview and the static demo work without a server.
 
 The audience is anonymous: each phone gets a random id kept in its browser. Phones never see your notes or the right answers before you reveal them. Votes and questions are stored in `.quorum/` inside your talk folder, on your laptop, and `quorum clean` deletes them. The presenter key in that folder is what lets you control the talk: never share it.
 
@@ -190,7 +171,7 @@ The audience is anonymous: each phone gets a random id kept in its browser. Phon
 
 ```bash
 npm test               # unit tests
-npm run test:e2e       # a server, the presentation, the panel and three phones, then the website, in a headless browser (needs Playwright)
+npm run test:e2e       # a live talk with phones, the website, the PowerPoint export and Studio, in a headless browser (needs Playwright)
 npm run demo           # preview the example talk
 npm run build:site     # the website in _site/, with every internal link checked
 ```
@@ -199,4 +180,4 @@ The website is built from this repository: `site/index.html` is the landing page
 
 ## License
 
-MIT. Quorum includes the [Inter](https://rsms.me/inter/) typeface (SIL Open Font License 1.1) and a QR code generator by Kazuhiko Arase (MIT). See [LICENSE](LICENSE).
+MIT. Quorum includes fonts under the SIL Open Font License 1.1 (see `app/fonts/FONTS.md`), icons from [Lucide](https://lucide.dev) (ISC) and a QR code generator by Kazuhiko Arase (MIT). See [LICENSE](LICENSE).
