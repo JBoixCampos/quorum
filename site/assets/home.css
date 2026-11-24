@@ -62,9 +62,7 @@ body.home { overflow-x: clip; }
 .demo-steps button:hover { color: var(--on-dark); }
 .demo-steps button.on { color: var(--on-dark); }
 .demo-steps button.on b { color: var(--q-signal-bright); }
-.demo-steps button::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--signal); }
-.demo-steps button.on::after { animation: fill var(--dur) linear both; }
-@keyframes fill { to { width: 100%; } }
+.demo-steps button::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--p, 0) * 100%); background: var(--signal); }
 
 /* --- a statement ------------------------------------------------------------------------ */
 .thesis { background: var(--paper); border-top: 1px solid var(--ink); }
@@ -169,7 +167,7 @@ body.home { overflow-x: clip; }
 .startsteps .n { display: block; margin-bottom: 28px; font: 500 72px/0.8 var(--display); letter-spacing: -0.05em; color: var(--signal); }
 .startsteps h3 { margin-bottom: 16px; font-size: 24px; }
 .startsteps p { margin: 0; font-size: 16px; }
-.startsteps pre { margin-bottom: 14px; padding: 16px 18px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.startsteps pre { margin-bottom: 14px; padding: 16px 76px 16px 18px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .startsteps pre .p { color: var(--q-signal-bright); user-select: none; }
 #start .more a { font-size: 17px; }
 
@@ -230,19 +228,17 @@ body.home { overflow-x: clip; }
   .tally .pulse, .tally .dots i, .tally .rows i { animation: none; }
   .terminal.typing [data-line] { opacity: 1; transform: none; transition: none; }
   .scene *, .scene { animation: none !important; transition: none !important; }
-  .demo-steps button.on::after { animation: none; width: 100%; }
+  .demo-steps button.on::after { width: 100%; }
 }
 
-/* --- the hero animation: three steps, drawn at 1000 by 560 and scaled by hero.js ----------------
+/* --- the hero animation: one loop, drawn at 1000 by 560 and scaled by hero.js ----------------
    A drawing of Studio and a phone, in Studio's own dark colours whatever the page uses.
-   Step 1: the agent writes the talk, then the slides appear in Studio.
-   Step 2: a poll is dragged from the Insert panel onto the slide.
-   Step 3: the talk is presented: the slide fills the screen and phones vote. */
+   The agent writes the talk, a poll is dragged onto a slide, the talk is presented and
+   phones vote, and it returns to where it began. The movement is not here: hero.js builds
+   one timeline (Web Animations) from the times written there. This is the state at its start. */
 .scene { --fg: #ececef; --fg-2: #b5b8c0; --muted: #8a8e98; --faint: #7a7e88; --line: #2a2d33; --line-2: #363a42; --raise: #1e2025; --raise-2: #262930; --accent: #f26e4e; --accent-2: #c8401f; --accent-soft: rgba(242, 110, 78, 0.14); --display: 'Space Grotesk', 'Inter', sans-serif; }
 .demo { background: #0b0c0e; }
-.demo-view { position: relative; overflow: hidden; transition: opacity 0.34s ease; }
-.demo-view.fade { opacity: 0; transition-duration: 0.26s; }
-.scene.reset, .scene.reset * { transition: none !important; animation: none !important; }
+.demo-view { position: relative; overflow: hidden; }
 .scene { position: absolute; left: 0; top: 0; width: 1000px; height: 560px; transform-origin: 0 0; text-align: left; font-size: 14px; line-height: 1.4; color: var(--fg); }
 .scene > * { position: absolute; }
 .scene p, .scene h4 { margin: 0; }
@@ -253,13 +249,13 @@ body.home { overflow-x: clip; }
 .scene .chrome span { margin-left: 12px; font-weight: 600; font-size: 13px; color: var(--fg-2); }
 .scene .chrome em { font-style: normal; font-size: 13px; font-weight: 600; }
 .scene .pres { margin-left: auto; padding: 6px 14px; border-radius: 8px; background: var(--accent-2); color: #fff; }
-.scene .onair { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 8px; border: 1px solid rgba(255, 90, 77, 0.45); background: rgba(255, 90, 77, 0.1); color: var(--fg); opacity: 0; transform: translateX(8px); transition: opacity 0.4s 0.5s, transform 0.4s 0.5s; }
+.scene .onair { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 8px; border: 1px solid rgba(255, 90, 77, 0.45); background: rgba(255, 90, 77, 0.1); color: var(--fg); opacity: 0; transform: translateX(8px); }
 .scene .onair::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ff5a4d; }
 .scene .onair + .pres { margin-left: 10px; }
 
 /* Studio: the slides, the canvas and the Insert panel */
-.scene .rail { left: 0; top: 42px; bottom: 0; width: 170px; padding: 14px; display: grid; align-content: start; gap: 12px; background: #101114; border-right: 1px solid var(--line); transition: opacity 0.5s, transform 0.5s; }
-.scene .th { position: relative; height: 80px; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: #f6f1e7; overflow: hidden; --c: #b4441f; }
+.scene .rail { left: 0; top: 42px; bottom: 0; width: 170px; padding: 14px; display: grid; align-content: start; gap: 12px; background: #101114; border-right: 1px solid var(--line); }
+.scene .th { opacity: 0; position: relative; height: 80px; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: #f6f1e7; overflow: hidden; --c: #b4441f; }
 .scene .th.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .scene .th u, .scene .th s { display: block; height: 5px; border-radius: 3px; background: rgba(42, 36, 29, 0.7); width: 62%; }
 .scene .th s { width: 40%; margin-top: 5px; background: rgba(42, 36, 29, 0.25); }
@@ -274,32 +270,32 @@ body.home { overflow-x: clip; }
 .scene .th.t-pic em { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f6deb0, #c98b45 70%); }
 .scene .th.t-pic s { margin-top: 0; }
 
-.scene .canvas { left: 170px; top: 42px; right: 230px; bottom: 0; background: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.2px) 0 0 / 20px 20px, radial-gradient(closest-side, #181a21, #0e0f11); transition: left 0.6s, right 0.6s; }
+.scene .canvas { left: 170px; top: 42px; right: 230px; bottom: 0; background: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.2px) 0 0 / 20px 20px, radial-gradient(closest-side, #181a21, #0e0f11); }
 
-.scene .panel { left: 770px; top: 42px; bottom: 0; width: 230px; padding: 18px; background: #101114; border-left: 1px solid var(--line); display: grid; align-content: start; gap: 10px; transition: opacity 0.5s, transform 0.5s; }
+.scene .panel { left: 770px; top: 42px; bottom: 0; width: 230px; padding: 18px; background: #101114; border-left: 1px solid var(--line); display: grid; align-content: start; gap: 10px; }
 .scene .panel .ph { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 .scene .it { padding: 11px 14px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--raise); font-size: 13.5px; color: var(--fg-2); }
 
 /* the slide: 16:9, in the canvas while editing, larger while presenting */
-.scene .slide { --fg: #2a241d; --fg-2: #3d352b; --muted: #6b5b3e; --faint: #6b5b3e; --accent: #b4441f; --accent-soft: rgba(180, 68, 31, 0.1); left: 210px; top: 155px; width: 520px; height: 292px; padding: 30px 32px; border-radius: 4px; overflow: hidden; background: #f6f1e7; color: #2a241d; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7); transform-origin: 0 0; transition: transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.75s; }
+.scene .slide { --fg: #2a241d; --fg-2: #3d352b; --muted: #6b5b3e; --faint: #6b5b3e; --accent: #b4441f; --accent-soft: rgba(180, 68, 31, 0.1); left: 210px; top: 155px; width: 520px; height: 292px; padding: 30px 32px; border-radius: 4px; overflow: hidden; background: #f6f1e7; color: #2a241d; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7); transform-origin: 0 0; }
 .scene .slide h4 { font: 700 25px/1.12 'Fraunces', Georgia, serif; letter-spacing: -0.01em; }
 .scene .slide .sub { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .scene .drop { position: absolute; left: 24px; right: 24px; top: 104px; bottom: 24px; border: 1.5px dashed var(--accent); border-radius: 10px; background: var(--accent-soft); opacity: 0; }
 .scene .poll { position: absolute; left: 32px; top: 122px; width: 330px; display: grid; gap: 13px; opacity: 0; }
 .scene .opt { display: grid; grid-template-columns: 136px 1fr 34px; align-items: center; gap: 12px; font-size: 13px; }
-.scene .opt b { text-align: right; font-weight: 600; color: var(--fg-2); font-size: 12.5px; opacity: 0; transition: opacity 0.4s; }
+.scene .opt b { text-align: right; font-weight: 600; color: var(--fg-2); font-size: 12.5px; opacity: 0; }
 .scene .bar { height: 13px; border-radius: 7px; background: rgba(42, 36, 29, 0.1); overflow: hidden; }
-.scene .bar i { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--c); transition: width 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.scene .bar i { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--c); }
 .scene .slide .foot { letter-spacing: 0.04em; position: absolute; left: 32px; right: 32px; bottom: 18px; display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); }
 .scene .ring { position: absolute; right: 30px; top: 112px; width: 96px; height: 96px; display: grid; place-content: center; text-align: center; opacity: 0; }
 .scene .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
 .scene .ring circle { fill: none; stroke: rgba(42, 36, 29, 0.12); stroke-width: 6; }
-.scene .ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 213.6; stroke-dashoffset: 213.6; transition: stroke-dashoffset 1.8s cubic-bezier(0.33, 1, 0.68, 1); }
+.scene .ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 213.6; stroke-dashoffset: 213.6; }
 .scene .ring b { font: 700 28px/1 'Fraunces', Georgia, serif; }
 .scene .ring small { font-size: 10px; color: var(--muted); }
 
 /* the phones, like the real voting page */
-.scene .phones { left: 726px; top: 92px; display: flex; gap: 12px; opacity: 0; transform: translateY(40px); transition: opacity 0.6s 0.35s, transform 0.6s 0.35s; }
+.scene .phones { left: 726px; top: 92px; display: flex; gap: 12px; opacity: 0; transform: translateY(40px); }
 .scene .phone { width: 124px; height: 262px; padding: 12px 9px; border-radius: 20px; --fg: #2a241d; --fg-2: #3d352b; --muted: #6b5b3e; --accent: #b4441f; border: 2px solid #3b403b; background: #f6f1e7; color: #2a241d; display: grid; align-content: start; gap: 6px; box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.9); }
 .scene .phone:nth-child(2) { margin-top: 40px; }
 .scene .phone .top { display: flex; justify-content: flex-end; gap: 4px; font-size: 7.5px; font-weight: 600; color: var(--fg-2); }
@@ -323,64 +319,9 @@ body.home { overflow-x: clip; }
 .scene .ghost { z-index: 4; left: 0; top: 0; padding: 10px 16px; border-radius: 9px; border: 1px solid var(--accent); background: #3a2118; font-size: 13.5px; font-weight: 600; box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.8); opacity: 0; pointer-events: none; }
 .scene .cursor { z-index: 5; left: 0; top: 0; width: 26px; height: 26px; opacity: 0; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)); }
 
-/* what shows in each step (these are the still states: reduced motion stops here) */
-.scene[data-step="1"] .term { opacity: 1; }
-.scene[data-step="2"] .poll, .scene[data-step="3"] .poll,
-.scene[data-step="2"] .ring, .scene[data-step="3"] .ring { opacity: 1; }
-.scene[data-step="2"] .it.pick { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
-.scene[data-step="3"] .rail { opacity: 0; transform: translateX(-30px); }
-.scene[data-step="3"] .panel { opacity: 0; transform: translateX(30px); }
-.scene[data-step="3"] .canvas { left: 0; right: 0; }
-.scene[data-step="3"] .slide { transform: translate(-170px, -36px) scale(1.2308); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.8); }
-.scene[data-step="3"] .onair { opacity: 1; transform: none; }
-.scene[data-step="3"] .phones { opacity: 1; transform: none; }
-.scene[data-step="3"] .opt b { opacity: 1; transition-delay: 1.7s; }
-.scene[data-step="3"] .bar i { width: var(--w); transition-delay: calc(1.7s + var(--k) * 0.25s); }
-.scene[data-step="3"] .ring .arc { stroke-dashoffset: 8.9; transition-delay: 1.7s; }
-.scene[data-step="3"] .phone .btn.t { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, #efe9dc); color: var(--fg); }
-
-/* the movement */
-@keyframes up { from { opacity: 0; transform: translateY(12px); } }
-@keyframes pop { from { opacity: 0; transform: translateX(-10px) scale(0.94); } }
-@keyframes drop { from { opacity: 0; transform: translateY(-14px) scale(0.97); } }
-@keyframes away { to { opacity: 0; transform: translateY(-12px) scale(0.98); } }
-@keyframes type { from { width: 0; } }
-@keyframes caret { 50% { border-color: transparent; } }
-@keyframes tap { 0% { transform: scale(1); } 40% { transform: scale(0.93); } 100% { transform: scale(1); } }
-@keyframes ripple { 0% { opacity: 0.6; transform: scale(0.3); } 100% { opacity: 0; transform: scale(2.4); } }
-@keyframes flash { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 5px rgba(242, 110, 78, 0.35); } }
-@keyframes zone { 0%, 30% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
-/* the pointer and the block move together: grab the Poll item, drop it on the slide */
-@keyframes pointer {
-  0% { opacity: 0; transform: translate(950px, 330px); }
-  10% { opacity: 1; }
-  34% { transform: translate(880px, 164px) scale(1); }
-  40% { transform: translate(880px, 164px) scale(0.82); }
-  46% { transform: translate(880px, 164px) scale(1); }
-  76% { opacity: 1; transform: translate(452px, 348px); }
-  86% { opacity: 1; transform: translate(452px, 348px); }
-  100% { opacity: 0; transform: translate(480px, 380px); }
-}
-@keyframes carry {
-  0%, 40% { opacity: 0; transform: translate(838px, 145px) scale(1); }
-  46% { opacity: 1; transform: translate(838px, 145px) scale(1.04); }
-  76% { opacity: 1; transform: translate(410px, 329px) scale(1.04) rotate(-2deg); }
-  80%, 100% { opacity: 0; transform: translate(410px, 329px) scale(0.9); }
-}
-
-.scene[data-step="1"] .term { animation: away 0.45s 3.5s forwards; }
-.scene[data-step="1"] .term .you span { border-right: 2px solid var(--accent); animation: type 1.4s 0.4s steps(44) both, caret 0.7s 1.8s steps(1) 2; }
-.scene[data-step="1"] .term .ok { animation: up 0.45s calc(var(--d) * 1s) both; }
-.scene[data-step="1"] .th { animation: pop 0.45s calc(3.7s + var(--i) * 0.18s) both; }
-.scene[data-step="1"] .slide { animation: up 0.6s 4.3s both; }
-.scene[data-step="2"] .it.pick { animation: flash 0.5s 1.5s 1; }
-.scene[data-step="2"] .cursor { animation: pointer 3s 0.5s both; }
-.scene[data-step="2"] .ghost { animation: carry 3s 0.5s both; }
-.scene[data-step="2"] .drop { animation: zone 3s 0.5s both; }
-.scene[data-step="2"] .poll { animation: drop 0.55s 2.85s both; }
-.scene[data-step="2"] .ring { animation: drop 0.55s 3.05s both; }
-.scene[data-step="3"] .phone .btn.t { animation: tap 0.45s calc(1.5s + var(--d, 0) * 0.5s) both; }
-.scene[data-step="3"] .phone:nth-child(2) .btn.t { --d: 1; }
-.scene[data-step="3"] .phone .btn.t::after { animation: ripple 0.6s calc(1.5s + var(--d, 0) * 0.5s) both; }
-.scene[data-step="3"] .phone:nth-child(2) .btn.t::after { --d: 1; }
-
+/* the start of the loop: the agent over an empty Studio (hero.js moves everything from here) */
+.scene .slide { opacity: 0; }
+.scene .term .ok { opacity: 0; }
+.scene .term .you span { width: 0; border-right: 2px solid var(--accent); }
+.scene .opt b { opacity: 0; }
+.scene .bar i { width: 0; }
