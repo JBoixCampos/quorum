@@ -31,3 +31,27 @@ document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
   sync();
 });
+
+// A copy button on code blocks: the commands in "Get started", the docs and the
+// examples. A leading "$ " (the prompt) is not copied.
+document.querySelectorAll('.startsteps pre, .prose pre, .ex-text pre').forEach((pre) => {
+  if (!navigator.clipboard) return;
+  const box = document.createElement('div');
+  box.className = 'codebox';
+  pre.parentNode.insertBefore(box, pre);
+  box.appendChild(pre);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'copy-code';
+  button.textContent = 'Copy';
+  button.setAttribute('aria-label', 'Copy this code');
+  box.appendChild(button);
+  button.addEventListener('click', () => {
+    const text = pre.textContent.replace(/^\$ /gm, '').replace(/\n+$/, '');
+    navigator.clipboard.writeText(text).then(() => {
+      button.textContent = 'Copied';
+      button.classList.add('done');
+      setTimeout(() => { button.textContent = 'Copy'; button.classList.remove('done'); }, 1600);
+    }, () => {});
+  });
+});

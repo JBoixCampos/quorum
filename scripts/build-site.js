@@ -353,6 +353,25 @@ function humanName(name) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// One example as a row of a list: its name and a sentence, and, when it is
+// opened, a live frame (loaded only then) and the Markdown that makes it.
+// `src` is the frame's page; examples.js sets it on the iframe when needed.
+function exRow({ id, label, tag, about, src, text }) {
+  const title = escapeHtml(label);
+  return `<details class="ex" id="${id}">
+        <summary><span class="ex-name">${title}${tag ? `<span class="tag">${tag}</span>` : ''}</span><span class="ex-about">${escapeHtml(about)}</span><span class="ex-state" aria-hidden="true"></span></summary>
+        <div class="ex-body">
+          <div class="ex-frame">
+            <div class="screen"><iframe data-src="${src}" title="${title}, live"></iframe></div>
+            <button type="button" class="ex-max" data-max aria-label="Open ${title} larger" hidden>Enlarge</button>
+          </div>
+          <div class="ex-text">${text}</div>
+        </div>
+      </details>`;
+}
+
+const plainText = (html) => html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+
 function exampleCard(from, { name, file, markdown, tag, slide }) {
   const result = render(markdown, { link: docLink('docs/') });
   const blocks = result.blocks.filter((b) => typeof b === 'string');
@@ -369,24 +388,18 @@ function exampleCard(from, { name, file, markdown, tag, slide }) {
   if (PLAYABLE.has(name) && usageSource) {
     links.push(`<a class="button" href="${href(from, 'playground/')}#md=${encodeURIComponent(usageSource)}">Try it in the playground</a>`);
   }
-  const preview = slide >= 0
-    ? `<figure class="preview">
-        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}&only=1" title="The ${escapeHtml(humanName(name))} component, live" loading="lazy"></iframe></div>
-        <figcaption><span class="live">Live</span>${escapeHtml(LIVE[name] ? LIVE[name].caption : 'With a simulated audience. Click the slide to start it.')}</figcaption>
-      </figure>`
-    : '';
-  return `<article class="card" id="${name}">
-      <div class="prose">
-        <h3>${escapeHtml(humanName(name))}${tag ? `<span class="tag">${tag}</span>` : ''}</h3>
-        ${summary}
-        ${rest.join('\n')}
-        <div class="links">${links.join('')}</div>
-      </div>
-      <div class="prose">
-        ${blocks[usageIndex] || ''}
-        ${preview}
-      </div>
-    </article>`;
+  const caption = LIVE[name] ? LIVE[name].caption : 'With a simulated audience. Click the slide to start it.';
+  return exRow({
+    id: name,
+    label: humanName(name),
+    tag,
+    about: plainText(summary),
+    src: `${href(from, 'examples/live/')}?slide=${slide}&only=1`,
+    text: `<div class="prose">${rest.join('\n')}</div>
+          ${blocks[usageIndex] || ''}
+          <p class="try"><span class="live">Live</span> ${escapeHtml(caption)}</p>
+          <div class="links">${links.join('')}</div>`,
+  });
 }
 
 // The built-in components come from the registry (src/shared/design.js). The
@@ -462,7 +475,7 @@ function buildLiveExamples(entries, tiles) {
       return { id: e.name, markdown: `## ${humanName(e.name)}\n\n${source}` };
     });
     tiles.forEach((t) => slides.push({ id: t.id, markdown: liveSlide(t.item) }));
-    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum examples\ntheme: editorial\n---\n\n${slides.map((x) => x.markdown).join('\n\n---\n\n')}\n`);
+    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum examples\ntheme: editorial\nfooter: off\n---\n\n${slides.map((x) => x.markdown).join('\n\n---\n\n')}\n`);
     execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', dir, '--out', join(OUT, 'examples', 'live')], { stdio: 'ignore' });
     return new Map(slides.map((x, i) => [x.id, i]));
   } finally {
@@ -485,18 +498,18 @@ function aboutOf(group, item) {
   return '';
 }
 
-// A compact example: the live slide, a sentence, and the Markdown that makes it.
+// A built-in example: a sentence, the live slide and the Markdown that makes it.
 function tile(from, group, item, slide) {
-  const id = `${group.id}-${item.key}`;
-  const about = aboutOf(group, item);
   const play = !item.noplay && playable(item.source);
-  return `<article class="tile" id="${id}">
-        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}&only=1${item.play ? `&play=${item.play === true ? 1 : item.play}` : ''}" title="${escapeHtml(item.label)}, live" loading="lazy"></iframe></div>
-        <h3>${escapeHtml(item.label)}</h3>
-        ${about ? `<p>${escapeHtml(about).replace(/`([^`]+)`/g, '<code>$1</code>')}</p>` : ''}
-        <pre><code class="language-markdown">${escapeHtml(item.source)}</code></pre>
-        <p class="try">${item.caption ? `<span class="live">Live</span> ${escapeHtml(item.caption)}${play ? ' ' : ''}` : ''}${play ? `<a href="${href(from, 'playground/')}#md=${encodeURIComponent(play)}">Try it in the playground</a>` : ''}</p>
-      </article>`;
+  const auto = item.play ? `&play=${item.play === true ? 1 : item.play}` : '';
+  return exRow({
+    id: `${group.id}-${item.key}`,
+    label: item.label,
+    about: aboutOf(group, item),
+    src: `${href(from, 'examples/live/')}?slide=${slide}&only=1${auto}`,
+    text: `<pre><code class="language-markdown">${escapeHtml(item.source)}</code></pre>
+          <p class="try">${item.caption ? `<span class="live">Live</span> ${escapeHtml(item.caption)}` : ''}${play ? `${item.caption ? ' ' : ''}<a href="${href(from, 'playground/')}#md=${encodeURIComponent(play)}">Try it in the playground</a>` : ''}</p>`,
+  });
 }
 
 function buildExamples() {
@@ -517,10 +530,14 @@ function buildExamples() {
   const slideOf = buildLiveExamples([...own, ...builtInEntries], tiles);
   const cards = own.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
   const builtIn = builtInEntries.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
+  const head = (id, title, intro) => `<div class="group-head">
+        <h2 class="group" id="${id}">${title}</h2>
+        <button type="button" class="ex-all" data-all hidden aria-expanded="false">Expand all</button>
+      </div>
+      <p class="group-intro">${intro}</p>`;
   const sections = GROUPS.map((g) => `<section class="group-block" aria-labelledby="${g.id}">
-      <h2 class="group" id="${g.id}">${g.title}</h2>
-      <p class="group-intro">${g.intro}</p>
-      <div class="tiles">
+      ${head(g.id, g.title, g.intro)}
+      <div class="ex-list">
       ${g.items.map((item) => tile(path, g, item, slideOf.get(`${g.id}-${item.key}`))).join('\n      ')}
       </div>
     </section>`);
@@ -532,25 +549,33 @@ function buildExamples() {
     path,
     title: 'Examples · Quorum',
     description: 'Everything built into Quorum, running live: polls, quizzes, estimates, visual blocks, layouts, charts, result looks and effects, plus components you can copy into a talk.',
+    scripts: ['assets/examples.js'],
     body: `    <div class="wrap page-head">
       <p class="kicker">examples / built in</p>
       <h1>Examples</h1>
-      <p class="lede">Everything that comes with Quorum, ${count} examples, each running live below with a simulated audience. Click a slide to try it, copy the Markdown into <code>talk.md</code>, and change it. At the end are components you can copy and change. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
-      <nav class="group-nav" aria-label="On this page">${nav}</nav>
+      <p class="lede">Everything that comes with Quorum, ${count} examples. Open one to see it running live with a simulated audience, and the Markdown that makes it. Copy it into <code>talk.md</code> and change it. At the end are components you can copy and change. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
+      <nav class="group-nav" aria-label="On this page">${nav}<button type="button" class="ex-all ex-all-page" data-all-page hidden aria-expanded="false">Expand all</button></nav>
     </div>
     <div class="wrap gallery">
       ${sections.join('\n      ')}
       <section class="group-block" aria-labelledby="built-in">
-      <h2 class="group" id="built-in">Built-in components</h2>
-      <p class="group-intro">Used with <code>::: component name</code>. No file needed.</p>
+      ${head('built-in', 'Built-in components', 'Used with <code>::: component name</code>. No file needed.')}
+      <div class="ex-list">
       ${builtIn.join('\n      ')}
+      </div>
       </section>
       <section class="group-block" aria-labelledby="components">
-      <h2 class="group" id="components">Components to copy</h2>
-      <p class="group-intro">One JavaScript file in your talk's <code>components/</code> folder each. Copy it, use it from <code>talk.md</code>, and change it.</p>
+      ${head('components', 'Components to copy', 'One JavaScript file in your talk\'s <code>components/</code> folder each. Copy it, use it from <code>talk.md</code>, and change it.')}
+      <div class="ex-list">
       ${cards.join('\n      ')}
+      </div>
       </section>
-    </div>`,
+    </div>
+    <dialog class="ex-modal" data-modal aria-labelledby="ex-modal-title">
+      <div class="ex-modal-bar"><h2 id="ex-modal-title" data-modal-title></h2><button type="button" class="button" data-modal-close>Close</button></div>
+      <div class="ex-modal-screen"><iframe title="Example, larger" data-modal-frame></iframe></div>
+      <p class="ex-modal-note" data-modal-note></p>
+    </dialog>`,
   }));
 }
 

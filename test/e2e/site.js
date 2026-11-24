@@ -136,6 +136,17 @@ try {
   await demo.keyboard.press('ArrowRight');
   check('the static showcase still plays from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
 
+  // The copy buttons put the commands on the clipboard, without the prompt.
+  const copier = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'], viewport: { width: 1280, height: 720 } });
+  const home = await copier.newPage();
+  await home.goto(base);
+  check('the hero links to the Why Quorum section', (await home.getAttribute('.hero .actions a[href="#why"]', 'href')) === '#why' && (await home.locator('#why').count()) === 1);
+  check('the getting started commands have copy buttons', (await home.locator('.startsteps .copy-code').count()) === 2);
+  await home.locator('.startsteps .copy-code').first().click();
+  check('copying gives the commands without the prompt', await until(async () => (await home.evaluate(() => navigator.clipboard.readText())).startsWith('npx github:')));
+  check('and the button says so', (await home.locator('.startsteps .copy-code').first().textContent()) === 'Copied');
+  await copier.close();
+
   // An example in its frame stays on its own slide.
   const only = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await only.goto(`${base}showcase/?slide=5&only=1`);
@@ -150,8 +161,21 @@ try {
   check('and going back does not leave it either', (await only.textContent('.q-slide')).includes('What makes the holes in bread?'));
   const gallery = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   await gallery.goto(`${base}examples/`);
-  const frames = await gallery.locator('.screen iframe').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
-  check('every example frame asks for its one slide', frames.length > 3 && frames.every((src) => src.includes('only=1')));
+  const frames = await gallery.locator('.ex iframe').evaluateAll((els) => els.map((e) => ({ src: e.getAttribute('src'), data: e.dataset.src })));
+  check('every example frame asks for its one slide', frames.length > 60 && frames.every((f) => f.data.includes('only=1')));
+  check('the examples start closed, with no frame loaded', frames.every((f) => !f.src) && (await gallery.locator('.ex[open]').count()) === 0);
+  await gallery.click('#audience-poll > summary');
+  check('opening an example loads its frame', await until(async () => !!(await gallery.getAttribute('#audience-poll iframe', 'src'))));
+  await gallery.click('#audience-poll [data-max]');
+  check('Enlarge shows the example in a dialog', await until(async () => (await gallery.evaluate(() => document.querySelector('[data-modal]').open))
+    && !!(await gallery.getAttribute('[data-modal-frame]', 'src'))));
+  await gallery.keyboard.press('Escape');
+  check('and Escape closes it and stops the frame', await until(async () => !(await gallery.evaluate(() => document.querySelector('[data-modal]').open))
+    && !(await gallery.getAttribute('[data-modal-frame]', 'src'))));
+  await gallery.click('#layouts + .ex-all');
+  check('Expand all opens every example of a group', (await gallery.locator('#layouts').evaluate((h) => h.closest('.group-block').querySelectorAll('details.ex:not([open])').length)) === 0);
+  await gallery.goto(`${base}examples/#charts-chart-donut`);
+  check('a link to an example opens it', await until(async () => await gallery.evaluate(() => document.getElementById('charts-chart-donut').open)));
   await gallery.close();
 
   // quorum export: the slides without the audience parts.
@@ -184,18 +208,24 @@ try {
   }
   // Every example component runs live on the examples page.
   await docs.goto(`${base}examples/`);
-  const cards = await docs.$$eval('.gallery .card', (all) => all.map((c) => ({ id: c.id, live: !!c.querySelector('.preview iframe') })));
-  check('every example has a live demo', cards.length >= 6 && cards.every((c) => c.live), JSON.stringify(cards));
-  const live = (id) => docs.frameLocator(`#${id} .preview iframe`);
-  await docs.locator('#next-word-explorer').scrollIntoViewIfNeeded();
+  const cards = await docs.$$eval('.gallery .ex', (all) => all.map((c) => ({ id: c.id, live: !!c.querySelector('iframe[data-src]') })));
+  check('every example has a live demo', cards.length >= 60 && cards.every((c) => c.live), JSON.stringify(cards.filter((c) => !c.live)));
+  // The rows are closed until opened: open one and wait for its frame.
+  const show = async (id) => {
+    await docs.goto(`${base}examples/#${id}`);
+    await docs.locator(`#${id}`).scrollIntoViewIfNeeded();
+    await until(async () => !!(await docs.getAttribute(`#${id} iframe`, 'src')));
+  };
+  const live = (id) => docs.frameLocator(`#${id} iframe`);
+  await show('next-word-explorer');
   check('the next-word explorer runs on sample probabilities', await until(async () => (await live('next-word-explorer').locator('[data-row]').count()) === 10));
   await live('next-word-explorer').locator('[data-row="0"]').click();
   check('and picking a word adds it', await until(async () => (await live('next-word-explorer').locator('[data-sentence]').textContent()).includes('Paris')));
-  await docs.locator('#counter').scrollIntoViewIfNeeded();
+  await show('counter');
   await until(async () => (await live('counter').locator('.counter').count()) === 1);
   await live('counter').locator('.counter').click();
   check('the counter counts', await until(async () => (await live('counter').locator('.counter').textContent()) === '1'));
-  await docs.locator('#embed').scrollIntoViewIfNeeded();
+  await show('embed');
   check('embed shows a page from the talk folder', await until(async () => (await live('embed').frameLocator('iframe.q-embed').locator('h1').textContent()) === 'pages/chart.html'));
 
   // Link previews (WhatsApp, Slack...): absolute URLs and a published image.
