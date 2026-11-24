@@ -1,4 +1,5 @@
-// End-to-end test of the PowerPoint and PDF export: exports the starter and
+// End-to-end test of the PowerPoint and PDF export: exports a talk with every
+// interaction (test/fixtures/every-feature, called "starter" below) and
 // showcase talks with a headless browser, checks the files, and (when
 // LibreOffice is installed) opens the PowerPoint file in it. Needs Playwright.
 
@@ -39,7 +40,7 @@ const has = (cmd) => {
 };
 
 try {
-  const starter = await exportTalk(join(ROOT, 'templates', 'starter'), { out: join(out, 'starter.pptx') });
+  const starter = await exportTalk(join(ROOT, 'test', 'fixtures', 'every-feature'), { out: join(out, 'starter.pptx') });
   check('starter: exports', starter.file && starter.slides === 13, JSON.stringify(starter).slice(0, 200));
   check('starter: no structural problems', starter.problems && starter.problems.length === 0, (starter.problems || []).join('; '));
   const files = unzip(readFileSync(join(out, 'starter.pptx')));
@@ -57,12 +58,12 @@ try {
   check('showcase: backgrounds and the morph transition are written', slideXml.some((x) => /<p:bg>/.test(x)) && slideXml.some((x) => /p159:morph/.test(x)));
   check('showcase: step animations are written', [...show.entries()].some(([n, d]) => n.startsWith('ppt/slides/slide') && /<p:timing>/.test(d.toString())));
 
-  const noAudience = await exportTalk(join(ROOT, 'templates', 'starter'), { out: join(out, 'plain.pptx'), audience: false });
+  const noAudience = await exportTalk(join(ROOT, 'test', 'fixtures', 'every-feature'), { out: join(out, 'plain.pptx'), audience: false });
   check('no-audience leaves out the interactive slides', noAudience.slides < 13 && noAudience.slides > 3, String(noAudience.slides));
-  const needsVotes = await exportTalk(join(ROOT, 'templates', 'starter'), { out: join(out, 'r.pptx'), results: true });
+  const needsVotes = await exportTalk(join(ROOT, 'test', 'fixtures', 'every-feature'), { out: join(out, 'r.pptx'), results: true });
   check('--results explains when there are no votes', /no votes/.test(needsVotes.error || ''));
 
-  const pdf = await exportTalk(join(ROOT, 'templates', 'starter'), { out: join(out, 'starter.pdf'), pdf: true });
+  const pdf = await exportTalk(join(ROOT, 'test', 'fixtures', 'every-feature'), { out: join(out, 'starter.pdf'), pdf: true });
   const pdfText = readFileSync(join(out, 'starter.pdf')).toString('latin1');
   check('pdf: one page per slide', pdf.slides === 13 && /\/Count 13/.test(pdfText));
 

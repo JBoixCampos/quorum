@@ -83,19 +83,24 @@ The **Theme** tab sets the look of the whole talk: one of eight themes, light or
 
 ## Placing things freely
 
-Flowing layouts keep slides readable on any screen, so they are the default. When you want something exactly there, choose the **canvas** layout for the slide. Each element then has a position as a share of the slide:
+Drag anything on a slide to put it where you want, as in a slide editor: a heading, a picture, a list, a chart, a poll. Use its corners to resize it. Edges snap to the slide and to other elements (a pink line shows what lined up); hold Alt to turn snapping off, or to let it go past the edge. The arrow keys nudge the selection (Shift for bigger steps), and the **Position** fields in the Edit tab take exact numbers.
+
+A layout places things for you, so on a slide that has one, the first drag pins everything else where the layout put it, and only what you drag moves. Text keeps the width of what is written in it, like a text box. The look of the layout stays: its type sizes, its background, its colours. One undo, or **Let the layout place everything again** in the Edit tab, gives the slide back to its layout.
+
+Each position is a share of the slide, from 0 to 100, written on the element:
 
 ```markdown
-<!-- layout: canvas -->
+<!-- layout: split -->
 
-## Where the gas goes {x=5 y=5 w=60 h=15}
+## Where the gas goes {x=55 y=12 w=38}
 
-![A loaf cut in half](images/crumb.jpg){x=0 y=30 w=55 h=70}
+![A loaf cut in half](images/crumb.jpg){x=0 y=0 w=48 h=100}
 
-Bubbles grow where the gluten is strongest. {x=60 y=35 w=35 h=20}
+- Bubbles grow where the gluten is strongest.
+- The crust sets them in place. {x=55 y=40 w=38}
 ```
 
-Drag an element to move it and use its corners to resize it. Edges snap to the slide and to other elements (a pink line shows what lined up); hold Alt to turn snapping off. The arrow keys nudge the selection (Shift for bigger steps). `quorum check` warns about elements that stick out of the slide or overlap.
+A list, a quote or a table takes its position at the end of its last line. The **canvas** layout is a blank slide for placing everything yourself. `quorum check` warns about elements that stick out of the slide or overlap.
 
 ## Checks
 
@@ -120,7 +125,7 @@ The **Checks** button shows how many things there are to fix: mistakes, colours 
 | Ctrl+D | Duplicate the selected element |
 | Esc | Deselect, or close what is open |
 | Page Up, Page Down | Previous and next slide |
-| Arrow keys | Nudge the selected element on a canvas slide |
+| Arrow keys | Nudge the selected element |
 
 ## It is only the files
 

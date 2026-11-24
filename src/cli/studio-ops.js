@@ -35,11 +35,15 @@ export function writeAttrs(a) {
   return parts.length ? `{${parts.join(' ')}}` : '';
 }
 
-// Changes the trailing attributes of one line of Markdown.
+// Changes the trailing attributes of one line of Markdown. A ::: line
+// keeps them where the parser reads them: in its first group, wherever it
+// is ("::: poll {#id} Question?"), or at the end when it has none.
 // change: { add: [classes], remove: [classes], kv: { key: value | null } }
 export function changeAttrs(line, change) {
-  const m = line.match(ATTR_GROUP);
+  const block = /^\s*:{3,}\s*[a-z]/i.test(line);
+  const m = block ? line.match(/\s*\{([^{}]*)\}/) : line.match(ATTR_GROUP);
   let text = line;
+  let after = '';
   let attrs = { id: '', classes: [], kv: {} };
   if (m) {
     const parsed = parseAttrs(m[1]);
@@ -47,6 +51,7 @@ export function changeAttrs(line, change) {
     if (parsed.valid) {
       attrs = parsed;
       text = line.slice(0, m.index);
+      after = line.slice(m.index + m[0].length).trim();
     }
   }
   (change.remove || []).forEach((c) => { attrs.classes = attrs.classes.filter((x) => x !== c); });
@@ -60,9 +65,12 @@ export function changeAttrs(line, change) {
     else attrs.kv[k] = String(v);
   });
   const written = writeAttrs(attrs);
-  if (!written) return text.replace(/\s+$/, '');
+  const head = text.replace(/\s+$/, '');
+  const tail = after ? ` ${after}` : '';
+  if (!written) return `${head}${tail}`;
   // Images keep the group right after the closing bracket.
-  return /\)\s*$/.test(text) && /^\s*!\[/.test(text) ? `${text.replace(/\s+$/, '')}${written}` : `${text.replace(/\s+$/, '')} ${written}`;
+  if (/\)$/.test(head) && /^\s*!\[/.test(head)) return `${head}${written}${tail}`;
+  return `${head} ${written}${tail}`;
 }
 
 // --- a working copy of the talk's files with undo ---------------------------
@@ -411,9 +419,16 @@ const OPS = {
       const last = ix(op.range[1]);
       // Headings, blocks and pictures carry it on their first line; a
       // paragraph on its last.
-      const onFirst = /^\s*(#{1,6}\s|:{3,}\s*[a-z]|!\[)/i.test(lines[first]) || first === last;
-      if (LIST_ITEM.test(lines[first]) && !/^\s*!\[/.test(lines[first])) fail('List items cannot take classes. Select the whole list.');
-      const at = onFirst ? first : last;
+      const onFirst = /^\s*(#{1,6}\s|:{3,}\s*[a-z]|!\[|```|~~~)/i.test(lines[first]) || first === last;
+      // A list, a quote or a table takes a position (and only that) at the
+      // end of its last line.
+      const placing = !(op.add || []).length && !(op.remove || []).length
+        && Object.keys(op.kv || {}).every((k) => ['x', 'y', 'w', 'h'].includes(k));
+      const multi = (re) => re.test(lines[first]) && first !== last;
+      if (LIST_ITEM.test(lines[first]) && !/^\s*!\[/.test(lines[first]) && !(placing && first !== last)) {
+        fail(placing ? 'Select the whole list to move it.' : 'List items cannot take classes. Select the whole list.');
+      }
+      const at = onFirst && !(placing && (multi(LIST_ITEM) || multi(/^\s*[>|]/))) ? first : last;
       lines[at] = changeAttrs(lines[at], op);
     });
     return { slide: slide.id };

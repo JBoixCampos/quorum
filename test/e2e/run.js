@@ -44,7 +44,8 @@ async function until(fn, ms = 4000) {
 
 const PHONES = 3;
 const dir = mkdtempSync(join(tmpdir(), 'quorum-e2e-'));
-cpSync(join(ROOT, 'templates', 'starter'), dir, { recursive: true });
+// A talk with every kind of interaction (the starter of earlier versions).
+cpSync(join(ROOT, 'test', 'fixtures', 'every-feature'), dir, { recursive: true });
 ['next-word-explorer.js', 'word-cloud.js'].forEach((f) => cpSync(join(ROOT, 'examples', 'components', f), join(dir, 'components', f)));
 const model = await startFakeModel();
 const server = await startServer({ talkDir: dir, port: 0, key: 'testkey', log: () => {} });

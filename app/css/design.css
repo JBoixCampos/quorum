@@ -383,3 +383,11 @@ pre[data-ranges] .q-line.on { opacity: 1; background: color-mix(in srgb, var(--a
 .layout-canvas .q-content > figure.q-positioned { margin: 0; }
 .layout-canvas .q-content > figure.q-positioned img, .layout-canvas .q-content > figure.q-positioned video { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .layout-canvas .q-content > h1, .layout-canvas .q-content > h2, .layout-canvas .q-content > h3, .layout-canvas .q-content > p { margin: 0; }
+
+/* Any layout: an element placed with {x= y= w= h=} sits on the slide itself,
+   where Studio's drag left it, and the others keep their places. */
+.q-content .q-placed { margin: 0; max-width: none; box-sizing: border-box; }
+.q-content .q-placed > .q-fill { margin: 0; width: 100%; height: 100%; max-width: none; box-sizing: border-box; }
+.q-content figure.q-positioned, .q-content .q-placed > figure.q-positioned { display: block; }
+.q-content figure.q-positioned img, .q-content figure.q-positioned video { display: block; width: 100%; height: 100%; max-height: none; object-fit: cover; border-radius: inherit; }
+.layout-full .q-content:has(.q-placed) { position: static; }

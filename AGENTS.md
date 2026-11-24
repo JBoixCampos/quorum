@@ -22,8 +22,8 @@ A command line tool and a small web app for presentations where the audience tak
 | `app/css/design.css` | Layouts, visual blocks, charts, motion and the eight presets. Tokens are in `base.css` |
 | `examples/components/` | Example components. The website's Examples page builds a talk with one live slide per component (`examples/live/`) |
 | `examples/brand/` | A talk with its own colours, logo, fonts and footer (the landing page's brand screenshot) |
-| `examples/showcase/` | A talk that uses a theme, layouts, blocks, result looks, morph and reactions. Built into the website's `showcase/`, used by the e2e tests and `themes.png` |
-| `templates/starter/` | What `quorum new` copies: `talk.md`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `package.json`, `gitignore` and `gitattributes` (renamed with a dot). `scripts/template-repo.js` makes the GitHub template repository from it |
+| `examples/showcase/` | The talk `quorum new` starts from (copied into `templates/starter/`). It uses a theme, layouts, blocks, result looks, morph and reactions. Built into the website's `showcase/`, used by the e2e tests and `themes.png` |
+| `templates/starter/` | What `quorum new` copies: `talk.md` (the same as `examples/showcase`, a unit test keeps them equal), `images/`, `components/counter.js`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `package.json`, `gitignore` and `gitattributes` (renamed with a dot). `scripts/template-repo.js` makes the GitHub template repository from it |
 | `docs/*.md` | The documentation. The single source of truth for the website's docs pages and `llms.txt` |
 | `docs/images/` | Screenshots used by the docs, the README and the landing page. Made by `scripts/screenshots.js` |
 | `site/` | The landing page, the website's shared CSS and JS (`assets/`) and `og.png`, the image shown when a link is shared |
@@ -68,7 +68,8 @@ Playwright is not a dependency. If it is missing: `npm install --no-save playwri
 ## Tests
 
 - Add a unit test in `test/` for new parser, session or command behaviour.
-- `test/e2e/run.js` uses the starter talk and relies on its slide indexes (poll on slide index 2, the counter on 10, questions on 11). If you change `templates/starter/talk.md`, update those indexes.
+- `test/e2e/run.js` and `test/e2e/export.js` use `test/fixtures/every-feature/`, a talk with every kind of interaction, and rely on its slide indexes (poll on slide index 2, the counter on 10, questions on 11). If you change that talk, update those indexes.
+- `templates/starter/talk.md` and its `images/` must stay identical to `examples/showcase/`: change both together.
 - `test/e2e/site.js` builds the website into a temporary folder, serves it under `/quorum/` and checks the playground, `?slide=N`, the docs and that no page makes an external request.
 
 ## Constraints

@@ -563,9 +563,8 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 ## Examples
 
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
-- [Showcase talk source](${BLOB}examples/showcase/talk.md): a theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
+- [Showcase talk source](${BLOB}examples/showcase/talk.md): the talk quorum new creates. A theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
 - [Slide patterns](${BLOB}agents/quorum/patterns.md): proven slides to build a talk from, and how to choose a theme
-- [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
 - [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
 ## Optional
@@ -578,7 +577,6 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
   const sources = [
     'examples/components/word-cloud.js',
     'templates/starter/components/counter.js',
-    'templates/starter/talk.md',
     'examples/brand/talk.md',
     'examples/showcase/talk.md',
     'agents/quorum/patterns.md',
@@ -586,8 +584,8 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
   const full = `# Quorum: the full reference
 
 This file has the whole Quorum documentation, then an example component, the
-counter component, the starter talk that \`quorum new\` creates, the branded and
-showcase talks, and the slide patterns.
+counter component, the branded talk, the showcase talk (the one \`quorum new\`
+creates), and the slide patterns.
 Source: ${REPO}
 
 ${[...parts, ...sources].join('\n')}`;

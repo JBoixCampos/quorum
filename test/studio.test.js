@@ -75,6 +75,15 @@ test('changeAttrs adds, removes and sets attributes on a line', () => {
   assert.throws(() => changeAttrs('## T', { add: ['nonsense'] }), StudioError);
 });
 
+test('changeAttrs keeps a ::: line\'s attributes in its first group, where the parser reads them', () => {
+  const place = { kv: { x: 10, y: 20 } };
+  assert.equal(changeAttrs('::: poll {#guess .wide chart=donut} What makes the holes?', place), '::: poll {#guess .wide chart=donut x=10 y=20} What makes the holes?');
+  assert.equal(changeAttrs('::: poll What makes the holes?', place), '::: poll What makes the holes? {x=10 y=20}');
+  assert.equal(changeAttrs('::: poll {#g x=1 y=2} Q?', { kv: { x: null, y: null } }), '::: poll {#g} Q?');
+  assert.equal(changeAttrs('::: poll {x=1} Q?', { kv: { x: null } }), '::: poll Q?');
+  assert.equal(changeAttrs('```js', place), '```js {x=10 y=20}');
+});
+
 test('replace-lines changes only those lines, and refuses lines outside the slide', () => {
   const { w, file } = make();
   const talk = w.talk();
@@ -100,6 +109,17 @@ test('set-attrs puts classes on headings, paragraphs (last line) and blocks', ()
   assert.match(file(), /::: cards \{\.steps\}/);
   const list = lineOf(TALK, '- A');
   assert.throws(() => w.apply({ op: 'set-attrs', slide: two.id, range: [list, list + 2], add: ['muted'] }), /List items/);
+});
+
+test('set-attrs places lists on their last line and code on its fence, and the talk reads it back', () => {
+  const { w, file } = make();
+  const two = w.talk().slides[1];
+  const list = lineOf(TALK, '- A');
+  const end = list + file().split('\n').slice(list - 1).findIndex((l) => !/^\s*[-*+]\s/.test(l)) - 1;
+  w.apply({ op: 'set-attrs', slide: two.id, range: [list, end], kv: { x: 5, y: 60, w: 40 } });
+  assert.match(file().split('\n')[end - 1], /\{x=5 y=60 w=40\}$/);
+  assert.match(w.talk().slides[1].html, /<ul[^>]* class="q-placed" style="position:absolute;left:5%;top:60%;width:40%">/);
+  assert.throws(() => w.apply({ op: 'set-attrs', slide: two.id, range: [list, list], kv: { x: 5 } }), /whole list/);
 });
 
 test('move-block reorders blocks, list items and cards', () => {

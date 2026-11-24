@@ -1,164 +1,235 @@
 ---
-title: My talk
-author: Your name
-accent: "#ff6a00"     # your brand: also primary, secondary, background,
-theme: light          # text, logo, font, text-font, footer and style (see the docs)
-duration: 20
+title: Why bread rises
+author: The Quorum examples
+theme: midnight           # a preset: try editorial, bold, paper, studio, signal, terminal
+transition: morph         # titles with the same {#name} glide between slides
+reactions: 👏 🤯 🍞 ❤️
+phone-welcome: Welcome! *Bread questions* are coming.
+phone-thanks: Thanks for baking with us.
+duration: 15
+footer: Why bread rises · {section} | {n} / {total}
 ---
 
-<!-- layout: center -->
-<!-- section: Welcome, 3 -->
+<!-- layout: title -->
+<!-- footer: off -->
 
-# My talk
+# Why bread rises {#title}
 
-Your name, or a subtitle.
+A short talk about yeast, gas and gluten. With your phone.
 
 ::: join Scan to join
 :::
 
-::: notes
-Speaker notes: press N on the presentation, or read them in the panel.
-Three dashes on their own line start a new slide.
-:::
+---
+
+<!-- layout: agenda -->
+
+## Today {#title}
 
 ---
 
-## A normal slide
+<!-- layout: section -->
+<!-- section: Ingredients, 4 -->
 
-Markdown as usual: **bold**, *emphasis*, `code`, [links](https://example.com), images.
-
---
-
-Two dashes on their own line: this part appears on the next click.
+# What goes in
 
 ---
 
-<!-- section: Interactions, 10 -->
+## Four ingredients {#title}
 
-::: poll {#warmup} Coffee or tea?
-- Coffee
-- Tea
-- Neither
-:::
-
-::: notes
-A poll. → opens voting, → closes it, → moves on.
-:::
-
----
-
-::: poll {#quiz} Which one is true?
-- Paris is the capital of Italy
-- [x] Rome is the capital of Italy
-- Rome is the capital of France
-
-Marked with [x], shown after "Reveal".
-:::
-
-::: notes
-A quiz: mark the right answer with [x]. The text below the list is the explanation.
-:::
-
----
-
-::: multi {#have} What do you have with you?
-- A phone
-- A laptop
-- Something to drink
-:::
-
-::: notes
-"multi": people pick several options.
-:::
-
----
-
-::: estimate {#guess} How many keys does a piano have?
-answer: 88
-min: 1
-max: 1000
-
-A standard piano has 88 keys.
-:::
-
-::: notes
-An estimate: every guess, then the average, then the answer.
-:::
-
----
-
-::: rounds {#would} Would you let an AI do it?
-options: Yes | No | Maybe
-- Write your emails
-- Pick your holiday
-:::
-
-::: notes
-"rounds": the same question for each item in the list.
-:::
-
----
-
-::: sentence {#story} Once upon a time
-max: 5
-start: there | a | in
-there: was | lived | were
-a: dragon | robot | cat
-in: a | the
-*: and | . | that
-:::
-
-::: notes
-The room writes a sentence word by word. "start:" lists the first options,
-"word:" the options after that word, "*:" the fallback. A "." ends it.
-:::
-
----
-
-<!-- layout: center -->
-
-::: stat 88
-keys on a standard piano.
-:::
-
----
-
-::: columns
-### Left
-Anything goes here.
+::: cards {.steps}
+### Flour {icon=wheat}
+Proteins that become gluten.
 
 +++
 
-### Right
-A line with three pluses starts a column.
+### Water {icon=droplet}
+Wakes up the enzymes.
+
++++
+
+### Yeast {icon=sparkles}
+A living fungus that makes gas.
+
++++
+
+### Salt {icon=gem}
+Slows the yeast, adds taste.
 :::
 
 ---
 
-## Your own component
+<!-- layout: split -->
 
-::: component counter
-label: Claps
-:::
+## Yeast eats sugar
 
-::: notes
-components/counter.js, next to this file. Copy it to build your own.
+![A bowl of rising dough](images/dough.svg)
+
+It turns sugar into **carbon dioxide** and alcohol.
+
+--
+
+The gas gets trapped in a web of *gluten*, and the dough grows.
+
+---
+
+::: poll {#guess .wide chart=donut reveal=spotlight} What makes the holes in bread?
+- Air you knead in
+- [x] Gas from the yeast
+- Steam from the water
+
+Yeast gas makes most of them. Steam helps them grow in the oven.
 :::
 
 ---
 
-<!-- section: Questions, 5 -->
+<!-- layout: section -->
+<!-- section: History, 5 -->
 
-::: questions
+# A little history
+
+---
+
+## From Egypt to sliced bread
+
+::: timeline {.steps}
+- Around 3000 BC: Egyptians bake leavened bread
+- 1857: Pasteur publishes his work on fermentation
+- 1928: sliced bread goes on sale in Missouri
+- 1961: the Chorleywood process speeds up baking
 :::
 
-::: notes
-People ask from the button on their phone. Approve questions in the panel,
-click one to highlight it, click again to mark it as answered.
+---
+
+::: estimate {#pasteur chart=beeswarm} Pasteur on fermentation: which year?
+answer: 1857
+min: 1500
+max: 2025
+format: year
+
+Pasteur, "Mémoire sur la fermentation appelée lactique", 1857.
 :::
+
+---
+
+<!-- layout: quote -->
+
+> Bread is the king of the table, and all else is merely the court.
+
+A saying, often quoted by bakers.
+
+---
+
+<!-- layout: section -->
+<!-- section: In the kitchen, 6 -->
+
+# In the kitchen
+
+---
+
+## One loaf, step by step
+
+::: steps
+- Mix: flour, water, yeast, salt
+- Knead: ten minutes, until smooth
+- Prove: until doubled in size
+- Bake: hot oven, steam at first
+:::
+
+---
+
+## Where the time goes
+
+::: chart column {unit=min title="Minutes for each step of our recipe"}
+Mix: 10
+Knead: 10
+First rise: 90
+Shape: 10
+Second rise: 60
+Bake: 35
+:::
+
+---
+
+::: kpis
+- 215 min: from flour to bread
+- 4: ingredients
+- 2: rises
+:::
+
+---
+
+## Timing the rise, in code
+
+```js {lines=1-2|4-6}
+const start = Date.now();
+const doubled = (v) => v >= 2 * startVolume;
+
+while (!doubled(volume())) {
+  await wait(minutes(10));
+}
+```
+
+--
+
+The first range shows first; the next click moves the highlight.
+
+---
+
+<!-- layout: compare -->
+
+## Fresh or sliced?
+
+::: columns
+### Fresh
+Crisp crust, best on the day.
+
++++
+
+### Sliced
+Lasts longer, ready for toast.
+:::
+
+---
+
+<!-- layout: full -->
+
+![A wheat field at sunset](images/field.svg)
+
+## It starts in a field
+
+A grain of wheat is mostly starch, the sugar store that yeast feeds on.
+
+---
+
+<!-- layout: grid -->
+
+## Three loaves
+
+![A small loaf](images/loaf-1.svg)
+
+![A medium loaf](images/loaf-2.svg)
+
+![A large loaf](images/loaf-3.svg)
+
+---
+
+<!-- layout: statement -->
+
+## Good bread is mostly *patience*.
 
 ---
 
 <!-- layout: center -->
+<!-- section: Questions, 3 -->
 
-# Thank you
+::: questions {chart=wall}
+:::
+
+---
+
+<!-- layout: closing -->
+
+# Thank you {#title}
+
+Now go and bake something. :icon[croissant]

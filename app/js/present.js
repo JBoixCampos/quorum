@@ -203,12 +203,130 @@ function unmount() {
   state.mounted = [];
 }
 
+// --- drawing the same slide again, in place ------------------------------
+//
+// When the talk is read again (Studio saved a change) and the slide on
+// screen is still the same one, only the blocks that changed are drawn
+// again. The others keep their elements, their pictures and whatever
+// their component drew, so nothing flashes. A block is "the same" when
+// its HTML and its specs are, apart from the line numbers of the source
+// map (data-src), which move whenever a line is added above.
+
+const parts = new WeakMap(); // a top-level element of .q-content -> { key, srcEls }
+const noLines = (s) => s.replace(/ data-src=\\?"[\d-]+\\?"/g, '');
+const srcEls = (node) => [node, ...node.querySelectorAll('[data-src]')].filter((n) => n.hasAttribute('data-src'));
+
+function frameKey(slide) {
+  return noLines(JSON.stringify([slide.layout, slide.layoutOptions, slide.background, slide.media, slide.logo]));
+}
+
+function partKey(node, slide) {
+  const specs = slide.components.filter((c) => node.querySelector(`[data-component="${CSS.escape(c.id)}"]`) || node.dataset.component === c.id);
+  const inter = slide.interaction && (node.matches(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`) || node.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`));
+  return noLines(`${node.outerHTML}${JSON.stringify(specs)}${inter ? JSON.stringify(slide.interaction) : ''}`);
+}
+
+function rememberParts(content, slide) {
+  [...content.children].forEach((n) => parts.set(n, { key: partKey(n, slide), srcEls: srcEls(n) }));
+}
+
+// Puts `nodes` in `parent`, in that order, moving as little as it can
+// (an iframe taken out of the page loads again from nothing).
+function keepChildren(parent, nodes) {
+  const wanted = new Set(nodes);
+  [...parent.children].forEach((n) => { if (!wanted.has(n)) n.remove(); });
+  nodes.forEach((node, i) => {
+    const at = parent.children[i] || null;
+    if (at === node) return;
+    if (node.isConnected && parent.moveBefore) parent.moveBefore(node, at);
+    else parent.insertBefore(node, at);
+  });
+}
+
+function patchSlide(slide) {
+  const content = slideEl.querySelector('.q-content');
+  if (!content || slideEl.dataset.sid !== slide.id || state.frameKey !== frameKey(slide)) return false;
+  const fresh = document.createElement('div');
+  fresh.innerHTML = slide.html;
+  fixAssets(fresh);
+  const pool = new Map();
+  [...content.children].forEach((n) => {
+    const p = parts.get(n);
+    if (!p) return;
+    if (!pool.has(p.key)) pool.set(p.key, []);
+    pool.get(p.key).push(n);
+  });
+  const next = [];
+  const added = [];
+  [...fresh.children].forEach((n) => {
+    const key = partKey(n, slide);
+    const lines = srcEls(n);
+    const old = (pool.get(key) || []).shift();
+    if (!old) {
+      parts.set(n, { key, srcEls: lines });
+      next.push(n);
+      added.push(n);
+      return;
+    }
+    // Same block: only its line numbers may have moved.
+    parts.get(old).srcEls.forEach((e, i) => {
+      const v = lines[i] && lines[i].getAttribute('data-src');
+      if (v && e.getAttribute('data-src') !== v) e.setAttribute('data-src', v);
+    });
+    next.push(old);
+  });
+  const gone = [...content.children].filter((n) => !next.includes(n));
+  state.mounted = state.mounted.filter((m) => {
+    if (!gone.some((n) => n.contains(m.el))) return true;
+    if (m.handle && m.handle.destroy) m.handle.destroy();
+    return false;
+  });
+  keepChildren(content, next);
+  state.mounted.forEach((m) => {
+    if (m.type === 'component') m.spec = slide.components.find((c) => c.id === m.spec.id) || m.spec;
+  });
+  mountParts(added, slide);
+  return true;
+}
+
+// Mounts the interaction, join codes and components found inside `roots`.
+function mountParts(roots, slide) {
+  const within = (el) => roots.some((r) => r === el || r.contains(el));
+  const each = (selector) => roots.flatMap((r) => [r, ...r.querySelectorAll(selector)]).filter((n) => n.matches(selector));
+  if (slide.interaction) {
+    const el = slideEl.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`);
+    if (el && within(el)) state.mounted.push({ type: 'interaction', el, handle: mountInteraction(el, slide.interaction, context()) });
+  }
+  each('[data-join]').forEach((el) => {
+    if (!AUDIENCE) {
+      el.remove();
+      return;
+    }
+    state.mounted.push({ type: 'join', el, handle: mountJoin(el, context()) });
+  });
+  slide.components.forEach((spec) => {
+    const el = slideEl.querySelector(`[data-component="${CSS.escape(spec.id)}"]`);
+    if (!el || !within(el)) return;
+    const entry = { type: 'component', el, spec, handle: null };
+    state.mounted.push(entry);
+    const base = STATIC ? STATIC.components : '/talk/components/';
+    loadComponent(spec.name, { base }).then((component) => {
+      if (!state.mounted.includes(entry)) return;
+      entry.handle = component.mount(el, componentContext(entry.spec)) || {};
+    }).catch((error) => mountError(el, spec.name, error));
+  });
+}
+
 function renderSlide() {
   const slide = state.talk.slides[state.index];
   const key = `${state.talk.version}:${state.index}`;
   if (state.mountedFor === key) return;
   state.mountedFor = key;
   const prev = state.shown;
+  if (prev && prev.index === state.index && prev.version !== state.talk.version && patchSlide(slide)) {
+    state.shown = { index: state.index, version: state.talk.version };
+    return;
+  }
   const moving = !STILL && prev && prev.version === state.talk.version && prev.index !== state.index;
   const kind = slide.transition || (state.talk.meta.tokens || {}).transition || 'none';
   const leaving = moving ? captureLeaving(slideEl, kind) : null;
@@ -226,29 +344,9 @@ function renderSlide() {
   fixAssets(slideEl);
   logo.hidden = !slide.logo || !logo.innerHTML;
   stage.classList.toggle('dim', !!(bg && bg.dim));
-
-  if (slide.interaction) {
-    const el = slideEl.querySelector(`[data-interaction="${CSS.escape(slide.interaction.id)}"]`);
-    if (el) state.mounted.push({ type: 'interaction', handle: mountInteraction(el, slide.interaction, context()) });
-  }
-  slideEl.querySelectorAll('[data-join]').forEach((el) => {
-    if (!AUDIENCE) {
-      el.remove();
-      return;
-    }
-    state.mounted.push({ type: 'join', handle: mountJoin(el, context()) });
-  });
-  slide.components.forEach((spec) => {
-    const el = slideEl.querySelector(`[data-component="${CSS.escape(spec.id)}"]`);
-    if (!el) return;
-    const entry = { type: 'component', spec, handle: null };
-    state.mounted.push(entry);
-    const base = STATIC ? STATIC.components : '/talk/components/';
-    loadComponent(spec.name, { base }).then((component) => {
-      if (!state.mounted.includes(entry)) return;
-      entry.handle = component.mount(el, componentContext(spec)) || {};
-    }).catch((error) => mountError(el, spec.name, error));
-  });
+  state.frameKey = frameKey(slide);
+  rememberParts(slideEl.querySelector('.q-content'), slide);
+  mountParts([slideEl], slide);
   if (leaving) {
     const back = prev.index > state.index;
     // Steps of the new slide must be in place before measuring it.
@@ -424,7 +522,9 @@ window.quorum = {
     talk.version = (state.talk ? state.talk.version || 0 : 0) + 1;
     state.talk = talk;
     applyTheme(talk.meta);
-    session = new Session(talk, null, { moderation: false });
+    // Keep what the session knew (its public link, for the QR code and the
+    // footer), so the slide does not lose them for a moment.
+    session = new Session(talk, session ? session.toJSON() : null, { moderation: false });
     refreshLocalView();
     state.index = Math.min(state.index, talk.slides.length - 1);
     window.quorum.show(state.index);
