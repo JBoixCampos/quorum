@@ -1,10 +1,28 @@
 # Components
 
-Polls and questions cover a lot, but the best moments in a talk are often something nobody has built yet. A component is how you build it: one JavaScript file, no build step, no framework.
+Polls, estimates and questions cover a lot, but the best moments in a talk are often something nobody has built yet. A component is how you build it: one JavaScript file, no build step, no framework.
+
+## What comes with Quorum
+
+Before you write a component, look at what is already built in. Almost everything an audience does in a talk is a block you write in `talk.md`, with no JavaScript:
+
+| Block | What the audience does |
+| --- | --- |
+| `::: poll` | Pick one answer from a list. `[x]` marks the right one, which makes it a quiz |
+| `::: multi` | Pick several answers |
+| `::: estimate` | Guess a number |
+| `::: rounds` | Answer the same question for several cases in a row |
+| `::: sentence` | Write a sentence together, one word at a time |
+| `::: questions` | Send questions, and vote for the ones they want answered |
+| `::: join` | Scan a QR code to join |
+
+Each can draw its results in several ways with `chart=` (bars, columns, donut, pictogram, race, bubbles, strip, histogram, beeswarm, thermometer, tree, wall, spotlight). For the slides where nobody answers there are cards, timelines, steps, key figures, comparisons, charts, callouts, icons, badges and highlighted code, and 13 layouts. [The talk format](format.md) and [design and themes](design.md) describe them, and `quorum schema --json` lists every name.
+
+The [examples page](https://jboixcampos.github.io/quorum/examples/) shows every one of them running live, with the Markdown that makes it, ready to copy.
 
 ## Components that come with Quorum
 
-Three components need no file. Use them with `::: component <name>`; `quorum schema --json` lists them too.
+Three more need no file, because they are not about the audience's answers. Use them with `::: component <name>`; `quorum schema --json` lists them too.
 
 | Component | What it does | Settings |
 | --- | --- | --- |

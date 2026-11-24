@@ -13,13 +13,16 @@
 //   quorum clean [folder]      delete votes and questions saved by a live session
 //   quorum skill               install the agent skill for Claude Code
 
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkTalk } from '../src/cli/check.js';
-import { frontMatterFor, saveTheme, themeFromLogo } from '../src/cli/theme.js';
+import {
+  frontMatterFor, saveTheme, themeFromLogo, themeGuide,
+} from '../src/cli/theme.js';
 import { INSTALL_PLAYWRIGHT, overflowIssues, renderTalk } from '../src/cli/visual.js';
 import { schema } from '../src/shared/design.js';
 import { ICONS } from '../src/shared/icons.js';
@@ -57,7 +60,7 @@ function parseArgs(argv) {
       const k = at < 0 ? a.slice(2) : a.slice(2, at);
       const v = at < 0 ? undefined : a.slice(at + 1);
       if (v !== undefined) args[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick', 'dir', 'note', 'kind', 'base', 'interval', 'minutes'].includes(k)) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick', 'dir', 'note', 'kind', 'base', 'interval', 'minutes', 'text', 'run'].includes(k)) {
         args[k] = argv[i + 1];
         i += 1;
       } else args[k] = true;
@@ -98,6 +101,7 @@ For agents and CI
   quorum split / join         One file per slide in slides/, and back
   quorum repo                 Slide by slide merging in this clone, and the CI workflow
   quorum theme new|from       Save the look as a theme file, or make one from a logo
+  quorum theme guide <name>   Turn a company's guidelines into a theme and a design guide, with your agent
   quorum build                A static, playable copy of the talk
   quorum export               The slides without the audience parts, as a website
   quorum skill                Install the agent skill for Claude Code (--to <folder>)
@@ -106,7 +110,7 @@ Options
   --port <n>  --file <name>  --out <path>  --no-open  --no-tunnel  --no-moderation
   --json  --visual  --icons  --no-results  --pictures  --pick <n>  --no-remix  --themes a,b
   --pptx  --pdf  --results  --no-audience  --safe-fonts  --repo  --save <name>  --to <folder>
-  --by <name>  --direction <text>  --from <file>  --quiet  --dir <folder>  --note <text>  --watch  --base <hash>
+  --by <name>  --direction <text>  --from <file>  --text <guidelines>  --run <agent command>  --quiet  --dir <folder>  --note <text>  --watch  --base <hash>
 
 Docs: https://jboixcampos.github.io/quorum/docs/
 `;
@@ -300,7 +304,26 @@ Use it in any talk folder that has it: theme: themes/${value}.yaml`);
       }
       return;
     }
-    throw new Error('Usage: quorum theme new <name> [folder] | quorum theme from <logo>');
+    if (sub === 'guide') {
+      if (!value) throw new Error('Usage: quorum theme guide <name> (--from brand.md | --text "guidelines") [--run "claude -p"] [folder]');
+      const dir = resolve(args._[3] || '.');
+      ensureTalk(dir, talkFile(args));
+      const text = typeof args.text === 'string' ? args.text : '';
+      const from = typeof args.from === 'string' ? resolve(args.from) : '';
+      const guide = themeGuide(dir, value, { text, from, file: talkFile(args) });
+      console.log(`Kept the guidelines in ${guide.guidelines}${guide.isNew ? `\nStarted ${guide.themeFile}` : ''}`);
+      if (typeof args.run === 'string' && args.run.trim()) {
+        const [program, ...rest] = args.run.trim().split(/\s+/);
+        console.log(`\nAsking ${program} to make the theme. This can take a few minutes.\n`);
+        const done = spawnSync(program, [...rest, guide.prompt], { cwd: dir, stdio: 'inherit' });
+        if (done.error) throw new Error(`Could not run "${program}": ${done.error.message}. Give the agent the brief below instead.\n\n${guide.prompt}`);
+        if (done.status) process.exitCode = done.status;
+        return;
+      }
+      console.log(`\nNow give this to your agent, in this talk folder:\n\n${'-'.repeat(60)}\n${guide.prompt}\n${'-'.repeat(60)}\n\nWhen it is done: theme: themes/${value}.yaml is in talk.md and the guide is themes/${value}.md.`);
+      return;
+    }
+    throw new Error('Usage: quorum theme new <name> [folder] | quorum theme from <logo> | quorum theme guide <name> --from <file>');
   } catch (error) {
     console.error(error.message);
     process.exit(1);

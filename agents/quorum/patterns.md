@@ -274,4 +274,4 @@ slides.example.com · :icon[mail] hello@example.com
 | A company all-hands, a client pitch | `signal` (with the brand's `accent` and `logo`) |
 | A technical talk, a demo | `terminal` |
 
-A company with a brand: `quorum theme from logo.svg` proposes colours, `quorum theme new acme` saves the look as `themes/acme.yaml` for every talk.
+A company with a brand: `quorum theme from logo.svg` proposes colours, `quorum theme new acme` saves the look as `themes/acme.yaml` for every talk. With written guidelines instead, `quorum theme guide acme --from brand.md` prints the brief for a theme file and a design guide; once `themes/acme.md` exists, follow it.

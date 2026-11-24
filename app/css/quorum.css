@@ -1,0 +1,27 @@
+/* The Quorum brand, shared by the website and Studio: one accent, the type
+   families and a few neutrals. Each surface keeps its own backgrounds and
+   semantic colours (the website is warm paper, Studio is a dark workspace)
+   and maps these tokens onto them. Nothing here is a layout. */
+
+@font-face { font-family: 'Space Grotesk'; src: url('../fonts/SpaceGrotesk-Medium.woff2') format('woff2'); font-weight: 300 600; font-display: swap; }
+@font-face { font-family: 'Space Grotesk'; src: url('../fonts/SpaceGrotesk-Bold.woff2') format('woff2'); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-Regular.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-Medium.woff') format('woff'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('../fonts/Inter-SemiBold.woff') format('woff'); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('../fonts/JetBrainsMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+:root {
+  --q-paper: #f4f2ec;
+  --q-ink: #222522;
+  --q-rule: #d9d6ce;
+  --q-green: #69796a;
+  /* Signal is the accent. Use the plain one for marks, bars and large type,
+     the deep one behind white text or as small text on paper (4.7:1 or more),
+     and the bright one as text on a dark surface. */
+  --q-signal: #e25536;
+  --q-signal-deep: #c8401f;
+  --q-signal-bright: #f26e4e;
+  --q-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --q-text: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --q-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+}

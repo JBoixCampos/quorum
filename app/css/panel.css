@@ -6,7 +6,7 @@ html, body.panel { height: 100%; }
    whatever the talk's theme is (the slides in it keep the theme). */
 body.panel {
   --bg: #17181c; --surface: #0e0f11; --card: #1e2025; --fg: #ececef; --primary: #ececef; --muted: #8a8e98; --faint: #656974;
-  --line: #2a2d33; --accent: #6e5cf0; --accent-text: #8b7bff; --accent-soft: rgba(139, 123, 255, 0.14); --on-accent: #fff; --secondary: #8b7bff; --bad: #ff6b6b;
+  --line: #2a2d33; --accent: #c8401f; --accent-text: #f26e4e; --accent-soft: rgba(242, 110, 78, 0.14); --on-accent: #fff; --secondary: #f26e4e; --bad: #ff6b6b;
   --font-display: 'Inter', system-ui, sans-serif; --font-body: 'Inter', system-ui, sans-serif;
   color-scheme: dark;
   display: flex; flex-direction: column; background: var(--surface); color: var(--fg); font-family: var(--font-body); font-size: 15px;

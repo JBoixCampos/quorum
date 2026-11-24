@@ -17,7 +17,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { COMPONENTS } from '../src/shared/design.js';
+import { COMPONENTS, schema } from '../src/shared/design.js';
+import { GROUPS } from './site/builtin.js';
 import { checkLinks } from './site/links.js';
 import { escapeHtml, firstParagraph, inline, render } from './site/markdown.js';
 
@@ -107,6 +108,7 @@ function header(path) {
         <a href="${REPO}">GitHub</a>
         </nav>
         <a class="button ink" href="${href(path, '#start')}">Get started</a>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
       </div>
     </div>
   </header>`;
@@ -175,7 +177,7 @@ function social(path, title, description) {
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Quorum: presentations, but interactive. Agent ready.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#ff6a00">`;
+  <meta name="theme-color" content="#f4f2ec">`;
 }
 
 function page({ path, title, description, body, scripts = [] }) {
@@ -190,6 +192,7 @@ function page({ path, title, description, body, scripts = [] }) {
   <meta name="description" content="${escapeHtml(description)}">
   ${social(path, title, description)}
   <link rel="icon" href="${to('favicon.svg')}">
+  <script>try{var t=localStorage.getItem('quorum-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="stylesheet" href="${to('assets/site.css')}">
 </head>
 <body>
@@ -242,7 +245,7 @@ function showcaseSlide(from, n) {
   return `<div class="side-by-side">
   <pre><code class="language-markdown">${escapeHtml(shown)}</code></pre>
   <figure>
-    <div class="screen"><iframe src="${href(from, 'showcase/')}?slide=${n - 1}" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
+    <div class="screen"><iframe src="${href(from, 'showcase/')}?slide=${n - 1}&only=1" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
   </figure>
 </div>`;
 }
@@ -368,7 +371,7 @@ function exampleCard(from, { name, file, markdown, tag, slide }) {
   }
   const preview = slide >= 0
     ? `<figure class="preview">
-        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}" title="The ${escapeHtml(humanName(name))} component, live" loading="lazy"></iframe></div>
+        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}&only=1" title="The ${escapeHtml(humanName(name))} component, live" loading="lazy"></iframe></div>
         <figcaption><span class="live">Live</span>${escapeHtml(LIVE[name] ? LIVE[name].caption : 'With a simulated audience. Click the slide to start it.')}</figcaption>
       </figure>`
     : '';
@@ -415,12 +418,12 @@ const CHART_PAGE = `<!doctype html>
 <title>A page in the talk folder</title>
 <style>
   html, body { margin: 0; height: 100%; }
-  body { display: grid; place-content: center; gap: 28px; padding: 40px; background: #0e0f11; color: #ececef; font: 400 28px/1.4 system-ui, sans-serif; }
+  body { display: grid; place-content: center; gap: 28px; padding: 40px; background: #f4f2ec; color: #222522; font: 400 28px/1.4 system-ui, sans-serif; }
   h1 { margin: 0; font-size: 44px; }
-  p { margin: 0; color: #9aa0aa; max-width: 32em; }
+  p { margin: 0; color: #5f635c; max-width: 32em; }
   .bars { display: flex; align-items: flex-end; gap: 18px; height: 220px; }
-  .bars span { width: 64px; border-radius: 10px 10px 4px 4px; background: #8b7bff; transform-origin: bottom; animation: grow 1.2s cubic-bezier(.2,.7,.2,1) both; }
-  .bars span:nth-child(2n) { background: #22d3ee; }
+  .bars span { width: 64px; border-radius: 10px 10px 4px 4px; background: #e25536; transform-origin: bottom; animation: grow 1.2s cubic-bezier(.2,.7,.2,1) both; }
+  .bars span:nth-child(2n) { background: #222522; }
   @keyframes grow { from { transform: scaleY(0); } }
   @media (prefers-reduced-motion: reduce) { .bars span { animation: none; } }
 </style>
@@ -435,26 +438,65 @@ const CHART_PAGE = `<!doctype html>
 </html>
 `;
 
+// The live slide of a built-in example: the source alone, or the source under
+// a heading ("## Cards\n\n"), or a slide of its own.
+function liveSlide(item) {
+  if (item.slide === undefined) return item.source;
+  return item.slide.endsWith('\n\n') ? item.slide + item.source : item.slide;
+}
+
 // One talk with a slide per example, built into examples/live/ so every card
-// can show its component working. Returns the slide index of each example.
-function buildLiveExamples(entries) {
+// can show its example working. `entries` are components and `tiles` are the
+// built-in blocks, layouts and so on. Returns the slide index of each, by id.
+function buildLiveExamples(entries, tiles) {
   const dir = mkdtempSync(join(tmpdir(), 'quorum-examples-'));
   try {
     mkdirSync(join(dir, 'components'));
     mkdirSync(join(dir, 'pages'));
+    cpSync(join(ROOT, 'examples', 'showcase', 'images'), join(dir, 'images'), { recursive: true });
     writeFileSync(join(dir, 'pages', 'chart.html'), CHART_PAGE);
     const slides = entries.map((e) => {
       if (e.file) cpSync(join(ROOT, e.file), join(dir, 'components', `${e.name}.js`));
       const source = (LIVE[e.name] && LIVE[e.name].source) || (e.markdown.match(/```markdown\n([\s\S]*?)\n```/) || [])[1];
       if (!source) throw new Error(`The example ${e.name} has no usage block to show live.`);
-      return `## ${humanName(e.name)}\n\n${source}`;
+      return { id: e.name, markdown: `## ${humanName(e.name)}\n\n${source}` };
     });
-    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum components\ntheme: midnight\n---\n\n${slides.join('\n\n---\n\n')}\n`);
+    tiles.forEach((t) => slides.push({ id: t.id, markdown: liveSlide(t.item) }));
+    writeFileSync(join(dir, 'talk.md'), `---\ntitle: Quorum examples\ntheme: editorial\n---\n\n${slides.map((x) => x.markdown).join('\n\n---\n\n')}\n`);
     execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', dir, '--out', join(OUT, 'examples', 'live')], { stdio: 'ignore' });
-    return new Map(entries.map((e, i) => [e.name, i]));
+    return new Map(slides.map((x, i) => [x.id, i]));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+// What a built-in example is, in a sentence: from the registry when it has one.
+function aboutOf(group, item) {
+  if (item.about) return item.about;
+  const s = schema();
+  if (group.id === 'blocks' || group.id === 'audience') return s.blocks[item.key] || '';
+  if (group.id === 'layouts') return s.layouts[item.key] || '';
+  if (group.id === 'charts') return `A ${item.chart} chart from "label: value" lines.`;
+  if (group.id === 'motion') return `Each step comes in with a ${item.effect} effect.`;
+  if (item.look) {
+    const [kind, look] = item.look.split(':');
+    return `The results of ${kind === 'sentence' ? 'a sentence' : kind === 'questions' ? 'the questions' : `a${kind === 'estimate' ? 'n' : ''} ${kind}`} drawn as ${look}.`;
+  }
+  return '';
+}
+
+// A compact example: the live slide, a sentence, and the Markdown that makes it.
+function tile(from, group, item, slide) {
+  const id = `${group.id}-${item.key}`;
+  const about = aboutOf(group, item);
+  const play = !item.noplay && playable(item.source);
+  return `<article class="tile" id="${id}">
+        <div class="screen"><iframe src="${href(from, 'examples/live/')}?slide=${slide}&only=1${item.play ? `&play=${item.play === true ? 1 : item.play}` : ''}" title="${escapeHtml(item.label)}, live" loading="lazy"></iframe></div>
+        <h3>${escapeHtml(item.label)}</h3>
+        ${about ? `<p>${escapeHtml(about).replace(/`([^`]+)`/g, '<code>$1</code>')}</p>` : ''}
+        <pre><code class="language-markdown">${escapeHtml(item.source)}</code></pre>
+        <p class="try">${item.caption ? `<span class="live">Live</span> ${escapeHtml(item.caption)}${play ? ' ' : ''}` : ''}${play ? `<a href="${href(from, 'playground/')}#md=${encodeURIComponent(play)}">Try it in the playground</a>` : ''}</p>
+      </article>`;
 }
 
 function buildExamples() {
@@ -471,23 +513,43 @@ function buildExamples() {
     tag: tags[file] || (file.includes('next-word') ? 'needs a local model' : ''),
   }));
   const builtInEntries = BUILT_IN_DOCS.map((b) => ({ ...b, tag: 'built in' }));
-  const slideOf = buildLiveExamples([...own, ...builtInEntries]);
+  const tiles = GROUPS.flatMap((g) => g.items.map((item) => ({ id: `${g.id}-${item.key}`, group: g, item })));
+  const slideOf = buildLiveExamples([...own, ...builtInEntries], tiles);
   const cards = own.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
   const builtIn = builtInEntries.map((e) => exampleCard(path, { ...e, slide: slideOf.get(e.name) }));
+  const sections = GROUPS.map((g) => `<section class="group-block" aria-labelledby="${g.id}">
+      <h2 class="group" id="${g.id}">${g.title}</h2>
+      <p class="group-intro">${g.intro}</p>
+      <div class="tiles">
+      ${g.items.map((item) => tile(path, g, item, slideOf.get(`${g.id}-${item.key}`))).join('\n      ')}
+      </div>
+    </section>`);
+  const nav = [...GROUPS.map((g) => [g.id, g.title]), ['built-in', 'Built-in components'], ['components', 'Components to copy']]
+    .map(([id, label]) => `<a href="#${id}">${label}</a>`).join('');
+  const count = tiles.length + builtInEntries.length;
 
   write(path, page({
     path,
     title: 'Examples · Quorum',
-    description: 'Components you can copy into a talk: a word cloud, a language model on your laptop, a counter and the built-in countdown, QR code and embed.',
+    description: 'Everything built into Quorum, running live: polls, quizzes, estimates, visual blocks, layouts, charts, result looks and effects, plus components you can copy into a talk.',
     body: `    <div class="wrap page-head">
-      <p class="kicker">examples / components</p>
+      <p class="kicker">examples / built in</p>
       <h1>Examples</h1>
-      <p class="lede">A component is one JavaScript file in your talk's <code>components/</code> folder. Each one runs live below, with a simulated audience. Copy any of these, use it from <code>talk.md</code>, and change it. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
+      <p class="lede">Everything that comes with Quorum, ${count} examples, each running live below with a simulated audience. Click a slide to try it, copy the Markdown into <code>talk.md</code>, and change it. At the end are components you can copy and change. <a href="${href(path, 'docs/components/')}">How components work</a>.</p>
+      <nav class="group-nav" aria-label="On this page">${nav}</nav>
     </div>
     <div class="wrap gallery">
-      ${cards.join('\n      ')}
-      <h2 class="group" id="built-in">Built in</h2>
+      ${sections.join('\n      ')}
+      <section class="group-block" aria-labelledby="built-in">
+      <h2 class="group" id="built-in">Built-in components</h2>
+      <p class="group-intro">Used with <code>::: component name</code>. No file needed.</p>
       ${builtIn.join('\n      ')}
+      </section>
+      <section class="group-block" aria-labelledby="components">
+      <h2 class="group" id="components">Components to copy</h2>
+      <p class="group-intro">One JavaScript file in your talk's <code>components/</code> folder each. Copy it, use it from <code>talk.md</code>, and change it.</p>
+      ${cards.join('\n      ')}
+      </section>
     </div>`,
   }));
 }
@@ -498,7 +560,7 @@ function buildPlayground() {
   const path = 'playground/';
   const start = `---
 title: My talk
-theme: midnight
+theme: editorial
 ---
 
 <!-- layout: center -->
@@ -528,7 +590,7 @@ The queue is long for a reason.
       <p class="lede">Write Markdown on the left and the real slide appears on the right, with 24 simulated people ready to vote. Your draft stays in this browser. When you like it, copy it into <code>talk.md</code>. <a href="${href(path, 'docs/format/')}">Every block is in the format guide</a>.</p>
     </div>
     <div class="wrap" style="padding-bottom:88px">
-      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'showcase/')}?playground=1&theme=midnight">
+      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'showcase/')}?playground=1&theme=editorial">
         <textarea aria-label="Markdown of the talk">${escapeHtml(start)}</textarea>
       </div>
     </div>`,
@@ -601,6 +663,8 @@ cpSync(join(ROOT, 'site'), OUT, { recursive: true });
 cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
 cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
+// The brand tokens shared with Studio.
+cpSync(join(ROOT, 'app', 'css', 'quorum.css'), join(OUT, 'assets', 'quorum.css'));
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'showcase'), '--out', join(OUT, 'showcase')], { stdio: 'inherit' });
 // The playground renders through the showcase build: give it every example.
 cpSync(join(ROOT, 'templates', 'starter', 'components', 'counter.js'), join(OUT, 'showcase', 'talk', 'components', 'counter.js'));

@@ -28,6 +28,11 @@ const wait = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 const dir = mkdtempSync(join(tmpdir(), 'quorum-studio-shots-'));
 cpSync(join(ROOT, 'examples', 'showcase'), dir, { recursive: true });
+// SHOT_THEME=editorial node scripts/...: the same talk in another preset.
+if (process.env.SHOT_THEME) {
+  const file = join(dir, 'talk.md');
+  writeFileSync(file, readFileSync(file, 'utf8').replace(/^theme: .*$/m, `theme: ${process.env.SHOT_THEME}`));
+}
 const variants = join(dir, 'variants', 'one-loaf-step-by-step');
 mkdirSync(variants, { recursive: true });
 writeFileSync(join(variants, '001-one-big-number.md'), '<!-- variant: by=claude; direction=one big number -->\n\n<!-- layout: big-number -->\n\n## 4 steps\n\nfrom flour to bread, in about three and a half hours\n');

@@ -88,6 +88,30 @@ quorum theme from logo.svg       # propose colours and a theme from a logo (SVG 
 
 `quorum theme from` prints the front matter lines to paste; `--save acme` also writes the theme file.
 
+### From your company's guidelines
+
+If you have written design guidelines (a brand book, a style guide, a few paragraphs in an email), let your agent turn them into a theme and a design guide:
+
+```bash
+quorum theme guide acme --from brand.md
+quorum theme guide acme --from brand.pdf --text "Never use gradients. Logo top right."
+```
+
+Quorum has no AI of its own, so this command prepares the work and your agent does it. It keeps the guidelines in `themes/` (a text file, a PDF or pasted text with `--text`), starts an empty `themes/acme.yaml` that the talk can already use, and prints a complete brief to give to your agent. The brief tells it to:
+
+- Write the theme file: colours, palette, fonts, logo, footer and the feel (corners, density, texture, motion), using only keys that `quorum schema` lists.
+- Write `themes/acme.md`, a design guide for whoever writes slides with it: what each colour is for, the type, which layouts and blocks fit the brand, how to use the logo and the wording rules.
+- Add a line to the talk's `AGENTS.md` so that every agent that writes slides follows the guide, and set `theme: themes/acme.yaml` in `talk.md`.
+- Check the result with `quorum check` and `quorum snapshot`, and report what the guidelines asked for that Quorum cannot express.
+
+To skip the copy and paste, name your agent's command and Quorum runs it with the brief as its last argument:
+
+```bash
+quorum theme guide acme --from brand.md --run "claude -p"
+```
+
+Run it again with more guidelines and the agent refines the theme file instead of starting over. Commit `themes/` with the talk, or keep it in a shared repository and reuse it in every talk with `theme: themes/acme.yaml`.
+
 ## Layouts
 
 A layout changes how the slide is composed. Put it at the top of the slide.

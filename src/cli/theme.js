@@ -4,7 +4,9 @@
 //   quorum theme new <name> [folder]   save the talk's look as themes/<name>.yaml
 //   quorum theme from <logo>           colours and a preset from an SVG or PNG logo
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync,
+} from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import { inflateSync } from 'node:zlib';
 
@@ -198,5 +200,91 @@ export function frontMatterFor(theme, logo) {
   if (theme.background) lines.push(`background: "${theme.background}"`);
   if (theme.palette) lines.push(`palette: [${theme.palette.map((c) => `"${c}"`).join(', ')}]`);
   if (logo) lines.push(`logo: ${logo}`);
+  return lines.join('\n');
+}
+
+// --- a design guide from a company's guidelines ------------------------------
+//
+// `quorum theme guide <name> --from brand.md` (or --text "...") does the part
+// that needs no AI: it keeps the guidelines in the talk folder, starts an empty
+// theme file the talk can already use, and writes the brief an agent follows
+// to turn the guidelines into a theme file and a written design guide.
+
+const TEXT_TYPES = new Set(['.md', '.markdown', '.txt', '.text', '']);
+
+export function themeGuide(dir, name, { text = '', from = '', file = 'talk.md' } = {}) {
+  if (!/^[\w-]+$/.test(name || '')) throw new Error('A theme name is letters, digits, - and _.');
+  if (!String(text).trim() && !from) {
+    throw new Error('Pass the guidelines as text (--text "...") or as a file (--from brand.md, brand.pdf).');
+  }
+  const folder = join(dir, 'themes');
+  mkdirSync(folder, { recursive: true });
+  const kept = [];
+  let inline = '';
+  if (from) {
+    if (!existsSync(from)) throw new Error(`There is no file ${from}.`);
+    const ext = extname(from).toLowerCase();
+    const isText = TEXT_TYPES.has(ext);
+    const copy = join(folder, `${name}.guidelines${isText ? '.md' : ext}`);
+    copyFileSync(from, copy);
+    kept.push(copy);
+    // A text file goes into the brief itself; a PDF or an image is read by the agent.
+    if (isText) inline = readFileSync(from, 'utf8').trim();
+  }
+  if (String(text).trim()) {
+    const copy = join(folder, `${name}.guidelines${kept.length ? '-notes' : ''}.md`);
+    writeFileSync(copy, `${String(text).trim()}\n`);
+    kept.push(copy);
+    inline = [inline, String(text).trim()].filter(Boolean).join('\n\n');
+  }
+  const themeFile = join(folder, `${name}.yaml`);
+  const isNew = !existsSync(themeFile);
+  if (isNew) {
+    writeFileSync(themeFile, `# The ${name} theme. An agent fills this in from the guidelines in themes/.\n# Use it with "theme: themes/${name}.yaml" in a talk.\nextends: clean\n`);
+  }
+  const rel = (path) => relative(dir, path).split('\\').join('/');
+  const prompt = themeBrief({
+    name, file, guidelines: kept.map(rel), inline: inline.length <= 6000 ? inline : '', isNew,
+  });
+  return {
+    guidelines: kept.map(rel).join(', '), kept, themeFile, isNew, prompt,
+  };
+}
+
+// The words an agent gets. Written so a fresh agent with no other context can
+// do the whole job, and say honestly what it could not express.
+export function themeBrief({
+  name, file = 'talk.md', guidelines = [], inline = '', isNew = true,
+}) {
+  const lines = [
+    `Create a Quorum theme and a design guide called "${name}" from these guidelines.`,
+    '',
+    inline
+      ? `Guidelines (saved in ${guidelines.join(' and ')}):\n\n${inline.split('\n').map((l) => `    ${l}`).join('\n')}`
+      : `The guidelines are in ${guidelines.join(' and ')}. Read all of it first.`,
+    ...(inline && guidelines.some((g) => !g.endsWith('.md')) ? ['', `The guidelines also include ${guidelines.filter((g) => !g.endsWith('.md')).join(', ')}: read it too.`] : []),
+    '',
+    'What to make:',
+    `1. themes/${name}.yaml${isNew ? ' (an empty theme file is there now)' : ' (it exists: refine it, keep what already matches the guidelines)'}. A theme file is the front matter keys of a talk, one per line, with \`extends: <preset>\` first. Run \`quorum schema --json\` for every valid key and value: do not guess names. Express the guidelines with:`,
+    '   - colours: `accent`, `primary`, `secondary`, `background`, `text`, `palette` (the series colours for charts and results), and `mode: light` or `dark`;',
+    '   - type: `font` (titles), `text-font` (body), `accent-font`. If the brand fonts are files (woff2, woff, ttf, otf) copy them into the talk folder and point to them relative to the theme file. If you do not have them, use the closest of the fonts Quorum bundles and say so;',
+    '   - the logo: copy the file into images/ and set `logo:`; and `footer:` if the guidelines say what goes there;',
+    '   - the feel: `scale`, `weight`, `case`, `radius`, `density`, `surface`, `texture`, `gradient`, `transition`, `charts`, `reveal`. Start from the preset whose mood is closest (`extends:`), then change what the guidelines say;',
+    '   - `style:` (a CSS file) only for something no key can express, and keep it small.',
+    `2. themes/${name}.md, a short design guide for the people and agents who write slides with this theme: the palette with the role of each colour, the type, which layouts and blocks fit the brand and which to avoid, how to use the logo, and the tone of voice or wording rules from the guidelines. Write it as rules a slide writer can follow, in plain language.`,
+    `3. A line in this talk's AGENTS.md (create it if it is missing) saying the talk uses themes/${name}.yaml and that slides follow themes/${name}.md.`,
+    `4. \`theme: themes/${name}.yaml\` in the front matter of ${file}.`,
+    '',
+    'Rules:',
+    '- Use only what the guidelines say. Where they say nothing, keep the preset\'s default; never invent a brand colour, a font name or a rule.',
+    '- Text and background must keep enough contrast (`quorum check` reports it). If a brand colour fails as text, use it for accents and shapes and say so in the guide.',
+    '- Where a guideline cannot be expressed in Quorum, list it under "Not covered" at the end of the guide instead of leaving it out.',
+    '',
+    'Check your work:',
+    '- Run `quorum check --json` and fix every warning. With Playwright installed, run `quorum check --visual` and `quorum snapshot`, look at `.quorum-snapshots/contact.png`, and adjust until the slides look like the brand.',
+    '- Finish by telling me what you set, what you chose without guidance, and what is not covered.',
+    '',
+    'If you work on a copy of the repository (in the cloud), commit and push to a branch so I can pull it.',
+  ];
   return lines.join('\n');
 }
