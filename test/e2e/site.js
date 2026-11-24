@@ -121,6 +121,13 @@ try {
   await page.click('[data-pg-reset]');
   check('start again restores the first draft', await until(async () => (await slideText()).includes('lunch')));
 
+  check('the room section shows the screen, the phone and five steps', await page.isVisible('#room img[src$="screen.png"]')
+    && await page.isVisible('#room img[src$="phone.png"]') && (await page.locator('#room .flow li').count()) === 5);
+  await page.click('[data-try="estimate"]');
+  check('a kind of interaction loads into the playground', await until(async () => (await slideText()).includes('How many keys does a piano have?'))
+    && !(await page.inputValue('#try textarea')).includes('lunch'));
+  await page.click('[data-pg-reset]');
+
   // The demo opens on a given slide.
   const demo = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   watch(demo, 'demo');
