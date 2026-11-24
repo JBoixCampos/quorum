@@ -7,6 +7,11 @@
 // This file only looks and reports: it never changes the talk. What a drag
 // means (move these lines, set these numbers) is sent to the page through
 // `api`, which writes it to the files.
+//
+// Like a slide editor, anything on the slide can be dragged anywhere. On a
+// slide whose layout still places things (title, split, cards...), the
+// first drag pins every element where the layout put it, as {x= y= w=},
+// so only the dragged one moves. One undo puts the layout back.
 
 const CSS = `
 html.in-studio, html.in-studio body { cursor: default; }
@@ -92,8 +97,47 @@ export function attachCanvas(frame, api) {
     };
   }
 
-  const inCanvas = () => api.isCanvas();
-  const isTopLevel = (el) => !!el.parentElement && el.parentElement.classList.contains('q-content');
+  // What can be moved on its own: the blocks of the slide, and the
+  // picture of a split or full slide.
+  const movables = () => [...slide().querySelectorAll('.q-content > [data-src], .q-media > [data-src]')];
+  const isTopLevel = (el) => !!el.parentElement && (el.parentElement.classList.contains('q-content') || el.parentElement.classList.contains('q-media'));
+  const isPlaced = (el) => el.style.position === 'absolute';
+  // Text grows with what is typed in it: it keeps no height of its own.
+  const TEXT = /^(H[1-6]|P|UL|OL|BLOCKQUOTE)$/;
+  const keepsHeight = (el) => !TEXT.test((el.classList.contains('q-step') && el.firstElementChild ? el.firstElementChild : el).tagName);
+  const round = (v) => Math.round(v * 10) / 10;
+  const kvOf = (el, b) => ({ x: round(b.x), y: round(b.y), w: round(b.w), ...(keepsHeight(el) ? { h: round(b.h) } : {}) });
+
+  // The box to pin an element in. A layout stretches text across the
+  // slide; pinned, it is as wide as what is written, like a text box, so
+  // it can be moved about without sticking out. The lines stay the same.
+  function pinBox(el) {
+    const box = percentBox(el);
+    if (keepsHeight(el)) return box;
+    const inner = el.classList.contains('q-step') && el.firstElementChild ? el.firstElementChild : el;
+    const range = doc.createRange();
+    range.selectNodeContents(inner);
+    const t = range.getBoundingClientRect();
+    if (!t.width) return box;
+    const s = slide().getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    // Lists and quotes keep their own left edge, with the bullets or the bar.
+    const left = /^(UL|OL|BLOCKQUOTE)$/.test(inner.tagName) ? r.left : Math.max(r.left, t.left);
+    const x = ((left - s.left) / s.width) * 100;
+    const w = Math.min(box.w, ((Math.min(r.right, t.right) - left) / s.width) * 100 + 0.6);
+    return { ...box, x, w };
+  }
+
+  // Pins every element that the layout still places, where it is now.
+  // Returns their positions, to be written with the one that moved.
+  function freeze() {
+    const loose = movables().filter((n) => !isPlaced(n) && n.getBoundingClientRect().height > 0);
+    const boxes = loose.map((n) => ({ el: n, box: pinBox(n) }));
+    boxes.forEach(({ el, box }) => place(el, { ...box, h: keepsHeight(el) ? box.h : 0 }));
+    // The picture of a split or full slide now sits on the slide itself.
+    slide().querySelectorAll('.q-media').forEach((m) => { if (boxes.some((b) => m.contains(b.el))) m.style.display = 'contents'; });
+    return boxes.map(({ el, box }) => ({ ...refOf(el), el, kv: kvOf(el, box) }));
+  }
 
   function refOf(el) {
     return { range: rangeOf(el), nth: nthOf(el) };
@@ -109,7 +153,7 @@ export function attachCanvas(frame, api) {
       tag: el.tagName.toLowerCase(),
       classes: [...el.classList].filter((c) => c.startsWith('is-')).map((c) => c.slice(3)),
       chain,
-      positioned: el.style.position === 'absolute',
+      positioned: isPlaced(el),
       topLevel: isTopLevel(el),
       box: percentBox(el),
       alt: el.tagName === 'FIGURE' ? ((el.querySelector('img') || {}).alt || '') : '',
@@ -140,7 +184,7 @@ export function attachCanvas(frame, api) {
     tag.style.width = 'auto';
     tag.style.height = 'auto';
     tag.textContent = (api.labelFor && api.labelFor(rangeOf(selected.el))) || labelOf(selected.el);
-    if (inCanvas() && isTopLevel(selected.el)) {
+    if (isTopLevel(selected.el)) {
       [['nw', r.left, r.top], ['ne', r.right, r.top], ['sw', r.left, r.bottom], ['se', r.right, r.bottom]].forEach(([name, x, y]) => {
         const h = add('qs-handle', { left: x - 6, top: y - 6, width: 12, height: 12 }, { 'data-handle': name });
         h.style.cursor = `${name}-resize`;
@@ -165,7 +209,8 @@ export function attachCanvas(frame, api) {
   // After the slide was drawn again: find the same element by its lines.
   function refind() {
     if (!selected) return;
-    if (selected.el.isConnected) { drawSelection(); return; }
+    // Kept in place: its lines may still have moved.
+    if (selected.el.isConnected) { Object.assign(selected, refOf(selected.el)); drawSelection(); return; }
     const again = find(selected.range, selected.nth) || find(selected.range, 0);
     if (again) select(again, true);
     else { selected = null; drawSelection(); api.onSelect(null); }
@@ -177,7 +222,7 @@ export function attachCanvas(frame, api) {
     const guides = [];
     const round = (v) => Math.round(v * 10) / 10;
     if (free) return { box: { x: round(box.x), y: round(box.y), w: round(box.w), h: round(box.h) }, guides };
-    const others = [...slide().querySelectorAll('.q-content > [data-src]')].filter((n) => n !== el).map(percentBox);
+    const others = movables().filter((n) => n !== el).map(percentBox);
     const xs = [0, 50, 100, ...others.flatMap((o) => [o.x, o.x + o.w / 2, o.x + o.w])];
     const ys = [0, 50, 100, ...others.flatMap((o) => [o.y, o.y + o.h / 2, o.y + o.h])];
     const fit = (lo, size, list, axis) => {
@@ -207,6 +252,7 @@ export function attachCanvas(frame, api) {
   }
 
   function place(el, box) {
+    el.classList.add('q-placed');
     Object.assign(el.style, {
       position: 'absolute', left: `${box.x}%`, top: `${box.y}%`, width: `${box.w}%`, height: box.h ? `${box.h}%` : '',
     });
@@ -216,12 +262,13 @@ export function attachCanvas(frame, api) {
 
   function startDrag(e) {
     const { el } = pending;
-    const canvas = inCanvas() && isTopLevel(el);
-    if (canvas) {
+    if (isTopLevel(el)) {
+      const pinned = freeze();
       const box = percentBox(el);
-      const had = el.style.position === 'absolute';
-      drag = { type: 'move', el, box, had, startX: e.clientX, startY: e.clientY, last: box };
-      if (!had) place(el, { ...box, h: 0 });
+      const own = pinned.find((p) => p.el === el);
+      drag = {
+        type: 'move', el, box, pinned: pinned.filter((p) => p !== own), sized: own ? 'h' in own.kv : true, startX: e.clientX, startY: e.clientY, last: box,
+      };
       return;
     }
     const siblings = [...el.parentElement.children].filter((n) => n !== el && n.hasAttribute('data-src'));
@@ -237,10 +284,12 @@ export function attachCanvas(frame, api) {
       const s = slide().getBoundingClientRect();
       const dx = ((e.clientX - drag.startX) / s.width) * 100;
       const dy = ((e.clientY - drag.startY) / s.height) * 100;
-      const moved = { ...drag.box, x: drag.box.x + dx, y: drag.box.y + dy };
+      const b = drag.box;
+      const inside = (v, size) => (e.altKey || size > 100 ? v : Math.max(0, Math.min(100 - size, v)));
+      const moved = { ...b, x: inside(b.x + dx, b.w), y: inside(b.y + dy, b.h) };
       const { box, guides } = snap(moved, drag.el, e.altKey);
       drag.last = box;
-      place(drag.el, { ...box, h: drag.had ? box.h : 0 });
+      place(drag.el, { ...box, h: drag.sized ? box.h : 0 });
       drawGuides(guides);
       drawSelection();
       return;
@@ -266,12 +315,12 @@ export function attachCanvas(frame, api) {
     const d = drag;
     drag = null;
     pending = null;
-    clearOverlay('.qs-line, .qs-guide');
+    clearOverlay('.qs-line, .qs-guide, .qs-hover');
     if (!d) return;
     if (d.type === 'move') {
-      const kv = { x: d.last.x, y: d.last.y };
-      if (!d.had) kv.w = Math.round(Math.min(d.box.w, 100 - d.last.x) * 10) / 10;
-      api.onPosition({ ...refOf(d.el), kv });
+      const kv = { x: d.last.x, y: d.last.y, w: round(d.last.w) };
+      if (d.sized) kv.h = round(d.last.h);
+      api.onPosition({ ...refOf(d.el), kv }, d.pinned);
       return;
     }
     d.el.style.opacity = '';
@@ -282,8 +331,10 @@ export function attachCanvas(frame, api) {
     e.preventDefault();
     e.stopPropagation();
     const el = selected.el;
-    drag = { type: 'resize', el, handle, box: percentBox(el), startX: e.clientX, startY: e.clientY, last: percentBox(el) };
-    if (el.style.position !== 'absolute') place(el, drag.box);
+    const pinned = freeze().filter((p) => p.el !== el);
+    const box = percentBox(el);
+    drag = { type: 'resize', el, handle, box, pinned, startX: e.clientX, startY: e.clientY, last: box };
+    place(el, box);
   }
 
   function updateResize(e) {
@@ -309,7 +360,7 @@ export function attachCanvas(frame, api) {
     const d = drag;
     drag = null;
     clearOverlay('.qs-guide');
-    api.onPosition({ ...refOf(d.el), kv: { x: d.last.x, y: d.last.y, w: d.last.w, h: d.last.h } });
+    api.onPosition({ ...refOf(d.el), kv: { x: d.last.x, y: d.last.y, w: d.last.w, h: d.last.h } }, d.pinned);
   }
 
   // --- events --------------------------------------------------------------------------------
@@ -387,7 +438,7 @@ export function attachCanvas(frame, api) {
       e.dataTransfer.dropEffect = 'copy';
       const place = dropPlace(e);
       clearOverlay('.qs-line');
-      if (inCanvas()) {
+      if (free()) {
         add('qs-line', { left: e.clientX - 2, top: e.clientY - 2, width: 4, height: 4 });
       } else if (place.rect) {
         const r = place.rect;
@@ -486,7 +537,17 @@ export function attachCanvas(frame, api) {
   win.addEventListener('resize', () => { drawSelection(); });
   win.addEventListener('scroll', () => { drawSelection(); }, true);
 
+  // Whether things on this slide sit where they were put: a canvas slide,
+  // or one where something was dragged.
+  const free = () => api.isCanvas() || movables().some(isPlaced);
+
   return {
+    free,
+    // Pins what the layout places and gives back its positions, for a
+    // change made from the keyboard or the Position fields.
+    freeze: () => freeze().map(({ range, nth, kv }) => ({ range, nth, kv })),
+    // The elements that sit where they were put.
+    placed: () => movables().filter(isPlaced).map(refOf),
     select(range, nth = 0) {
       const el = range ? find(range, nth) : null;
       select(el, true);

@@ -117,6 +117,36 @@ try {
   check('typing on the slide writes the heading, keeping its attributes', await until(() => file().includes('## Four simple ingredients {#title}')), file().split('\n').find((l) => l.includes('ingredients')));
   check('undo puts it back', await undoAll());
 
+  // --- a change draws only what changed ------------------------------------------------
+  await goTo('Four ingredients');
+  const thumbs = () => page.frames().filter((f) => f.url().includes('view=still'));
+  for (const f of thumbs()) await f.evaluate(() => { window.qsKept = true; }).catch(() => {});
+  await canvas.locator('.q-cards').evaluate((n) => { n.qsKept = true; });
+  await canvas.locator('[data-slide] h2').first().click();
+  await page.locator('.chip', { hasText: 'accent' }).first().click();
+  await until(() => file().includes('## Four ingredients {#title .accent}'));
+  await page.waitForTimeout(600);
+  const kept = await Promise.all(thumbs().map((f) => f.evaluate(() => !!window.qsKept).catch(() => false)));
+  check('saving a change does not load the slide list again', kept.length > 0 && kept.every(Boolean), `${kept.filter(Boolean).length} of ${kept.length}`);
+  check('nor redraw the blocks of the slide that did not change', await canvas.locator('.q-cards').evaluate((n) => n.qsKept === true));
+  check('undo puts it back', await undoAll());
+
+  // --- moving things freely on any layout ------------------------------------------------
+  await goTo('Four ingredients');
+  const cardsBefore = await canvas.locator('.q-cards').boundingBox();
+  const heading = await canvas.locator('[data-slide] h2').first().boundingBox();
+  await page.mouse.move(heading.x + 20, heading.y + heading.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k += 1) await page.mouse.move(heading.x + 20 + k * 30, heading.y + heading.height / 2 + k * 25, { steps: 2 });
+  await page.mouse.up();
+  check('dragging a heading on a flowing slide places it there', await until(() => /## Four ingredients \{#title x=[\d.]+ y=[\d.]+ w=[\d.]+\}/.test(file())), file().split('\n').find((l) => l.includes('Four ingredients')));
+  check('and pins the rest where the layout had put it', /::: cards \{\.steps x=[\d.]+ y=[\d.]+ w=[\d.]+ h=[\d.]+\}/.test(file()));
+  await page.waitForTimeout(600);
+  const cardsAfter = await canvas.locator('.q-cards').boundingBox();
+  check('so the cards did not move', Math.abs(cardsAfter.x - cardsBefore.x) < 2 && Math.abs(cardsAfter.y - cardsBefore.y) < 2, JSON.stringify([cardsBefore, cardsAfter]));
+  await page.getByText('Let the layout place everything again').click();
+  check('one button lets the layout place everything again', await until(() => file() === original));
+
   // --- the cards form ---------------------------------------------------------------
   await goTo('Four ingredients');
   await canvas.locator('.q-card p').first().click();

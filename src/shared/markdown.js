@@ -68,26 +68,48 @@ function colorValue(v) {
   return COLOR.test(v) ? v : '';
 }
 
-// HTML attributes for an element with { id, classes, kv }.
-function attrsHtml(a, base = '') {
-  if (!a) return base ? ` class="${base}"` : '';
-  const classes = [base, ...a.classes.map((c) => `is-${c}`)].filter(Boolean).join(' ');
+// HTML attributes for an element with { id, classes, kv }. `extra` is a
+// style of the block's own (--cols:3), kept in the same style attribute.
+function attrsHtml(a, base = '', extra = '') {
+  if (!a) return `${base ? ` class="${base}"` : ''}${extra ? ` style="${extra}"` : ''}`;
+  // Free positions, on any layout: percentages of the slide. They come
+  // first in the style, so a .q-step around the element can take them.
+  const placed = a.kv.x !== undefined || a.kv.y !== undefined;
+  const classes = [base, placed ? 'q-placed' : '', ...a.classes.map((c) => `is-${c}`)].filter(Boolean).join(' ');
   const style = [];
-  if (a.kv.width) style.push(`width:${cssSize(a.kv.width)}`);
-  if (a.kv.height) style.push(`height:${cssSize(a.kv.height)}`);
-  if (a.kv.color && colorValue(a.kv.color)) style.push(`color:${colorValue(a.kv.color)}`);
-  // layout: canvas, free positions: percentages of the slide.
-  if (a.kv.x !== undefined || a.kv.y !== undefined) {
+  if (placed) {
     style.push('position:absolute');
     if (a.kv.x !== undefined) style.push(`left:${cssPercent(a.kv.x)}`);
     if (a.kv.y !== undefined) style.push(`top:${cssPercent(a.kv.y)}`);
     if (a.kv.w !== undefined) style.push(`width:${cssPercent(a.kv.w)}`);
     if (a.kv.h !== undefined) style.push(`height:${cssPercent(a.kv.h)}`);
   }
+  if (a.kv.width) style.push(`width:${cssSize(a.kv.width)}`);
+  if (a.kv.height) style.push(`height:${cssSize(a.kv.height)}`);
+  if (a.kv.color && colorValue(a.kv.color)) style.push(`color:${colorValue(a.kv.color)}`);
+  if (extra) style.push(extra);
   return `${classes ? ` class="${escapeHtml(classes)}"` : ''}${a.id ? ` data-morph="${escapeHtml(a.id)}"` : ''}${style.length ? ` style="${escapeHtml(style.join(';'))}"` : ''}`;
 }
 
 const CANVAS_KEYS = ['x', 'y', 'w', 'h'];
+
+// Only the position of { id, classes, kv }: for blocks that take nothing else.
+function placeOnly(a) {
+  if (!a) return null;
+  const kv = Object.fromEntries(CANVAS_KEYS.filter((k) => a.kv[k] !== undefined).map((k) => [k, a.kv[k]]));
+  return Object.keys(kv).length ? { id: '', classes: [], kv } : null;
+}
+
+// A group of positions alone at the end of a line ("- last item {x=5 y=10}"),
+// for lists, quotes and tables, whose lines have no other place for one.
+function positionGroup(text) {
+  const m = text.match(/\s*\{([^{}]*)\}\s*$/);
+  if (!m) return null;
+  const a = parseAttrs(m[1]);
+  const keys = Object.keys(a.kv);
+  if (!a.valid || a.id || a.classes.length || !keys.length || keys.some((k) => !CANVAS_KEYS.includes(k))) return null;
+  return { text: text.slice(0, m.index), attrs: a };
+}
 
 // A position or size on a canvas slide: "40" or "40%" is a share of the slide.
 function cssPercent(v) {
@@ -533,7 +555,16 @@ class SlideParser {
   stepped(html, step = this.step) {
     if (step <= 0) return html;
     const fx = this.root.fx[step];
-    return `<div class="q-step${fx ? ` fx-${fx}` : ''}" data-step="${step}">${html}</div>`;
+    // A placed element: the step around it takes the place, since its
+    // motion would otherwise move the frame the element is placed in.
+    const m = html.match(/^<([a-z][\w-]*)((?:(?!>)[\s\S])*?) style="(position:absolute;(?:(?:left|top|width|height):[\d.-]+%;?)*)/i);
+    let place = '';
+    if (m && /\bq-placed\b/.test(m[2])) {
+      place = m[3].replace(/;$/, '');
+      const rest = html.slice(m[0].length).replace(/^;?/, '');
+      html = `<${m[1]}${m[2].replace(/\bq-placed\b/, 'q-fill')}${rest.startsWith('"') ? rest.slice(1) : ` style="${rest}`}`;
+    }
+    return `<div class="q-step${place ? ' q-placed' : ''}${fx ? ` fx-${fx}` : ''}" data-step="${step}"${place ? ` style="${place}"` : ''}>${html}</div>`;
   }
 
   // For items that appear one per click ({.steps}): the attributes of item i.
@@ -648,9 +679,12 @@ class SlideParser {
           quote.push({ ...lines[i], text: lines[i].text.replace(/^\s*>\s?/, '') });
           i += 1;
         }
+        const pos = positionGroup(quote[quote.length - 1].text);
+        if (pos) quote[quote.length - 1] = { ...quote[quote.length - 1], text: pos.text };
+        if (pos) this.checkAttrs(pos.attrs, quote[quote.length - 1]);
         const inner = this.child(quote);
         const start = this.step;
-        out.push(this.stepped(`<blockquote>${inner.blocks(quote).join('')}</blockquote>`, start));
+        out.push(this.stepped(`<blockquote${attrsHtml(pos && pos.attrs)}>${inner.blocks(quote).join('')}</blockquote>`, start));
         continue;
       }
 
@@ -671,7 +705,12 @@ class SlideParser {
           rows.push(lines[i].text);
           i += 1;
         }
-        out.push(this.stepped(this.table(rows)));
+        const pos = positionGroup(rows[rows.length - 1]);
+        if (pos) {
+          rows[rows.length - 1] = pos.text;
+          this.checkAttrs(pos.attrs, lines[i - 1]);
+        }
+        out.push(this.stepped(this.table(rows, pos && pos.attrs)));
         continue;
       }
 
@@ -740,6 +779,11 @@ class SlideParser {
   }
 
   list(items) {
+    const pos = positionGroup(items[items.length - 1].text);
+    if (pos) {
+      this.checkAttrs(pos.attrs, items[items.length - 1]);
+      items = [...items.slice(0, -1), { ...items[items.length - 1], text: pos.text }];
+    }
     // One level of nesting: lines indented by 2+ spaces become a sub-list.
     const ordered = /^\s*\d+[.)]/.test(items[0].text);
     const tag = ordered ? 'ol' : 'ul';
@@ -771,16 +815,16 @@ class SlideParser {
     });
     flushSub();
     if (html.length) html[html.length - 1] += '</li>';
-    return this.stepped(`<${tag}>${html.join('').replace(/<\/li><\/li>/g, '</li>')}</${tag}>`);
+    return this.stepped(`<${tag}${attrsHtml(pos && pos.attrs)}>${html.join('').replace(/<\/li><\/li>/g, '</li>')}</${tag}>`);
   }
 
-  table(rows) {
+  table(rows, place = null) {
     const cells = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
     const head = cells(rows[0]);
     const align = cells(rows[1]).map((c) => (/^:-+:$/.test(c) ? 'center' : (/-:$/.test(c) ? 'right' : '')));
     const td = (c, k, tagName) => `<${tagName}${align[k] ? ` style="text-align:${align[k]}"` : ''}>${inline(c)}</${tagName}>`;
     const body = rows.slice(2).map((r) => `<tr>${cells(r).map((c, k) => td(c, k, 'td')).join('')}</tr>`).join('');
-    return `<table><thead><tr>${head.map((c, k) => td(c, k, 'th')).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+    return `<table${attrsHtml(place)}><thead><tr>${head.map((c, k) => td(c, k, 'th')).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   }
 
   directive(name, rest, body, line) {
@@ -796,7 +840,9 @@ class SlideParser {
     if (name === 'component') return this.stepped(this.component(rest, body, line));
     if (name === 'join') {
       this.root.hasJoin = true;
-      return this.stepped(`<div class="q-join" data-join>${inline(rest || '')}</div>`);
+      const { title, attrs } = titleAndId(rest || '', 'join');
+      this.checkAttrs(placeOnly(attrs), line);
+      return this.stepped(`<div${attrsHtml(placeOnly(attrs), 'q-join')} data-join>${inline(title)}</div>`);
     }
     if (SIMPLE_BLOCKS.has(name)) return this.layout(name, rest, body, line);
     if (VISUAL_BLOCKS.has(name)) return this.visual(name, rest, body, line);
@@ -820,7 +866,7 @@ class SlideParser {
     if (name === 'columns') {
       const cols = SlideParser.parts(body);
       const html = cols.map((c) => `<div class="q-col">${this.child(c).blocks(c).join('')}</div>`).join('');
-      return `<div${attrsHtml(attrs, 'q-columns')} style="--cols:${cols.length}">${html}</div>`;
+      return `<div${attrsHtml(attrs, 'q-columns', `--cols:${cols.length}`)}>${html}</div>`;
     }
     if (name === 'stat') {
       const start = this.step;
@@ -852,7 +898,7 @@ class SlideParser {
         const s = this.itemStep(k, each);
         return `<div class="q-card${s.cls}"${s.attr}${this.srcOf(p)}>${this.child(p).blocks(p).join('')}</div>`;
       }).join('');
-      return this.stepped(`<div${attrsHtml(attrs, 'q-cards')} style="--cols:${parts.length}">${html}</div>`, start);
+      return this.stepped(`<div${attrsHtml(attrs, 'q-cards', `--cols:${parts.length}`)}>${html}</div>`, start);
     }
 
     if (name === 'compare') {
@@ -876,7 +922,7 @@ class SlideParser {
         const s = this.itemStep(k, each);
         return `<li class="q-tl-item${s.cls}"${s.attr}${this.srcAt(it.n)}><span class="q-tl-dot"></span>${when ? `<span class="q-tl-when">${inline(when)}</span>` : ''}<span class="q-tl-what">${inline(what)}</span></li>`;
       }).join('');
-      return this.stepped(`<ol${attrsHtml(attrs, 'q-timeline')} style="--n:${items.length}">${html}</ol>`, start);
+      return this.stepped(`<ol${attrsHtml(attrs, 'q-timeline', `--n:${items.length}`)}>${html}</ol>`, start);
     }
 
     if (name === 'steps') {
@@ -886,7 +932,7 @@ class SlideParser {
         const s = this.itemStep(k, each);
         return `<li class="q-process-item${s.cls}"${s.attr}${this.srcAt(it.n)}><span class="q-process-n">${k + 1}</span><div>${head ? `<p class="q-process-head">${inline(head)}</p>` : ''}<p class="q-process-text">${inline(text)}</p></div></li>`;
       }).join('');
-      return this.stepped(`<ol${attrsHtml(attrs, 'q-process')} style="--n:${items.length}">${html}</ol>`, start);
+      return this.stepped(`<ol${attrsHtml(attrs, 'q-process', `--n:${items.length}`)}>${html}</ol>`, start);
     }
 
     if (name === 'kpis') {
@@ -898,7 +944,7 @@ class SlideParser {
         const s = this.itemStep(k, each);
         return `<div class="q-kpi${s.cls}"${s.attr}${this.srcAt(it.n)}><p class="q-kpi-value"${n !== null ? ` data-count="${n}"` : ''}>${inline((value || label) + unit)}</p>${value ? `<p class="q-kpi-label">${inline(label)}</p>` : ''}</div>`;
       }).join('');
-      return this.stepped(`<div${attrsHtml(attrs, 'q-kpis')} style="--cols:${items.length}">${html}</div>`, start);
+      return this.stepped(`<div${attrsHtml(attrs, 'q-kpis', `--cols:${items.length}`)}>${html}</div>`, start);
     }
 
     // chart: "label: value" lines (or list items).
@@ -920,7 +966,8 @@ class SlideParser {
   }
 
   component(rest, body, line) {
-    const { title: name, id } = titleAndId(rest, 'component');
+    const { title: name, id, attrs } = titleAndId(rest, 'component');
+    this.checkAttrs(placeOnly(attrs), line);
     const { opts, rest: content } = readOptions(body);
     if (!/^[a-z][\w-]*$/i.test(name)) {
       this.at(line, '"::: component" needs a component name, for example "::: component countdown".');
@@ -928,7 +975,7 @@ class SlideParser {
     }
     const spec = { id: `${id}-${this.root.components.length}`, name, params: opts, text: content.map((l) => l.text).join('\n').trim() };
     this.root.components.push(spec);
-    const html = `<div class="q-component" data-component="${escapeHtml(spec.id)}"></div>`;
+    const html = `<div${attrsHtml(placeOnly(attrs), 'q-component')} data-component="${escapeHtml(spec.id)}"></div>`;
     if (!opts.audience) return html;
     // "audience:" makes the component ask the audience something.
     const ask = this.componentInput(id, name, opts, line);
@@ -1022,7 +1069,7 @@ class SlideParser {
       this.at(line, `Two interactions share the id "${spec.id}". Give one of them {#another-id}.`);
     }
     this.root.interactions.push(spec);
-    return `<div class="q-interaction" data-interaction="${escapeHtml(spec.id)}"></div>`;
+    return `<div${attrsHtml(placeOnly(attrs), 'q-interaction')} data-interaction="${escapeHtml(spec.id)}"></div>`;
   }
 }
 
@@ -1116,13 +1163,12 @@ export function parseTalk(source, { readFile = null, sourceMap = false } = {}) {
       const taken = takeMedia(html);
       html = taken.html;
       mediaHtml = taken.media;
-      if (!mediaHtml) warnings.push(`Slide ${index + 1}: the layout "${layoutName}" needs an image or a video on its own line.`);
+      if (!mediaHtml && !/class="q-positioned/.test(html)) warnings.push(`Slide ${index + 1}: the layout "${layoutName}" needs an image or a video on its own line.`);
     }
     const titleText = plain || (p.interactions[0] && p.interactions[0].title) || '';
     if (p.canvas && p.canvas.length) {
       const at = (m) => warnings.push(`Slide ${index + 1}: ${m}`);
       const boxes = p.canvas;
-      if (layoutName !== 'canvas') at('x=, y=, w= and h= place things freely only with <!-- layout: canvas -->.');
       boxes.forEach((b) => {
         if ([b.x, b.y].some((v) => v !== null && (v < 0 || v > 100)) || (b.x !== null && b.w !== null && b.x + b.w > 100.5) || (b.y !== null && b.h !== null && b.y + b.h > 100.5)) {
           at(`line ${b.line}: this element sticks out of the slide (x, y, w and h are shares of the slide, from 0 to 100).`);

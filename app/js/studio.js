@@ -108,6 +108,12 @@ async function api(path, { method = 'GET', body } = {}) {
 const slides = () => (S.state ? S.state.slides : []);
 const current = () => slides()[S.index];
 const isCanvasSlide = () => !!current() && current().layout === 'canvas';
+// Whether things on the slide sit where they were put (a canvas slide, or
+// one where something was dragged): new things then go where they are dropped.
+const isFreeSlide = () => isCanvasSlide() || !!(S.canvas && S.canvas.free());
+const positionOps = (moved, pinned = []) => [...pinned, moved].map(({ range, kv }) => ({
+  op: 'set-attrs', slide: current().id, range, kv,
+}));
 
 // Applies operations to the files, then draws everything again.
 async function run(ops, { select = null, message = '', side = true } = {}) {
@@ -270,8 +276,10 @@ const canvasApi = {
     S.selected = null;
     run({ op: 'move-block', slide: current().id, from, to, where });
   },
-  onPosition({ range, kv }) {
-    run({ op: 'set-attrs', slide: current().id, range, kv }, { select: range });
+  // What moved, and the others that the move pinned where they were: one
+  // change, so one undo puts the slide back as it was.
+  onPosition(moved, pinned = []) {
+    run(positionOps(moved, pinned), { select: moved.range, message: pinned.length ? 'Everything on this slide now stays where you put it. Undo to let the layout place it again.' : '' });
   },
   onDragFiles(on) { el.drop.hidden = !on; },
   onDropFiles: handleDropFiles,
@@ -334,9 +342,14 @@ function renderRail(stale) {
   const askedSlides = new Set(((S.state && S.state.requests) || []).filter((r) => r.status !== 'done').map((r) => r.slide));
   const incomingSlides = new Set(((S.sync && S.sync.incoming) || []).map((x) => x.id));
   const existing = new Map(all('.slide', el.rail).map((n) => [n.dataset.key, n]));
+  const labels = all('.section-label', el.rail);
   const nodes = [];
   list.forEach((slide, i) => {
-    if (slide.section) nodes.push(h('div', { class: 'section-label' }, slide.section.name));
+    if (slide.section) {
+      const label = labels.shift() || h('div', { class: 'section-label' });
+      if (label.textContent !== slide.section.name) label.textContent = slide.section.name;
+      nodes.push(label);
+    }
     const key = `${i}`;
     let item = existing.get(key);
     if (!item) {
@@ -364,7 +377,7 @@ function renderRail(stale) {
     ].filter(Boolean));
     nodes.push(item);
   });
-  el.rail.replaceChildren(...nodes);
+  keepChildren(el.rail, nodes);
   if (!thumbObserver) {
     thumbObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => { if (entry.isIntersecting) drawThumb(entry.target); });
@@ -376,6 +389,21 @@ function renderRail(stale) {
     if (scale > 0) frame.style.transform = `scale(${scale})`;
     thumbObserver.unobserve(thumb);
     thumbObserver.observe(thumb);
+  });
+}
+
+// Puts `nodes` in `parent`, in that order, moving as little as it can. An
+// iframe taken out of the page loads again from nothing (a white flash),
+// so nodes already in place stay where they are, and the ones that must
+// move use moveBefore where the browser has it (it keeps the iframe).
+function keepChildren(parent, nodes) {
+  const wanted = new Set(nodes);
+  [...parent.children].forEach((n) => { if (!wanted.has(n)) n.remove(); });
+  nodes.forEach((node, i) => {
+    const at = parent.children[i] || null;
+    if (at === node) return;
+    if (node.isConnected && parent.moveBefore) parent.moveBefore(node, at);
+    else parent.insertBefore(node, at);
   });
 }
 
@@ -584,7 +612,7 @@ async function insertItem(item, place) {
     return;
   }
   let text = item.text;
-  if (isCanvasSlide() && place && Number.isFinite(place.x)) text = placeOnCanvas(text, place.x, place.y);
+  if (isFreeSlide() && place && Number.isFinite(place.x)) text = placeOnCanvas(text, place.x, place.y);
   let after = null;
   if (place && place.anchor) after = place.where === 'before' ? place.anchor[0] - 1 : place.anchor[1];
   if (after !== null && after < slide.lines[0]) after = null;
@@ -644,16 +672,19 @@ function elementGroups(sel) {
       op: 'set-attrs', slide: slide.id, range, add: on ? [name] : [], remove: on ? [] : [name],
     }, { select: range }), S.state.schema.classes)));
   }
-  if (isCanvasSlide() && sel.topLevel) {
+  if (sel.topLevel) {
     const b = sel.box;
     const num = (key) => {
       const node = h('input', { type: 'number', step: '0.5', value: String(Math.round(b[key] * 10) / 10) });
-      node.addEventListener('change', () => run({
-        op: 'set-attrs', slide: slide.id, range, kv: { x: Math.round(b.x * 10) / 10, y: Math.round(b.y * 10) / 10, w: Math.round(b.w * 10) / 10, [key]: node.value },
-      }, { select: range }));
+      node.addEventListener('change', () => moveSelected(sel, (kv) => ({ ...kv, [key]: node.value })));
       return h('label', {}, key, node);
     };
-    groups.push(group('Position', h('div', { class: 'grid4' }, ['x', 'y', 'w', 'h'].map(num)), h('p', { class: 'hint', style: 'margin-top:8px' }, 'Shares of the slide, 0 to 100. Drag on the slide; hold Alt to stop snapping.')));
+    const free = isFreeSlide();
+    groups.push(group('Position', h('div', { class: 'grid4' }, ['x', 'y', 'w', 'h'].map(num)), h('p', { class: 'hint', style: 'margin-top:8px' },
+      free ? 'Shares of the slide, 0 to 100. Drag on the slide; hold Alt to stop snapping.' : 'Drag anything on the slide to place it yourself: the rest stays where it is. Hold Alt to stop snapping.')));
+    if (free && !isCanvasSlide()) {
+      groups.push(group('Layout', btn('ghost sm', [ic('layout-template'), 'Let the layout place everything again'], resetPlaces)));
+    }
   }
   return groups;
 }
@@ -1145,7 +1176,7 @@ async function handleDropFiles(files, point) {
       const alt = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
       const x = point && Number.isFinite(point.x) ? point.x : 50;
       const y = point && Number.isFinite(point.y) ? point.y : 50;
-      const where = isCanvasSlide() ? `{x=${Math.round(clamp(x - 15, 0, 70))} y=${Math.round(clamp(y - 10, 0, 70))} w=30 h=30}` : '';
+      const where = isFreeSlide() ? `{x=${Math.round(clamp(x - 15, 0, 70))} y=${Math.round(clamp(y - 10, 0, 70))} w=30 h=30}` : '';
       ops.push({ op: 'insert-lines', slide: current().id, after, text: `![${alt}](${path})${where}` });
       after = null;
     }
@@ -1398,18 +1429,38 @@ function handleKey(e) {
   if (!sel) return;
   if (e.key === 'Enter') { e.preventDefault(); editSelected(sel); return; }
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); return; }
-  if (isCanvasSlide() && sel.topLevel && e.key.startsWith('Arrow')) {
+  if (sel.topLevel && e.key.startsWith('Arrow')) {
     e.preventDefault();
     const step = e.shiftKey ? 5 : 1;
-    const b = sel.box;
-    const kv = { x: Math.round(b.x), y: Math.round(b.y) };
-    if (e.key === 'ArrowLeft') kv.x -= step;
-    if (e.key === 'ArrowRight') kv.x += step;
-    if (e.key === 'ArrowUp') kv.y -= step;
-    if (e.key === 'ArrowDown') kv.y += step;
-    if (!sel.positioned) kv.w = Math.round(b.w);
-    run({ op: 'set-attrs', slide: current().id, range: sel.range, kv }, { select: sel.range });
+    moveSelected(sel, (kv) => {
+      const next = { ...kv, x: Math.round(kv.x), y: Math.round(kv.y) };
+      if (e.key === 'ArrowLeft') next.x -= step;
+      if (e.key === 'ArrowRight') next.x += step;
+      if (e.key === 'ArrowUp') next.y -= step;
+      if (e.key === 'ArrowDown') next.y += step;
+      return next;
+    });
   }
+}
+
+// Moves the selected element from the keyboard or the Position fields.
+// On a slide the layout still places, the others are pinned first.
+function moveSelected(sel, change) {
+  const pinned = S.canvas ? S.canvas.freeze() : [];
+  const same = (p) => p.range[0] === sel.range[0] && p.range[1] === sel.range[1];
+  const own = pinned.find(same);
+  const b = sel.box;
+  const kv = own ? own.kv : { x: Math.round(b.x * 10) / 10, y: Math.round(b.y * 10) / 10, w: Math.round(b.w * 10) / 10 };
+  canvasApi.onPosition({ range: sel.range, kv: change(kv) }, pinned.filter((p) => !same(p)));
+}
+
+// Takes x, y, w and h off every element of the slide: the layout places them again.
+function resetPlaces() {
+  const placed = S.canvas ? S.canvas.placed() : [];
+  if (!placed.length) return;
+  run(placed.map(({ range }) => ({
+    op: 'set-attrs', slide: current().id, range, kv: { x: null, y: null, w: null, h: null },
+  })), { select: S.selected ? S.selected.range : null, message: 'The layout places everything on this slide again.' });
 }
 document.addEventListener('keydown', handleKey);
 

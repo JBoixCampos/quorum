@@ -79,12 +79,44 @@ test('canvas slides: positions are checked, and so are overlaps and the edges', 
   assert.match(out.warnings.join(' '), /sticks out of the slide/);
   const over = parseTalk(`${head}One {x=5 y=5 w=40 h=20}\n\nTwo {x=20 y=10 w=40 h=20}\n`);
   assert.match(over.warnings.join(' '), /overlap/);
-  const wrong = parseTalk('# A\n\nText {x=5 y=5 w=10 h=10}\n');
-  assert.match(wrong.warnings.join(' '), /only with <!-- layout: canvas -->/);
+  // Any layout: the element is placed, the others keep their places.
+  const anywhere = parseTalk('<!-- layout: title -->\n\n# A\n\nText {x=5 y=5 w=10 h=10}\n');
+  assert.deepEqual(anywhere.warnings, []);
+  assert.match(anywhere.slides[0].html, /<p class="q-placed" style="position:absolute;left:5%;top:5%;width:10%;height:10%">Text<\/p>/);
   const bad = parseTalk(`${head}Text {x=left y=5}\n`);
   assert.match(bad.warnings.join(' '), /should be a number/);
   const picture = parseTalk(`${head}![A loaf](a.jpg){x=0 y=30 w=55 h=70}\n`);
-  assert.match(picture.slides[0].html, /<figure class="q-positioned" style="position:absolute;left:0%;top:30%;width:55%;height:70%"><img/);
+  assert.match(picture.slides[0].html, /<figure class="q-positioned q-placed" style="position:absolute;left:0%;top:30%;width:55%;height:70%"><img/);
+});
+
+test('every block can be placed freely, and keeps its own style', () => {
+  const at = '{x=10 y=20 w=30}';
+  const html = (md) => parseTalk(`# T\n\n${md}\n`).slides[0].html;
+  const placed = /class="[^"]*\bq-placed\b[^"]*" style="position:absolute;left:10%;top:20%;width:30%/;
+  assert.match(html(`- a\n- b ${at}`), /<ul class="q-placed"[^>]*><li>a<\/li><li>b<\/li><\/ul>/);
+  assert.match(html(`> Said ${at}`), /<blockquote class="q-placed"[^>]*><p>Said<\/p><\/blockquote>/);
+  assert.match(html(`| a | b |\n| --- | --- |\n| 1 | 2 | ${at}`), /<table class="q-placed"[^>]*><thead>.*<td>2<\/td>/);
+  assert.match(html(`::: poll ${at} Which?\n- a\n- b\n:::`), placed);
+  assert.match(html(`::: questions ${at}\n:::`), placed);
+  assert.match(html(`::: join ${at} Scan to join\n:::`), /data-join>Scan to join<\/div>/);
+  assert.match(html(`::: component countdown ${at}\nseconds: 30\n:::`), placed);
+  // Blocks with a style of their own keep it, in the same attribute.
+  assert.match(html(`::: cards ${at}\n### A\na\n:::`), /style="position:absolute;left:10%;top:20%;width:30%;--cols:1"/);
+  assert.match(html(`::: kpis ${at}\n- 1: a\n- 2: b\n:::`), /;--cols:2"/);
+  // A group that is not only a position stays text in a list.
+  assert.match(html('- a {.muted}'), /<li>a \{\.muted\}<\/li>/);
+});
+
+test('a placed element revealed in steps: the step around it takes the place', () => {
+  const html = parseTalk('# A\n\n--\n\nTwo {x=10 y=10 w=20}\n').slides[0].html;
+  assert.match(html, /<div class="q-step q-placed" data-step="1" style="position:absolute;left:10%;top:10%;width:20%"><p class="q-fill">Two<\/p><\/div>/);
+});
+
+test('a split slide whose picture was placed freely is not missing its picture', () => {
+  const talk = parseTalk('<!-- layout: split -->\n\n![A](a.jpg){x=0 y=0 w=48 h=100}\n\n## Hi {x=55 y=10 w=40}\n');
+  assert.deepEqual(talk.warnings, []);
+  assert.equal(talk.slides[0].media, '');
+  assert.match(talk.slides[0].html, /<figure class="q-positioned q-placed"/);
 });
 
 test('with a source map, list items and cards carry their own lines', () => {
