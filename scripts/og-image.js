@@ -25,28 +25,31 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <style>
-  @font-face { font-family: 'Inter Display'; src: url('${font('InterDisplay-Bold.woff')}'); font-weight: 700; }
+  @font-face { font-family: 'Space Grotesk'; src: url('${font('SpaceGrotesk-Bold.woff2')}'); font-weight: 700; }
   @font-face { font-family: 'Inter'; src: url('${font('Inter-Medium.woff')}'); font-weight: 500; }
   html, body { margin: 0; }
   body {
     position: relative; width: 1200px; height: 630px; overflow: hidden;
-    background: #0e0f11 radial-gradient(ellipse 70% 60% at 50% 0%, rgba(110, 92, 240, 0.35), transparent 70%);
-    color: #ececef; font-family: 'Inter', sans-serif;
+    background: #f4f2ec; color: #222522; font-family: 'Inter', sans-serif;
   }
-  .text { position: absolute; left: 0; right: 0; top: 92px; text-align: center; }
-  .brand { display: inline-flex; align-items: center; gap: 14px; font: 700 38px/1 'Inter Display', sans-serif; letter-spacing: -0.02em; }
-  .brand svg { width: 50px; height: 50px; }
-  h1 { margin: 44px auto 0; max-width: 1000px; font: 700 86px/1.02 'Inter Display', sans-serif; letter-spacing: -0.045em; }
-  h1 span { color: #8b7bff; }
-  p { margin: 30px 0 0; font: 500 28px/1.3 'Inter', sans-serif; color: #b5b8c0; }
+  .rule { position: absolute; left: 72px; right: 72px; top: 64px; height: 3px; background: #222522; }
+  .brand { position: absolute; left: 72px; top: 92px; display: inline-flex; align-items: center; gap: 14px; font: 700 36px/1 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
+  .brand svg { width: 46px; height: 46px; }
+  h1 { position: absolute; left: 72px; top: 200px; width: 1100px; margin: 0; font: 700 74px/1.04 'Space Grotesk', sans-serif; letter-spacing: -0.05em; }
+  h1 span { display: block; color: #e25536; }
+  .dots { position: absolute; left: 72px; bottom: 56px; display: flex; gap: 14px; }
+  .dots i { width: 22px; height: 22px; border-radius: 50%; background: #222522; }
+  .dots i.b { background: #e25536; }
+  .dots i.c { background: #69796a; }
+  p { position: absolute; right: 72px; top: 104px; margin: 0; font: 500 26px/1 'Inter', sans-serif; color: #5f635c; }
 </style>
 </head>
 <body>
-  <div class="text">
-    <div class="brand">${logo}Quorum</div>
-    <h1>Your agent writes the talk. <span>You shape it.</span></h1>
-    <p>Present it live, or export it to PowerPoint.</p>
-  </div>
+  <div class="rule"></div>
+  <div class="brand">${logo}Quorum</div>
+  <h1>Make a talk with your AI agent. <span>The room joins in.</span></h1>
+  <div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></div>
+  <p>Open source. Agent ready.</p>
 </body>
 </html>`;
 

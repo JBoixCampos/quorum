@@ -96,7 +96,7 @@ try {
   check('the hero animation plays the steps in turn', await until(async () => (await page.getAttribute('[data-scene]', 'data-step')) === '2', 12000));
   await page.click('[data-go="3"]');
   check('and a step can be chosen', await until(async () => (await page.getAttribute('[data-scene]', 'data-step')) === '3' && (await page.textContent('[data-count]')) !== ''));
-  check('the three steps are there', (await page.locator('#how .row.step').count()) === 3);
+  check('the three steps are there', (await page.locator('#how .chapter').count()) === 3);
   check('getting started has three steps, with the commands', (await page.locator('.startsteps li').count()) === 3 && (await page.textContent('.startsteps')).includes('npm run studio'));
   await page.locator('[data-terminal]').scrollIntoViewIfNeeded();
   check('the agent session plays to the end once it is seen', await until(async () => (await page.locator('.terminal [data-line]:not(.shown)').count()) === 0, 10000));

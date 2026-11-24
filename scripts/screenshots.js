@@ -27,6 +27,11 @@ const wait = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 const dir = mkdtempSync(join(tmpdir(), 'quorum-shots-'));
 cpSync(join(ROOT, 'examples', 'showcase'), dir, { recursive: true });
+// SHOT_THEME=editorial node scripts/...: the same talk in another preset.
+if (process.env.SHOT_THEME) {
+  const file = join(dir, 'talk.md');
+  writeFileSync(file, readFileSync(file, 'utf8').replace(/^theme: .*$/m, `theme: ${process.env.SHOT_THEME}`));
+}
 const server = await startServer({ talkDir: dir, port: 0, key: 'example', log: () => {} });
 const base = `http://localhost:${server.port}`;
 server.setPublicUrl('https://your-talk.trycloudflare.com');
