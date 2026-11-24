@@ -2,6 +2,10 @@
 // Markdown. Each editor reads the block's Markdown into fields and writes
 // the fields back as Markdown: lines it does not understand are kept.
 
+// How Studio names the built-in components (COMPONENTS in src/shared/design.js,
+// which Studio gets from the schema).
+export const COMPONENT_LABELS = { countdown: 'Countdown', qr: 'QR code', embed: 'Web page' };
+
 // --- the Insert library --------------------------------------------------------
 
 // `audience`: the block asks the audience something (one per slide).
@@ -15,6 +19,8 @@ export const LIBRARY = [
     { id: 'questions', name: 'Questions', icon: 'message-circle', about: 'The audience asks and upvotes', audience: true, text: '::: questions Ask me anything\n:::' },
     { id: 'join', name: 'Join code', icon: 'qr-code', about: 'The QR code to join', audience: false, text: '::: join Scan to join\n:::' },
     { id: 'countdown', name: 'Countdown', icon: 'timer', about: 'A timer on the slide', audience: false, text: '::: component countdown\nseconds: 60\n:::' },
+    { id: 'qr', name: 'QR code', icon: 'qr-code', about: 'A code for any link', audience: false, text: '::: component qr\nurl: https://example.com\nlabel: Scan to open\n:::' },
+    { id: 'embed', name: 'Web page', icon: 'globe', about: 'Another page inside the slide', audience: false, text: '::: component embed\nurl: https://example.com\n:::' },
   ] },
   { group: 'Text', items: [
     { id: 'heading', name: 'Heading', icon: 'heading', about: 'A title', text: '## A heading' },
@@ -206,9 +212,38 @@ export const EDITORS = {
       return writeBlock({ ...b, attrs }, cols.join('\n\n+++\n\n').split('\n'));
     },
   },
+  // A built-in component (countdown, qr, embed): one field per setting.
+  component: {
+    label: 'Component',
+    read(b, components) {
+      const name = String(b.title).trim().toLowerCase();
+      const keys = Object.keys(components[name].params);
+      const values = Object.fromEntries(keys.map((k) => [k, '']));
+      const order = [];
+      const rest = [];
+      b.body.forEach((line) => {
+        const pair = line.match(KEYVAL);
+        const key = pair && pair[1].toLowerCase();
+        if (key && keys.includes(key) && !order.includes(key)) {
+          values[key] = pair[2].replace(/\s+#\s.*$/, '').trim();
+          order.push(key);
+        } else rest.push(line);
+      });
+      while (rest.length && rest[0].trim() === '') rest.shift();
+      while (rest.length && rest[rest.length - 1].trim() === '') rest.pop();
+      return { name, values, order, rest };
+    },
+    write(b, m) {
+      const keys = [...m.order, ...Object.keys(m.values).filter((k) => !m.order.includes(k))];
+      const lines = keys.filter((k) => String(m.values[k]).trim() !== '').map((k) => `${k}: ${String(m.values[k]).trim()}`);
+      return writeBlock(b, [...lines, ...m.rest]);
+    },
+  },
 };
 
-export function editorFor(name) {
+// `components`: the built-in components, from the schema.
+export function editorFor(name, block = null, components = {}) {
+  if (name === 'component') return block && components[String(block.title).trim().toLowerCase()] ? EDITORS.component : null;
   if (name === 'poll' || name === 'multi') return EDITORS.poll;
   if (name === 'estimate') return EDITORS.estimate;
   if (name === 'questions') return EDITORS.questions;
