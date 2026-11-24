@@ -83,6 +83,7 @@ Studio does most of this. The commands are there for agents, CI and people who p
 | `quorum split`, `quorum join` | One file per slide, and back |
 | `quorum repo` | Slide by slide merging in this clone, and the CI workflow |
 | `quorum theme new <name>`, `quorum theme from <logo>` | Save the look as a theme file, or make one from a logo |
+| `quorum theme guide <name> --from <file>` | Turn written brand guidelines into a theme and a design guide, with your agent ([how](design.md#from-your-companys-guidelines)) |
 | `quorum build [folder]` | A static, playable copy of the talk |
 | `quorum export [folder]` | The slides without the audience parts, as a website |
 | `quorum clean [folder]` | Delete the votes and questions of the last session |

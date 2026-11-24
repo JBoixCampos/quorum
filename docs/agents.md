@@ -103,6 +103,7 @@ A talk should look good, not only work. Quorum gives an agent what it needs to g
 | `quorum check --visual --json` | Also measures every slide in a browser, with its results shown: a slide that does not fit is a warning |
 | `quorum snapshot` | A picture of every slide in `.quorum-snapshots/`, and `contact.png` with the whole talk on one image. An agent that can see images looks at it the way the speaker will |
 | `quorum theme from logo.svg` | Colours and a theme from the speaker's logo |
+| `quorum theme guide <name> --from <file>` | Keeps written brand guidelines in `themes/` and prints the brief for a theme file and a design guide (`themes/<name>.md`) |
 | `quorum diff main --json` | The slides that changed since a branch, tag or commit; `--pictures` saves before and after pictures. See [Working in a repository](repository.md) |
 | `quorum studio` | Opens an editor for the person: they adjust slides by hand while you keep editing the same files (their changes and yours show up in both). See [Studio](studio.md) |
 | `quorum remix <slide>` | One slide in other layouts on one numbered picture; `--pick <n>` applies one. See [Remixing slides](remix.md) |
