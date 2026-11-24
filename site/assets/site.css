@@ -115,7 +115,7 @@ section { padding: 112px 0; border-top: 1px solid var(--line); }
 .hero .badge b { padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .hero h1 { max-width: 15ch; margin: 0 auto; }
 .hero h1 em { font-style: normal; color: var(--accent); }
-.hero .lede { max-width: 36em; margin: 26px auto 0; }
+.hero .lede { max-width: 40em; margin: 26px auto 0; }
 .hero .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
 .hero .for { max-width: 34em; margin: 20px auto 0; color: var(--muted); font-size: 15px; }
 .window { margin: 48px auto 0; max-width: 1180px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line-2); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.02), 0 50px 120px -40px rgba(110, 92, 240, 0.45), var(--shadow); }
@@ -347,7 +347,7 @@ pre .c { color: var(--faint); }
   nav.links { gap: 4px 14px; }
   nav.links a[href^="https://github.com"], nav.links a[href$="#how"] { display: none; }
   .steps { grid-template-columns: minmax(0, 1fr); }
-  .hero .badge span { display: none; }
+  .hero .badge { gap: 8px; font-size: 12.5px; }
   .install { font-size: 12.5px; }
   .pager { grid-template-columns: minmax(0, 1fr); }
   .pager .next { grid-column: 1; }
@@ -359,6 +359,9 @@ pre .c { color: var(--faint); }
   .flow .n { grid-row: span 2; margin: 0; }
   .room { grid-template-columns: minmax(0, 1fr); }
   .room-phone { width: 58%; justify-self: center; }
+}
+@media (max-width: 380px) {
+  .hero .badge span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
