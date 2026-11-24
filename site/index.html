@@ -26,25 +26,15 @@
         <p class="for">For workshops, classrooms, talks, meetups and any room where people should take part, not just listen.</p>
         <figure class="window demo" data-demo>
           <div class="demo-view" data-view hidden>
-            <div class="scene" data-scene data-step="1" role="img" aria-label="An animation of the three steps. An agent writes the slides, a poll is dragged into Studio, and phones vote on the poll while the results fill in.">
-              <div class="chrome"><i></i><i></i><i></i><span>Why bread rises</span><em class="pres">Present</em></div>
+            <div class="scene" data-scene data-step="1" role="img" aria-label="An animation of the three steps. An agent writes a talk on why bread rises, a poll is dragged onto a slide in Studio, then the talk is presented and phones vote while the results fill in.">
+              <div class="chrome"><i></i><i></i><i></i><span>Why bread rises</span><em class="onair">Live</em><em class="pres">Present</em></div>
               <div class="rail">
-                <div class="th on" style="--i:0"><u></u><s></s></div>
-                <div class="th" style="--i:1"><u></u><s></s></div>
-                <div class="th" style="--i:2"><u></u><s></s></div>
-                <div class="th" style="--i:3"><u></u><s></s></div>
+                <div class="th t-title" style="--i:0"><b>01</b><u></u></div>
+                <div class="th t-cards" style="--i:1"><u></u><span><i></i><i></i><i></i></span></div>
+                <div class="th t-poll on" style="--i:2"><u></u><span><i style="--c:#7c5cff;--w:30%"></i><i style="--c:#22d3ee;--w:72%"></i><i style="--c:#f472b6;--w:22%"></i></span></div>
+                <div class="th t-pic" style="--i:3"><em></em><u></u><s></s></div>
               </div>
-              <div class="canvas">
-                <div class="slide">
-                  <h4>Where should we go for lunch?</h4>
-                  <div class="poll">
-                    <div class="opt"><span>Tacos</span><div class="bar"><i style="--w:30%;--k:0"></i></div><b>30%</b></div>
-                    <div class="opt"><span>Ramen</span><div class="bar"><i style="--w:48%;--k:1"></i></div><b>48%</b></div>
-                    <div class="opt"><span>The long queue</span><div class="bar"><i style="--w:22%;--k:2"></i></div><b>22%</b></div>
-                  </div>
-                  <div class="count"><b data-count>0</b> answers</div>
-                </div>
-              </div>
+              <div class="canvas"></div>
               <div class="panel">
                 <p class="ph">Insert</p>
                 <div class="it">Title</div>
@@ -52,12 +42,26 @@
                 <div class="it">Chart</div>
                 <div class="it">Quiz</div>
               </div>
-              <div class="phones"><div class="phone"><p>Where should we go for lunch?</p><span class="btn">Tacos</span><span class="btn t" style="--d:0">Ramen</span><span class="btn">The long queue</span></div><div class="phone"><p>Where should we go for lunch?</p><span class="btn t" style="--d:1">Tacos</span><span class="btn">Ramen</span><span class="btn">The long queue</span></div></div>
-              <div class="term">
-                <p class="you" style="--d:0.4">Make me a talk on why bread rises. Start with a poll and end with questions.</p>
-                <p class="ok" style="--d:1.6">Wrote 16 slides, 3 where the room answers</p>
-                <p class="ok" style="--d:2.6">Checked every slide, all of them fit</p>
+              <div class="slide">
+                <h4>What makes the holes in bread?</h4>
+                <p class="sub">Tap one option on your phone.</p>
+                <div class="drop"></div>
+                <div class="poll">
+                    <div class="opt" style="--c:#7c5cff"><span>Air you knead in</span><div class="bar"><i style="--w:22%;--k:0"></i></div><b>22%</b></div>
+                    <div class="opt" style="--c:#22d3ee"><span>Gas from the yeast</span><div class="bar"><i style="--w:61%;--k:1"></i></div><b>61%</b></div>
+                    <div class="opt" style="--c:#f472b6"><span>Steam from the water</span><div class="bar"><i style="--w:17%;--k:2"></i></div><b>17%</b></div>
+                </div>
+                <p class="foot"><span>Why bread rises</span><span>6 / 16</span></p>
+                <div class="ring"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34"/><circle class="arc" cx="40" cy="40" r="34"/></svg><b data-count>0</b><small>answers</small></div>
               </div>
+              <div class="phones"><div class="phone"><p class="top"><i>Connected</i></p><p class="k">Vote</p><p class="q">What makes the holes in bread?</p><span class="btn" style="--c:#7c5cff">Air you knead in</span><span class="btn t" style="--c:#22d3ee">Gas from the yeast</span><span class="btn" style="--c:#f472b6">Steam from the water</span></div><div class="phone"><p class="top"><i>Connected</i></p><p class="k">Vote</p><p class="q">What makes the holes in bread?</p><span class="btn t" style="--c:#7c5cff">Air you knead in</span><span class="btn" style="--c:#22d3ee">Gas from the yeast</span><span class="btn" style="--c:#f472b6">Steam from the water</span></div></div>
+              <div class="term">
+                <p class="tbar">your agent, in the talk folder</p>
+                <p class="you"><span style="--n:44">Make a talk on why bread rises, with a poll.</span></p>
+                <p class="ok" style="--d:2.2">Wrote 16 slides, 3 where the room answers</p>
+                <p class="ok" style="--d:2.8">Checked every slide, all of them fit</p>
+              </div>
+              <div class="ghost">Poll</div>
               <svg class="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7-6 2-2 6z" fill="#fff" stroke="#0e0f11" stroke-width="1.5" stroke-linejoin="round"/></svg>
             </div>
           </div>

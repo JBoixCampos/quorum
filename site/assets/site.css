@@ -369,7 +369,11 @@ pre .c { color: var(--faint); }
   .live::before { animation: none; }
 }
 
-/* --- the hero animation: three steps, drawn at 1000 by 560 and scaled by hero.js ---------------- */
+/* --- the hero animation: three steps, drawn at 1000 by 560 and scaled by hero.js ----------------
+   Step 1: the agent writes the talk, then the slides appear in Studio.
+   Step 2: a poll is dragged from the Insert panel onto the slide.
+   Step 3: the talk is presented: the slide fills the screen and phones vote.
+   The option colours are the default palette in src/shared/design.js. */
 .demo { background: #0b0c0e; }
 .demo-view { position: relative; overflow: hidden; transition: opacity 0.22s; }
 .demo-view.fade { opacity: 0; }
@@ -377,81 +381,142 @@ pre .c { color: var(--faint); }
 .scene > * { position: absolute; }
 .scene p, .scene h4 { margin: 0; }
 
-.scene .chrome { left: 0; top: 0; right: 0; height: 42px; display: flex; align-items: center; gap: 7px; padding: 0 16px; background: #131417; border-bottom: 1px solid var(--line); }
+/* the window bar */
+.scene .chrome { z-index: 2; left: 0; top: 0; right: 0; height: 42px; display: flex; align-items: center; gap: 7px; padding: 0 16px; background: #131417; border-bottom: 1px solid var(--line); }
 .scene .chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--raise-2); }
 .scene .chrome span { margin-left: 12px; font-weight: 600; font-size: 13px; color: var(--fg-2); }
-.scene .pres { margin-left: auto; font-style: normal; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: var(--accent-2); color: #fff; }
+.scene .chrome em { font-style: normal; font-size: 13px; font-weight: 600; }
+.scene .pres { margin-left: auto; padding: 6px 14px; border-radius: 8px; background: var(--accent-2); color: #fff; }
+.scene .onair { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.1); color: var(--fg); opacity: 0; transform: translateX(8px); transition: opacity 0.4s 0.5s, transform 0.4s 0.5s; }
+.scene .onair::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; }
+.scene .onair + .pres { margin-left: 10px; }
 
-.scene .rail { left: 0; top: 42px; bottom: 0; width: 170px; padding: 14px; display: grid; align-content: start; gap: 12px; background: #101114; border-right: 1px solid var(--line); }
-.scene .th { height: 74px; border-radius: 8px; border: 1px solid var(--line-2); background: linear-gradient(135deg, #1b1840, #0f1230); padding: 12px; display: grid; align-content: start; gap: 6px; }
+/* Studio: the slides, the canvas and the Insert panel */
+.scene .rail { left: 0; top: 42px; bottom: 0; width: 170px; padding: 14px; display: grid; align-content: start; gap: 12px; background: #101114; border-right: 1px solid var(--line); transition: opacity 0.5s, transform 0.5s; }
+.scene .th { position: relative; height: 80px; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: linear-gradient(135deg, #1b1840, #0f1230); overflow: hidden; }
 .scene .th.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.scene .th u, .scene .th s { display: block; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.5); width: 70%; }
-.scene .th s { width: 45%; background: rgba(255, 255, 255, 0.22); }
+.scene .th u, .scene .th s { display: block; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.55); width: 62%; }
+.scene .th s { width: 40%; margin-top: 5px; background: rgba(255, 255, 255, 0.22); }
+.scene .th.t-title { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; background: linear-gradient(135deg, #7c5cff, #f472b6); border-color: transparent; }
+.scene .th.t-title b { font: 700 17px/1 var(--display); color: #fff; }
+.scene .th.t-title u { background: rgba(255, 255, 255, 0.85); }
+.scene .th span { display: grid; gap: 6px; margin-top: 12px; }
+.scene .th.t-cards span { grid-template-columns: repeat(3, 1fr); }
+.scene .th.t-cards span i { height: 30px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); }
+.scene .th.t-poll span i { display: block; height: 6px; width: var(--w); border-radius: 3px; background: var(--c); opacity: 0.85; }
+.scene .th.t-pic { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; align-content: center; column-gap: 10px; }
+.scene .th.t-pic em { grid-row: span 2; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f6deb0, #c98b45 70%); }
+.scene .th.t-pic s { margin-top: 0; }
 
-.scene .canvas { left: 170px; top: 42px; right: 230px; bottom: 0; display: grid; place-items: center; background: radial-gradient(closest-side, #181a21, #0e0f11); }
-.scene .slide { position: relative; width: 520px; height: 272px; border-radius: 12px; padding: 30px 34px; background: linear-gradient(135deg, #221d55, #11143a 70%); border: 1px solid rgba(139, 123, 255, 0.35); box-shadow: 0 30px 60px -30px rgba(110, 92, 240, 0.6); }
-.scene .slide h4 { font: 700 24px/1.15 var(--display); letter-spacing: -0.02em; }
-.scene .poll { margin-top: 26px; display: grid; gap: 12px; opacity: 0; }
-.scene .opt { display: grid; grid-template-columns: 110px 1fr 38px; align-items: center; gap: 12px; font-size: 13.5px; }
-.scene .opt b { text-align: right; font-weight: 600; color: var(--fg-2); font-size: 13px; opacity: 0; transition: opacity 0.4s; }
-.scene .bar { height: 14px; border-radius: 7px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
-.scene .bar i { display: block; height: 100%; width: 0; border-radius: 7px; background: linear-gradient(90deg, #6e5cf0, #a99bff); transition: width 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.scene .count { position: absolute; left: 34px; bottom: 22px; font-size: 13px; color: var(--fg-2); opacity: 0; transition: opacity 0.4s; }
-.scene .count b { color: var(--fg); font-weight: 700; font-size: 16px; }
+.scene .canvas { left: 170px; top: 42px; right: 230px; bottom: 0; background: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.2px) 0 0 / 20px 20px, radial-gradient(closest-side, #181a21, #0e0f11); transition: left 0.6s, right 0.6s; }
 
-.scene .panel { right: 0; top: 42px; bottom: 0; width: 230px; padding: 18px; background: #101114; border-left: 1px solid var(--line); display: grid; align-content: start; gap: 10px; transition: opacity 0.5s, transform 0.5s; }
+.scene .panel { left: 770px; top: 42px; bottom: 0; width: 230px; padding: 18px; background: #101114; border-left: 1px solid var(--line); display: grid; align-content: start; gap: 10px; transition: opacity 0.5s, transform 0.5s; }
 .scene .panel .ph { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 .scene .it { padding: 11px 14px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--raise); font-size: 13.5px; color: var(--fg-2); }
 
-.scene .phones { right: 16px; top: 96px; display: flex; gap: 10px; opacity: 0; transform: translateY(40px); transition: opacity 0.6s 0.2s, transform 0.6s 0.2s; }
-.scene .phone { width: 112px; height: 250px; padding: 14px 10px; border-radius: 18px; border: 2px solid var(--line-2); background: #14151a; display: grid; align-content: start; gap: 7px; }
-.scene .phone p { font-size: 10.5px; line-height: 1.3; font-weight: 600; color: var(--fg); margin-bottom: 6px; }
-.scene .phone .btn { display: block; padding: 8px 7px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--raise); font-size: 10.5px; color: var(--fg-2); }
-.scene .phone:nth-child(2) { margin-top: 36px; }
+/* the slide: 16:9, in the canvas while editing, larger while presenting */
+.scene .slide { left: 210px; top: 155px; width: 520px; height: 292px; padding: 30px 32px; border-radius: 12px; overflow: hidden; background: radial-gradient(circle at 85% 0%, rgba(124, 92, 255, 0.4), transparent 55%), radial-gradient(circle at 0% 100%, rgba(34, 211, 238, 0.14), transparent 45%), #0c0e1d; border: 1px solid rgba(139, 123, 255, 0.4); box-shadow: 0 30px 60px -30px rgba(110, 92, 240, 0.6); transform-origin: 0 0; transition: transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.75s; }
+.scene .slide h4 { font: 700 25px/1.12 var(--display); letter-spacing: -0.02em; }
+.scene .slide .sub { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.scene .drop { position: absolute; left: 24px; right: 24px; top: 104px; bottom: 24px; border: 1.5px dashed var(--accent); border-radius: 10px; background: var(--accent-soft); opacity: 0; }
+.scene .poll { position: absolute; left: 32px; top: 122px; width: 330px; display: grid; gap: 13px; opacity: 0; }
+.scene .opt { display: grid; grid-template-columns: 136px 1fr 34px; align-items: center; gap: 12px; font-size: 13px; }
+.scene .opt b { text-align: right; font-weight: 600; color: var(--fg-2); font-size: 12.5px; opacity: 0; transition: opacity 0.4s; }
+.scene .bar { height: 13px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.scene .bar i { display: block; height: 100%; width: 0; border-radius: 7px; background: var(--c); transition: width 1.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.scene .slide .foot { position: absolute; left: 32px; right: 32px; bottom: 18px; display: flex; justify-content: space-between; font-size: 10px; color: var(--faint); }
+.scene .ring { position: absolute; right: 30px; top: 112px; width: 96px; height: 96px; display: grid; place-content: center; text-align: center; opacity: 0; }
+.scene .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.scene .ring circle { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 6; }
+.scene .ring .arc { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 213.6; stroke-dashoffset: 213.6; transition: stroke-dashoffset 1.8s cubic-bezier(0.33, 1, 0.68, 1); }
+.scene .ring b { font: 700 28px/1 var(--display); }
+.scene .ring small { font-size: 10px; color: var(--muted); }
 
-.scene .term { left: 200px; top: 116px; width: 520px; padding: 20px 22px; border-radius: 12px; background: rgba(23, 24, 28, 0.97); border: 1px solid var(--line-2); box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.8); font: 14px/1.6 var(--mono); display: grid; gap: 10px; }
+/* the phones, like the real voting page */
+.scene .phones { left: 726px; top: 92px; display: flex; gap: 12px; opacity: 0; transform: translateY(40px); transition: opacity 0.6s 0.35s, transform 0.6s 0.35s; }
+.scene .phone { width: 124px; height: 262px; padding: 12px 9px; border-radius: 20px; border: 2px solid var(--line-2); background: radial-gradient(circle at 100% 0%, rgba(124, 92, 255, 0.3), transparent 60%), #0c0e1d; display: grid; align-content: start; gap: 6px; box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.9); }
+.scene .phone:nth-child(2) { margin-top: 40px; }
+.scene .phone .top { display: flex; justify-content: flex-end; gap: 4px; font-size: 7.5px; font-weight: 600; color: var(--fg-2); }
+.scene .phone .top i { font-style: normal; font-weight: 400; color: var(--muted); }
+.scene .phone .top i::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 3px; border-radius: 50%; background: #22c55e; }
+.scene .phone .k { margin-top: 8px; font-size: 8px; font-weight: 600; color: var(--accent); }
+.scene .phone .q { font: 700 12px/1.2 var(--display); margin-bottom: 4px; }
+.scene .phone .btn { position: relative; display: block; padding: 7px 7px 7px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: #10121d; font-size: 9.5px; line-height: 1.25; color: var(--fg-2); box-shadow: inset 3px 0 0 var(--c); }
+.scene .phone .btn.t::after { content: ''; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: rgba(255, 255, 255, 0.5); opacity: 0; }
+
+/* the agent, over a dimmed Studio */
+.scene .term { z-index: 3; left: 220px; top: 150px; width: 560px; border-radius: 12px; background: rgba(23, 24, 28, 0.98); border: 1px solid var(--line-2); box-shadow: 0 0 0 2000px rgba(8, 9, 11, 0.55), 0 30px 70px -20px rgba(0, 0, 0, 0.8); font: 14px/1.6 var(--mono); display: grid; gap: 10px; padding-bottom: 22px; opacity: 0; pointer-events: none; }
+.scene .term .tbar { padding: 11px 18px; margin-bottom: 6px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--faint); }
+.scene .term .you, .scene .term .ok { padding: 0 22px; }
 .scene .term .you::before { content: '> '; color: var(--accent); }
+.scene .term .you span { display: inline-block; vertical-align: bottom; overflow: hidden; white-space: nowrap; width: calc(var(--n) * 1ch); }
 .scene .term .ok { color: var(--fg-2); }
 .scene .term .ok::before { content: '\2713  '; color: var(--accent); }
-.scene .cursor { left: 880px; top: 230px; width: 26px; height: 26px; opacity: 0; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)); }
+
+/* the dragged block and the pointer */
+.scene .ghost { z-index: 4; left: 0; top: 0; padding: 10px 16px; border-radius: 9px; border: 1px solid var(--accent); background: #2a2550; font-size: 13.5px; font-weight: 600; box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.8); opacity: 0; pointer-events: none; }
+.scene .cursor { z-index: 5; left: 0; top: 0; width: 26px; height: 26px; opacity: 0; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)); }
 
 /* what shows in each step (these are the still states: reduced motion stops here) */
-.scene .term { opacity: 0; pointer-events: none; }
 .scene[data-step="1"] .term { opacity: 1; }
-.scene[data-step="2"] .poll, .scene[data-step="3"] .poll { opacity: 1; }
+.scene[data-step="2"] .poll, .scene[data-step="3"] .poll,
+.scene[data-step="2"] .ring, .scene[data-step="3"] .ring { opacity: 1; }
 .scene[data-step="2"] .it.pick { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
-.scene[data-step="3"] .panel { opacity: 0; transform: translateX(24px); }
+.scene[data-step="3"] .rail { opacity: 0; transform: translateX(-30px); }
+.scene[data-step="3"] .panel { opacity: 0; transform: translateX(30px); }
+.scene[data-step="3"] .canvas { left: 0; right: 0; }
+.scene[data-step="3"] .slide { transform: translate(-170px, -36px) scale(1.2308); box-shadow: 0 40px 90px -30px rgba(110, 92, 240, 0.75); }
+.scene[data-step="3"] .onair { opacity: 1; transform: none; }
 .scene[data-step="3"] .phones { opacity: 1; transform: none; }
-.scene[data-step="3"] .count, .scene[data-step="3"] .opt b { opacity: 1; }
-.scene[data-step="3"] .bar i { width: var(--w); transition-delay: calc(1.7s + var(--k) * 0.3s); }
-.scene[data-step="3"] .phone .btn.t { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
-.scene[data-step="3"] .pres { box-shadow: 0 0 0 4px rgba(139, 123, 255, 0.35); }
+.scene[data-step="3"] .opt b { opacity: 1; transition-delay: 1.7s; }
+.scene[data-step="3"] .bar i { width: var(--w); transition-delay: calc(1.7s + var(--k) * 0.25s); }
+.scene[data-step="3"] .ring .arc { stroke-dashoffset: 8.9; transition-delay: 1.7s; }
+.scene[data-step="3"] .phone .btn.t { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, #10121d); color: var(--fg); }
 
 /* the movement */
-@keyframes up { from { opacity: 0; transform: translateY(10px); } }
-@keyframes pop { from { opacity: 0; transform: scale(0.82); } }
-@keyframes drop { from { opacity: 0; transform: translateY(-34px) scale(0.96); } }
-@keyframes away { to { opacity: 0; transform: translateY(-10px) scale(0.98); } }
-@keyframes tap { 0% { transform: scale(1); } 40% { transform: scale(0.92); } 100% { transform: scale(1); } }
+@keyframes up { from { opacity: 0; transform: translateY(12px); } }
+@keyframes pop { from { opacity: 0; transform: translateX(-10px) scale(0.94); } }
+@keyframes drop { from { opacity: 0; transform: translateY(-14px) scale(0.97); } }
+@keyframes away { to { opacity: 0; transform: translateY(-12px) scale(0.98); } }
+@keyframes type { from { width: 0; } }
+@keyframes caret { 50% { border-color: transparent; } }
+@keyframes tap { 0% { transform: scale(1); } 40% { transform: scale(0.93); } 100% { transform: scale(1); } }
+@keyframes ripple { 0% { opacity: 0.6; transform: scale(0.3); } 100% { opacity: 0; transform: scale(2.4); } }
 @keyframes flash { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 5px rgba(139, 123, 255, 0.35); } }
+@keyframes zone { 0%, 30% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
+/* the pointer and the block move together: grab the Poll item, drop it on the slide */
 @keyframes pointer {
-  0% { opacity: 0; left: 930px; top: 300px; transform: scale(1); }
-  12% { opacity: 1; left: 900px; top: 170px; }
-  36% { opacity: 1; left: 760px; top: 138px; transform: scale(1); }
-  42% { transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1); left: 760px; top: 138px; }
-  78% { opacity: 1; left: 560px; top: 330px; }
-  100% { opacity: 0; left: 540px; top: 340px; }
+  0% { opacity: 0; transform: translate(950px, 330px); }
+  10% { opacity: 1; }
+  34% { transform: translate(880px, 164px) scale(1); }
+  40% { transform: translate(880px, 164px) scale(0.82); }
+  46% { transform: translate(880px, 164px) scale(1); }
+  76% { opacity: 1; transform: translate(452px, 348px); }
+  86% { opacity: 1; transform: translate(452px, 348px); }
+  100% { opacity: 0; transform: translate(480px, 380px); }
 }
-.scene[data-step="1"] .term p { animation: up 0.45s calc(var(--d) * 1s) both; }
-.scene[data-step="1"] .term { animation: away 0.5s 4.6s forwards; }
-.scene[data-step="1"] .th { animation: pop 0.45s calc(3s + var(--i) * 0.4s) both; }
-.scene[data-step="1"] .slide { animation: up 0.6s 4s both; }
-.scene[data-step="2"] .poll { animation: drop 0.6s 2.4s both; }
-.scene[data-step="2"] .it.pick { animation: flash 0.5s 1.4s 1; }
-.scene[data-step="2"] .cursor { animation: pointer 2.8s 0.6s both; }
-.scene[data-step="3"] .phone .btn.t { animation: tap 0.5s calc(1.6s + var(--d) * 0.55s) both; }
-.scene[data-step="3"] .pres { animation: flash 1.2s 4.2s 2; }
+@keyframes carry {
+  0%, 40% { opacity: 0; transform: translate(838px, 145px) scale(1); }
+  46% { opacity: 1; transform: translate(838px, 145px) scale(1.04); }
+  76% { opacity: 1; transform: translate(410px, 329px) scale(1.04) rotate(-2deg); }
+  80%, 100% { opacity: 0; transform: translate(410px, 329px) scale(0.9); }
+}
+
+.scene[data-step="1"] .term { animation: away 0.45s 3.5s forwards; }
+.scene[data-step="1"] .term .you span { border-right: 2px solid var(--accent); animation: type 1.4s 0.4s steps(44) both, caret 0.7s 1.8s steps(1) 2; }
+.scene[data-step="1"] .term .ok { animation: up 0.45s calc(var(--d) * 1s) both; }
+.scene[data-step="1"] .th { animation: pop 0.45s calc(3.7s + var(--i) * 0.18s) both; }
+.scene[data-step="1"] .slide { animation: up 0.6s 4.3s both; }
+.scene[data-step="2"] .it.pick { animation: flash 0.5s 1.5s 1; }
+.scene[data-step="2"] .cursor { animation: pointer 3s 0.5s both; }
+.scene[data-step="2"] .ghost { animation: carry 3s 0.5s both; }
+.scene[data-step="2"] .drop { animation: zone 3s 0.5s both; }
+.scene[data-step="2"] .poll { animation: drop 0.55s 2.85s both; }
+.scene[data-step="2"] .ring { animation: drop 0.55s 3.05s both; }
+.scene[data-step="3"] .phone .btn.t { animation: tap 0.45s calc(1.5s + var(--d, 0) * 0.5s) both; }
+.scene[data-step="3"] .phone:nth-child(2) .btn.t { --d: 1; }
+.scene[data-step="3"] .phone .btn.t::after { animation: ripple 0.6s calc(1.5s + var(--d, 0) * 0.5s) both; }
+.scene[data-step="3"] .phone:nth-child(2) .btn.t::after { --d: 1; }
 
 /* the three steps under the animation */
 .demo-steps { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: #101114; }
