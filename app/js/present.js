@@ -417,7 +417,9 @@ function refresh() {
   });
   codeRanges(slideEl, state.step);
   countUp(slideEl, { still: STILL });
-  if (!STILL && !IN_PANEL) reactions.show((state.view.reactions || {}).recent);
+  // The shared screen and the presenter's preview both show them: the
+  // speaker should see the room react, whichever window they look at.
+  if (!STILL) reactions.show((state.view.reactions || {}).recent);
   state.mounted.forEach((m) => {
     if (!m.handle || !m.handle.update) return;
     m.handle.update(m.type === 'component' ? componentContext(m.spec) : context());
