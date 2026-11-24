@@ -28,6 +28,7 @@ A command line tool and a small web app for presentations where the audience tak
 | `docs/*.md` | The documentation. The single source of truth for the website's docs pages and `llms.txt` |
 | `docs/images/` | Screenshots used by the docs, the README and the landing page. Made by `scripts/screenshots.js` |
 | `site/` | The landing page, the website's shared CSS (`assets/site.css`), the landing's own CSS (`assets/home.css`), JS (including the light/dark toggle in `assets/site.js`) and `og.png`, the image shown when a link is shared |
+| `scripts/site/builtin.js` | One example for everything built in (blocks, layouts, charts, result looks, effects, inline marks) for the Examples page. `test/site-examples.test.js` fails when the registry gains something without an example |
 | `scripts/build-site.js` | Builds `_site/`: landing, docs, examples, playground, showcase, llms.txt, llms-full.txt, then checks every internal link |
 | `agents/quorum/` | The agent skill: `SKILL.md` (write, design and check a talk, build components) and `patterns.md` (slide patterns and choosing a theme) |
 | `test/` | Unit tests (`*.test.js`) and end-to-end tests (`e2e/`) |

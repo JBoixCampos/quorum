@@ -136,6 +136,24 @@ try {
   await demo.keyboard.press('ArrowRight');
   check('the static showcase still plays from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
 
+  // An example in its frame stays on its own slide.
+  const only = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  await only.goto(`${base}showcase/?slide=5&only=1`);
+  await until(async () => (await only.textContent('.q-slide')).includes('What makes the holes in bread?'));
+  for (const key of ['ArrowRight', 'ArrowRight', 'ArrowRight', 'End', 'PageDown']) await only.keyboard.press(key);
+  await only.mouse.click(1100, 400);
+  await only.waitForTimeout(600);
+  check('with only=1 no key or click leaves the slide', (await only.textContent('.q-slide')).includes('What makes the holes in bread?'));
+  await only.keyboard.press('Home');
+  await only.keyboard.press('ArrowLeft');
+  await only.waitForTimeout(300);
+  check('and going back does not leave it either', (await only.textContent('.q-slide')).includes('What makes the holes in bread?'));
+  const gallery = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  await gallery.goto(`${base}examples/`);
+  const frames = await gallery.locator('.screen iframe').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
+  check('every example frame asks for its one slide', frames.length > 3 && frames.every((src) => src.includes('only=1')));
+  await gallery.close();
+
   // quorum export: the slides without the audience parts.
   const exported = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   watch(exported, 'export');

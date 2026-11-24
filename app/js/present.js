@@ -13,6 +13,12 @@
 // Both accept:
 //
 //   ?slide=3                    start on that slide (counted from 0)
+//   ?only=1                     with ?slide=N: stay on that one slide. Its own
+//                               steps and interactions work, but no key or
+//                               click moves to another slide (embedded examples)
+//   ?play=1                     with ?only=1: open the slide's interaction after a
+//                               moment, so the simulated audience answers by itself
+//                               (play=reveal closes voting a few seconds later)
 //   ?playground=1               wait for Markdown from the page that embeds
 //                               it (same origin only) and render that instead
 
@@ -42,6 +48,8 @@ const NOSIM = params.get('nosim') === '1';
 const IN_PANEL = VIEW === 'panel';
 const PREVIEW = !!STATIC || !KEY;
 const PLAYGROUND = !!STATIC && params.get('playground') === '1';
+// One slide of a talk shown on its own, for the examples in the website.
+const ONLY = !!STATIC && params.get('only') === '1';
 // `quorum export`: the slides alone, with no audience at all.
 const AUDIENCE = !STATIC || STATIC.audience !== false;
 // Where the talk folder (images, components, fonts) is served.
@@ -500,12 +508,12 @@ export function next() {
     }
   }
   if (state.step < slide.steps - 1) go(state.index, state.step + 1);
-  else go(state.index + 1, 0);
+  else if (!ONLY) go(state.index + 1, 0);
 }
 
 export function previous() {
   if (state.step > 0) go(state.index, state.step - 1);
-  else if (state.index > 0) go(state.index - 1, state.talk.slides[state.index - 1].steps - 1);
+  else if (!ONLY && state.index > 0) go(state.index - 1, state.talk.slides[state.index - 1].steps - 1);
 }
 
 function syncFromServer() {
@@ -555,6 +563,7 @@ document.addEventListener('keydown', (e) => {
   const k = e.key;
   if (['ArrowRight', ' ', 'PageDown', 'Enter'].includes(k)) { e.preventDefault(); next(); }
   else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); previous(); }
+  else if (ONLY && (k === 'Home' || k === 'End')) return;
   else if (k === 'Home') go(0, 0);
   else if (k === 'End') go(state.talk.slides.length - 1, 0);
   else if (k === 'n' || k === 'N') { state.notes = !state.notes; paintNotes(); }
@@ -654,6 +663,11 @@ async function start() {
     if (STATIC && !STILL && params.has('slide')) {
       const n = Number(params.get('slide'));
       if (Number.isInteger(n)) go(Math.max(0, Math.min(n, talk.slides.length - 1)), 0);
+    }
+    if (ONLY && params.get('play')) {
+      setTimeout(() => { if (interactionVisible()) next(); }, 900);
+      // play=reveal closes voting a few seconds later, for results drawn at the end.
+      if (params.get('play') === 'reveal') setTimeout(() => { if (interactionVisible()) next(); }, 5200);
     }
     return;
   }
