@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { PRESETS } from '../shared/design.js';
+import { escapeHtml as esc } from '../shared/text.js';
 import { checkTalk } from './check.js';
 import { assemble, readTalk } from './load.js';
 import { cut, findSlide, slideText } from './repo.js';
@@ -56,7 +57,6 @@ export function candidatesFor(dir, file, talk, slide, { remixToo = true } = {}) 
   return { list, skipped, reason };
 }
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // The options for one slide: the slide as it is, then variants kept in
 // variants/, then Quorum's own remixes. Numbered from 1 in that order.

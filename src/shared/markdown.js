@@ -145,7 +145,7 @@ export function inline(text) {
 // --- front matter ------------------------------------------------------------
 
 // `key: value` lines. "key: value   # a comment": the comment is dropped.
-function keyValues(lines) {
+export function keyValues(lines) {
   const meta = {};
   lines.forEach((l) => {
     const m = l.match(/^\s*([A-Za-z][\w-]*)\s*:\s*(.*)$/);
@@ -357,7 +357,7 @@ function unquote(v) {
 
 // Splits the body into slides on lines that are exactly `---`, ignoring
 // those inside code fences.
-function splitSlides(lines) {
+export function splitSlides(lines) {
   const slides = [[]];
   let fence = null;
   lines.forEach((line, n) => {
@@ -1037,11 +1037,6 @@ function takeMedia(html) {
   return { html: html.slice(0, m.index) + html.slice(m.index + m[0].length), media: m[0] };
 }
 
-// Parses a whole talk. Returns { meta, slides, warnings }.
-//
-// options.readFile(path): reads a file in the talk folder (for theme files),
-// returning its text, or null when it does not exist. Only the quorum
-// command has one; in the browser theme files are already merged.
 // A slide id from its title: "Why bread rises!" becomes "why-bread-rises".
 export function slug(text) {
   return String(text || '')
@@ -1062,6 +1057,11 @@ function uniqueId(base, index, used) {
   return id;
 }
 
+// Parses a whole talk. Returns { meta, slides, warnings }.
+//
+// options.readFile(path): reads a file in the talk folder (for theme files),
+// returning its text, or null when it does not exist. Only the quorum
+// command has one; in the browser theme files are already merged.
 export function parseTalk(source, { readFile = null, sourceMap = false } = {}) {
   const warnings = [];
   const all = String(source).replace(/\r\n?/g, '\n').split('\n');

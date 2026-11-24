@@ -17,7 +17,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assemble, frontMatterOf } from './load.js';
-import { parseTalk, slug } from '../shared/markdown.js';
+import { parseTalk, slug, splitSlides } from '../shared/markdown.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -28,15 +28,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export function cut(source) {
   const lines = String(source).replace(/\r\n?/g, '\n').split('\n');
   const { head, body } = frontMatterOf(lines.join('\n'));
-  const slides = [[]];
-  let fence = null;
-  body.forEach((line) => {
-    const f = line.match(/^\s*(```+|~~~+)/);
-    if (f) fence = fence && line.trim().startsWith(fence) ? null : (fence || f[1]);
-    if (!fence && line.trim() === '---') slides.push([]);
-    else slides[slides.length - 1].push(line);
-  });
-  return { head, slides: slides.filter((s) => s.some((l) => l.trim() !== '')) };
+  return { head, slides: splitSlides(body).map((s) => s.map((l) => l.text)) };
 }
 
 const trimEnds = (lines) => {
@@ -214,7 +206,8 @@ const pad = (n) => String(n).padStart(3, '0');
 export function splitTalk(dir, file = 'talk.md', folder = 'slides') {
   const full = join(dir, file);
   const text = readFileSync(full, 'utf8');
-  if (frontMatterOf(text).meta.slides) throw new Error(`${file} is already split into ${frontMatterOf(text).meta.slides}.`);
+  const already = frontMatterOf(text).meta.slides;
+  if (already) throw new Error(`${file} is already split into ${already}.`);
   const { head, slides } = cut(text);
   const ids = parseTalk(text).slides.map((s) => s.id);
   if (ids.length !== slides.length) throw new Error('Could not match the slides to their ids. Run `quorum check` and fix the warnings first.');

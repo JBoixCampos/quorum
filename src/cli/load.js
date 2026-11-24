@@ -4,7 +4,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, normalize, resolve, sep } from 'node:path';
 
-import { parseTalk } from '../shared/markdown.js';
+import { keyValues, parseTalk } from '../shared/markdown.js';
 
 // Reads a file inside `dir`, or returns null (missing, or outside the folder).
 export function reader(dir) {
@@ -26,12 +26,7 @@ export function frontMatterOf(text) {
   if (lines[0] === undefined || lines[0].trim() !== '---') return { head: [], meta: {}, body: lines };
   const end = lines.findIndex((l, i) => i > 0 && l.trim() === '---');
   if (end < 0) return { head: [], meta: {}, body: lines };
-  const meta = {};
-  lines.slice(1, end).forEach((l) => {
-    const m = l.match(/^\s*([A-Za-z][\w-]*)\s*:\s*(.*)$/);
-    if (m) meta[m[1]] = m[2].replace(/\s+#\s.*$/, '').trim().replace(/^["']|["']$/g, '');
-  });
-  return { head: lines.slice(0, end + 1), meta, body: lines.slice(end + 1) };
+  return { head: lines.slice(0, end + 1), meta: keyValues(lines.slice(1, end)), body: lines.slice(end + 1) };
 }
 
 // The slide files of a split talk, in order: `order:` (a comma separated

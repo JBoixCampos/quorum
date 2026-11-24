@@ -3,7 +3,7 @@
 // before and after.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 
@@ -183,5 +183,3 @@ export async function diffPictures(dir, d, { out, file = 'talk.md' } = {}) {
 export function cleanup(d) {
   rmSync(d.tmp, { recursive: true, force: true });
 }
-
-export const _test = { moved, writeFileSync };

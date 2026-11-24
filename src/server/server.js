@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 import { readTalk, themeFile } from '../cli/load.js';
 import { Session, isDevice } from '../shared/session.js';
+import { readJson } from './http.js';
 import { createStudio } from './studio.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -161,26 +162,6 @@ export function startServer({
 
   const isPresenter = (req, url) => (req.headers['x-key'] || url.searchParams.get('key')) === KEY;
 
-  function readBody(req) {
-    return new Promise((done, failed) => {
-      let data = '';
-      req.on('data', (chunk) => {
-        data += chunk;
-        if (data.length > 30000) {
-          failed(new Error('Body too large'));
-          req.destroy();
-        }
-      });
-      req.on('end', () => {
-        try {
-          done(JSON.parse(data || '{}'));
-        } catch (error) {
-          failed(error);
-        }
-      });
-    });
-  }
-
   function wait(req, res, url) {
     const role = url.searchParams.get('role') || 'audience';
     const device = url.searchParams.get('d') || '';
@@ -207,7 +188,7 @@ export function startServer({
   async function action(req, res, url) {
     let body;
     try {
-      body = await readBody(req);
+      body = await readJson(req, 30000);
     } catch {
       return send(res, 400, { ok: false, error: 'Not a valid request.' });
     }

@@ -3,6 +3,8 @@
 // changes, or after 20 s, and we ask again. Works through tunnels and
 // proxies, which hold back open streams but not complete responses.
 
+import { escapeHtml } from '../shared/text.js';
+
 const sleep = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 export function connect({ role, key = '', device = '', onChange, onStatus }) {
@@ -90,14 +92,7 @@ export async function send(action, { key = '', device = '' } = {}) {
   }
 }
 
-export function esc(text) {
-  return String(text ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+export const esc = (text) => escapeHtml(text ?? '');
 
 // A stable random id for this phone, kept in the browser.
 export function deviceId() {

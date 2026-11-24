@@ -308,5 +308,3 @@ export function remix(text) {
   }
   return { variants: out };
 }
-
-export const _internal = { itemsOf, parseNumber };
