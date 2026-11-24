@@ -565,7 +565,7 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
 - [Showcase talk source](${BLOB}examples/showcase/talk.md): a theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
 - [Slide patterns](${BLOB}agents/quorum/patterns.md): proven slides to build a talk from, and how to choose a theme
-- [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
+- [Starter talk source](${BLOB}templates/starter/talk.md): the talk quorum new creates, the same as the showcase
 - [Branded talk source](${BLOB}examples/brand/talk.md): colours, logo, fonts and footer of its own
 
 ## Optional

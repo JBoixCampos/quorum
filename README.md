@@ -12,7 +12,7 @@ Start from a template, ask Claude Code or any coding agent for the talk you want
 
 | | Who | What happens |
 | --- | --- | --- |
-| **1. Start** | you | **[Use the template](https://github.com/JBoixCampos/quorum-talk/generate)** on GitHub, or `npx github:JBoixCampos/quorum new my-talk`. You get `talk.md`, instructions for agents and checks on every push |
+| **1. Start** | you | **[Use the template](https://github.com/JBoixCampos/quorum-talk/generate)** on GitHub, or `npx github:JBoixCampos/quorum new my-talk`. You get `talk.md` (a finished sample talk, "Why bread rises", to change or start over from), instructions for agents and checks on every push |
 | **2. Write** | your agent | Claude Code, Codex, Cursor or an agent in the cloud writes the slides, runs `quorum check` and fixes what it finds |
 | **3. Shape** | you, in Studio | Type on the slide, drag in polls and charts, try other layouts, ask your agent for alternatives |
 | **4. Give** | you, in Studio | **Present** opens a link and QR code for the room, the slides and your panel. **Export** writes an editable PowerPoint file |
