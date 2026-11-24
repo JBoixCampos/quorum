@@ -142,6 +142,21 @@ try {
   check('a second question gets its own slide', await until(async () => (await titles()).length === before + 1));
   check('undo puts it all back', await undoAll());
 
+  // the built-in components, from the library and with a form
+  await goTo('Four ingredients');
+  await libClick('qr');
+  check('the QR code component can be inserted', await until(() => file().includes('::: component qr\nurl: https://example.com\nlabel: Scan to open\n:::')));
+  await canvas.locator('.q-qr-figure').first().click();
+  const link = page.locator('.field', { has: page.locator('.label', { hasText: /^Link$/ }) }).locator('input');
+  await link.waitFor();
+  await link.fill('https://example.org/slides');
+  await link.press('Tab');
+  check('the component form rewrites its link', await until(() => file().includes('::: component qr\nurl: https://example.org/slides\nlabel: Scan to open\n:::')));
+  check('undo puts it back', await undoAll());
+  await libClick('embed');
+  check('the web page component can be inserted', await until(() => file().includes('::: component embed\nurl: https://example.com\n:::')));
+  check('undo puts it back', await undoAll());
+
   // drag a block from the library onto the slide
   await goTo('Four ingredients');
   await tab('insert');

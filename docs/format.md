@@ -258,7 +258,7 @@ url: https://example.com  # or a page in the talk folder: pages/chart.html
 :::
 ```
 
-`embed` shows a web page that allows being shown in a frame, or an HTML file from your talk folder, which works without internet. `quorum check` warns if that file is missing.
+`embed` shows a web page that allows being shown in a frame, or an HTML file from your talk folder, which works without internet. `quorum check` warns if that file is missing. [Components](components.md) lists their settings.
 
 A component can also ask the audience something with `audience:`:
 

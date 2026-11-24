@@ -1,6 +1,6 @@
 // End-to-end test of the website: builds it into a temporary folder, serves
 // it under /quorum/ (as GitHub Pages does) and drives the playground, the
-// demo and the docs in a headless browser. Needs Playwright.
+// showcase and the docs in a headless browser. Needs Playwright.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
@@ -128,13 +128,13 @@ try {
     && !(await page.inputValue('#try textarea')).includes('lunch'));
   await page.click('[data-pg-reset]');
 
-  // The demo opens on a given slide.
+  // The showcase opens on a given slide.
   const demo = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  watch(demo, 'demo');
-  await demo.goto(`${base}demo/?slide=3`);
-  check('?slide=3 opens the demo on its fourth slide', await until(async () => (await demo.textContent('.q-slide')).includes('When did ChatGPT come out?')));
+  watch(demo, 'showcase');
+  await demo.goto(`${base}showcase/?slide=5`);
+  check('?slide=5 opens the showcase on its sixth slide', await until(async () => (await demo.textContent('.q-slide')).includes('What makes the holes in bread?')));
   await demo.keyboard.press('ArrowRight');
-  check('the static demo still plays from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
+  check('the static showcase still plays from there', await until(async () => Number(await demo.textContent('.q-ring b')) > 2, 10000));
 
   // quorum export: the slides without the audience parts.
   const exported = await browser.newPage({ viewport: { width: 1280, height: 720 } });

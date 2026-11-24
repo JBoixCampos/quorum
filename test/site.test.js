@@ -35,9 +35,9 @@ test('docs renderer: lists, links and rewritten targets', () => {
 });
 
 test('docs renderer: build markers in HTML comments', () => {
-  const r = render('Before\n\n<!-- demo-slide: 4 -->\n\nAfter');
-  assert.deepEqual(r.blocks.filter((b) => typeof b !== 'string'), [{ marker: 'demo-slide', value: '4' }]);
-  assert.doesNotMatch(r.html, /demo-slide/);
+  const r = render('Before\n\n<!-- showcase-slide: 4 -->\n\nAfter');
+  assert.deepEqual(r.blocks.filter((b) => typeof b !== 'string'), [{ marker: 'showcase-slide', value: '4' }]);
+  assert.doesNotMatch(r.html, /showcase-slide/);
 });
 
 test('link checker finds missing files, anchors and absolute paths', () => {

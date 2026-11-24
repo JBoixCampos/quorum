@@ -47,7 +47,7 @@ Studio opens in your browser with the real slides.
 
 This is what your agent writes. Click the slide to open the vote, then again to close it and to reveal the answer.
 
-<!-- demo-slide: 4 -->
+<!-- showcase-slide: 6 -->
 
 ## Next
 

@@ -2,6 +2,33 @@
 
 Polls and questions cover a lot, but the best moments in a talk are often something nobody has built yet. A component is how you build it: one JavaScript file, no build step, no framework.
 
+## Components that come with Quorum
+
+Three components need no file. Use them with `::: component <name>`; `quorum schema --json` lists them too.
+
+| Component | What it does | Settings |
+| --- | --- | --- |
+| `countdown` | A countdown on the slide. Click it, or press the right arrow, to start and pause it. The time is shared, so your panel shows the same. | `seconds` (60 when left out) |
+| `qr` | A QR code for any link, drawn in the browser. | `url`, and `label` (a caption, optional) |
+| `embed` | Another web page inside the slide: an `https://` link (the site must allow being shown in a frame), or an HTML file in your talk folder, which works without internet. `quorum check` warns if that file is missing. | `url`, and `title` (optional) |
+
+```markdown
+::: component countdown
+seconds: 90
+:::
+
+::: component qr
+url: https://example.com/slides
+label: The slides
+:::
+
+::: component embed
+url: pages/chart.html
+:::
+```
+
+Each one runs live on the [examples page](https://jboixcampos.github.io/quorum/examples/#built-in). That page also has the components you can copy and change: [word-cloud.js](../examples/components/word-cloud.js), [next-word-explorer.js](../examples/components/next-word-explorer.js) and [counter.js](../templates/starter/components/counter.js), which every new talk includes. The rest of this page is about writing your own.
+
 ## The smallest component
 
 Create `components/hello.js` next to `talk.md`:

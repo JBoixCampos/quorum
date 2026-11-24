@@ -47,7 +47,7 @@ The form saves as you type. Lines of the block it does not know are kept as they
 
 ![The Insert tab: polls, quizzes, guesses, questions, charts, cards and pictures to drag onto a slide](images/studio-insert.png)
 
-The **Insert** tab holds what you can add, in three groups: what asks the audience (poll, quiz, several answers, guess a number, write together, questions, join code, countdown), text (heading, text, list, quote, callout, code) and visual blocks (picture, cards, steps, timeline, key figures, chart, compare). Components in your `components/` folder are listed too.
+The **Insert** tab holds what you can add, in three groups: what asks the audience (poll, quiz, several answers, guess a number, write together, questions, join code, countdown, QR code, web page), text (heading, text, list, quote, callout, code) and visual blocks (picture, cards, steps, timeline, key figures, chart, compare). Components in your `components/` folder are listed too. Select a countdown, QR code or web page on the slide and its settings appear as a form on the right.
 
 - **Click** one to add it to the end of the slide.
 - **Drag** one onto the slide to put it where you drop it, or onto the slide list to make a new slide with it.

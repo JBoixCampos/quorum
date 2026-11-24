@@ -4,7 +4,7 @@
 // after each change, so what you see is always what is on disk.
 
 import {
-  EDITORS, LIBRARY, LIBRARY_ITEMS, editorFor, inlineEditable, inlineToMarkdown, placeOnCanvas, readBlock,
+  COMPONENT_LABELS, EDITORS, LIBRARY, LIBRARY_ITEMS, editorFor, inlineEditable, inlineToMarkdown, placeOnCanvas, readBlock,
 } from './studio-blocks.js';
 import { attachCanvas } from './studio-canvas.js';
 import { icon } from './studio-icons.js';
@@ -290,6 +290,7 @@ function blockLabel(range, fallback) {
   const b = readBlock(sourceOf(range));
   if (!b) return fallback;
   if (b.name === 'poll' && /^\s*[-*+]\s+\[[xX]\]/m.test(b.body.join('\n'))) return 'Quiz';
+  if (b.name === 'component' && COMPONENT_LABELS[String(b.title).trim().toLowerCase()]) return COMPONENT_LABELS[String(b.title).trim().toLowerCase()];
   return BLOCK_LABELS[b.name] || fallback;
 }
 function named(info) {
@@ -631,7 +632,7 @@ function elementGroups(sel) {
   const top = sel.chain[0];
   const blockText = top ? sourceOf(top.range) : '';
   const block = readBlock(blockText);
-  const editor = block ? editorFor(block.name) : null;
+  const editor = block ? editorFor(block.name, block, S.state.schema.components) : null;
   if (editor) groups.push(blockEditor(editor, block, top.range, slide));
 
   if (sel.kind === 'image') {
@@ -695,7 +696,7 @@ function textIn(value, onInput, attrs = {}) {
 }
 
 function blockEditor(editor, block, start, slide) {
-  const model = editor.read(block);
+  const model = editor.read(block, S.state.schema.components);
   // The block's lines move as it grows or shrinks: keep track.
   let range = [...start];
   let timer = null;
@@ -760,6 +761,12 @@ function blockEditor(editor, block, start, slide) {
     rowRender.two = true;
     nodes.push(field('Items', listEditor(model.items, rowRender, () => save(true), 'Add an item', () => ({ label: '', detail: '' }))));
     nodes.push(h('label', { class: 'row' }, h('input', { type: 'checkbox', checked: model.steps, onchange: (e) => { model.steps = e.target.checked; save(true); } }), 'Show one item per click'));
+  } else if (editor === EDITORS.component) {
+    const spec = S.state.schema.components[model.name].params;
+    const labels = { seconds: 'Seconds', url: 'Link, or a file in the talk folder', label: 'Caption', title: 'Title for screen readers' };
+    Object.keys(model.values).forEach((key) => {
+      nodes.push(field(model.name === 'qr' && key === 'url' ? 'Link' : (labels[key] || key), textIn(model.values[key], (v, f) => { model.values[key] = v; changed(v, f); }, { placeholder: spec[key] })));
+    });
   } else if (editor === EDITORS.cards) {
     const cardRender = (row) => [h('div', { class: 'card-edit' },
       h('div', { class: 'row nowrap' }, textIn(row.title, (v, f) => { row.title = v; changed(v, f); }, { placeholder: 'Title' }), textIn(row.icon, (v, f) => { row.icon = v; changed(v, f); }, { placeholder: 'icon', style: 'width:90px', 'data-tip': '`quorum schema --icons` lists the names' })),
@@ -767,7 +774,7 @@ function blockEditor(editor, block, start, slide) {
     nodes.push(field(block.name === 'compare' ? 'Sides' : 'Cards', listEditor(model.cards, cardRender, () => save(true), block.name === 'compare' ? 'Add a side' : 'Add a card', () => ({ title: '', icon: '', text: '', level: 3, extra: '' }))));
     if (block.name === 'cards') nodes.push(h('label', { class: 'row' }, h('input', { type: 'checkbox', checked: model.steps, onchange: (e) => { model.steps = e.target.checked; save(true); } }), 'Show one card per click'));
   }
-  return group(h('span', {}, editor === EDITORS.items ? { kpis: 'Key figures', timeline: 'Timeline', steps: 'Steps' }[block.name] : (block.name === 'multi' ? 'Several answers' : (block.name === 'compare' ? 'Compare' : editor.label)), ' ', h('span', { class: 'muted' }, 'saved as you type')), ...nodes);
+  return group(h('span', {}, editor === EDITORS.items ? { kpis: 'Key figures', timeline: 'Timeline', steps: 'Steps' }[block.name] : (block.name === 'multi' ? 'Several answers' : (block.name === 'compare' ? 'Compare' : (editor === EDITORS.component ? COMPONENT_LABELS[model.name] : editor.label))), ' ', h('span', { class: 'muted' }, 'saved as you type')), ...nodes);
 }
 
 // --- the slide's own settings ----------------------------------------------------------------------

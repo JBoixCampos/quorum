@@ -6,8 +6,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  EDITORS, LIBRARY, editorFor, inlineEditable, placeOnCanvas, readBlock,
+  COMPONENT_LABELS, EDITORS, LIBRARY, editorFor, inlineEditable, placeOnCanvas, readBlock,
 } from '../app/js/studio-blocks.js';
+import { COMPONENTS } from '../src/shared/design.js';
 import { parseTalk } from '../src/shared/markdown.js';
 
 const round = (text) => {
@@ -89,6 +90,32 @@ test('every block in the Insert library parses without warnings', () => {
     assert.deepEqual(talk.warnings, [], item.id);
     assert.equal(talk.slides.length, 1, item.id);
   });
+});
+
+test('the Insert library has every built-in component, each with a form', () => {
+  const items = LIBRARY.flatMap((g) => g.items);
+  Object.keys(COMPONENTS).forEach((name) => {
+    const item = items.find((i) => i.id === name);
+    assert.ok(item, `${name} is in the Insert library`);
+    assert.ok(item.text.startsWith(`::: component ${name}\n`), name);
+    assert.ok(COMPONENT_LABELS[name], `${name} has a label`);
+    const b = readBlock(item.text);
+    assert.equal(editorFor(b.name, b, COMPONENTS), EDITORS.component, name);
+  });
+});
+
+test('a built-in component form keeps what it does not know', () => {
+  const text = '::: component qr {#code}\nurl: https://example.com\nlabel: Hi\nsome text\n:::';
+  const b = readBlock(text);
+  const e = editorFor(b.name, b, COMPONENTS);
+  const m = e.read(b, COMPONENTS);
+  assert.deepEqual(m.values, { url: 'https://example.com', label: 'Hi' });
+  assert.equal(e.write(b, m), text);
+  m.values.url = 'https://example.org';
+  m.values.label = '';
+  assert.equal(e.write(b, m), '::: component qr {#code}\nurl: https://example.org\nsome text\n:::');
+  const own = readBlock('::: component word-cloud\n:::');
+  assert.equal(editorFor(own.name, own, COMPONENTS), null, 'your own components have no form');
 });
 
 test('a block dropped on a canvas slide gets a position', () => {
