@@ -202,7 +202,27 @@ export const BLOCKS = {
   rounds: 'The same question over several items.',
   sentence: 'The audience writes a sentence one word at a time.',
   questions: 'Questions from the audience, with votes.',
-  component: 'A JavaScript component from components/<name>.js, or a built-in one (countdown, qr, embed).',
+  component: 'A JavaScript component from components/<name>.js, or a built-in one (see `components` in the schema).',
+};
+
+// Components that ship with Quorum (app/js/components.js draws them):
+// `::: component <name>`. Anything else is a file in components/.
+export const COMPONENTS = {
+  countdown: {
+    about: 'A countdown on the slide. Click it, or press the right arrow, to start and pause it. The time is shared, so your panel shows the same.',
+    params: { seconds: 'How long it counts down, in seconds (60 when left out).' },
+    example: '::: component countdown\nseconds: 90\n:::',
+  },
+  qr: {
+    about: 'A QR code for any link, for example to your slides or a survey. It is drawn in the browser, with no request to any service.',
+    params: { url: 'The link the code opens.', label: 'A caption under the code (optional).' },
+    example: '::: component qr\nurl: https://example.com/slides\nlabel: The slides\n:::',
+  },
+  embed: {
+    about: 'Another web page inside the slide: an `https://` link (the site must allow being shown in a frame), or an HTML file in your talk folder, which works without internet.',
+    params: { url: 'An https:// link, or a path to an HTML file in the talk folder.', title: 'A title for screen readers (optional).' },
+    example: '::: component embed\nurl: pages/chart.html\n:::',
+  },
 };
 
 export const CHART_TYPES = ['bar', 'column', 'line', 'donut', 'pictogram'];
@@ -284,6 +304,7 @@ export function schema() {
     brand: BRAND_KEYS,
     layouts: LAYOUTS,
     blocks: BLOCKS,
+    components: COMPONENTS,
     chartTypes: CHART_TYPES,
     resultStyles: RESULT_STYLES,
     classes: CLASSES,

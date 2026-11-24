@@ -125,6 +125,8 @@ there: was | lived
 
 ## Writing a component
 
+Three components need no file: `countdown` (`seconds:`), `qr` (`url:`, `label:`) and `embed` (`url:`, an https link or an HTML file in this folder). For anything else:
+
 A component is `components/<name>.js`, used as `::: component <name>`. The `key: value` lines become `ctx.params`. Add `audience:` (`text`, `number`, `choice` or `choices`) and phones get an input; the answers arrive in `ctx.answers.values` (and `ctx.answers.counts` for choices).
 
 ```markdown

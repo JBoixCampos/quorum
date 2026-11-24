@@ -24,7 +24,7 @@ Plan first: how long the talk is (`duration:` in the front matter, in minutes), 
 - An `::: estimate` with a reveal must use a well-known, verifiable fact, with its source in the reveal text. Never invent numbers.
 - Put what the speaker should say and press in `::: notes`.
 - End with `::: questions` and a closing slide.
-- For anything the blocks do not cover, write a component in `components/<name>.js` (see the `AGENTS.md` in the talk folder). Use `audience:` to give phones an input.
+- Three components need no file: `countdown`, `qr` and `embed` (`quorum schema --json` lists their settings). For anything the blocks and those do not cover, write a component in `components/<name>.js` (see the `AGENTS.md` in the talk folder). Use `audience:` to give phones an input.
 
 ## 3. Design
 

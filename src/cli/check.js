@@ -5,11 +5,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { COMPONENTS } from '../shared/design.js';
 import { designCheck } from './design-check.js';
 import { readTalk } from './load.js';
 
-// Components that ship with Quorum (app/js/components.js).
-export const BUILT_IN_COMPONENTS = ['countdown', 'qr', 'embed'];
+// Components that ship with Quorum (COMPONENTS in design.js).
+export const BUILT_IN_COMPONENTS = Object.keys(COMPONENTS);
 
 export function checkTalk(dir, file = 'talk.md') {
   const path = join(dir, file);

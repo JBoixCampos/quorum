@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { COMPONENTS } from '../src/shared/design.js';
 import { checkLinks } from './site/links.js';
 import { escapeHtml, firstParagraph, inline, render } from './site/markdown.js';
 
@@ -44,8 +45,8 @@ const DOCS = [
 ];
 
 // Components the playground can render: they are in the showcase build.
-const BUILT_IN = ['countdown', 'qr'];
-const PLAYABLE = new Set([...BUILT_IN, 'word-cloud', 'counter']);
+// (embed needs a page from the talk folder, so it is not one of them.)
+const PLAYABLE = new Set(['countdown', 'qr', 'word-cloud', 'counter']);
 
 // --- paths ------------------------------------------------------------------
 
@@ -385,11 +386,12 @@ function exampleCard(from, { name, file, markdown, tag, slide }) {
     </article>`;
 }
 
-const BUILT_IN_DOCS = [
-  { name: 'countdown', markdown: 'A countdown on the slide. Click it, or press the right arrow, to start and pause it. The time is shared, so your panel shows the same.\n\n```markdown\n::: component countdown\nseconds: 90\n:::\n```' },
-  { name: 'qr', markdown: `A QR code for any link, for example to your slides or a survey.\n\n\`\`\`markdown\n::: component qr\nurl: ${SITE_URL}\nlabel: This website\n:::\n\`\`\`` },
-  { name: 'embed', markdown: 'Another web page inside the slide: an `https://` link (the site must allow being shown in a frame), or an HTML file in your talk folder, which works without internet.\n\n```markdown\n::: component embed\nurl: pages/chart.html\n:::\n```' },
-];
+// The built-in components come from the registry (src/shared/design.js). The
+// QR example points at this website, so the live slide can be scanned.
+const BUILT_IN_DOCS = Object.entries(COMPONENTS).map(([name, c]) => {
+  const example = name === 'qr' ? `::: component qr\nurl: ${SITE_URL}\nlabel: This website\n:::` : c.example;
+  return { name, markdown: `${c.about}\n\n\`\`\`markdown\n${example}\n\`\`\`` };
+});
 
 // What each live example needs beyond its usage block: the slide's
 // Markdown when it differs, and the line under the slide.
