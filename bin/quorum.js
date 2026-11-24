@@ -432,6 +432,21 @@ ${url ? `People on the same network can still join at ${url}. ` : ''}Votes are s
   }, 25000);
 }
 
+// Copies a talk folder's files into `dest`, one entry at a time, leaving
+// out hidden files, session data, dependencies and `out` itself. The
+// output is usually inside the talk folder (dist/, or build/ in CI), and
+// a single cpSync of the whole folder refuses to copy it into itself.
+const NOT_COPIED = ['dist', 'export', 'node_modules', 'variants'];
+function copyTalkFiles(src, dest, out) {
+  mkdirSync(dest, { recursive: true });
+  readdirSync(src, { withFileTypes: true }).forEach((entry) => {
+    const from = join(src, entry.name);
+    if (entry.name.startsWith('.') || NOT_COPIED.includes(entry.name) || resolve(from) === out) return;
+    if (entry.isDirectory()) copyTalkFiles(from, join(dest, entry.name), out);
+    else cpSync(from, join(dest, entry.name));
+  });
+}
+
 // A static site of the talk. With `audience`, a simulated room plays the
 // interactions (quorum build); without, only the other slides are kept
 // (quorum export), for when nobody can join.
@@ -449,14 +464,7 @@ function buildStatic(args, { audience = true } = {}) {
   cpSync(join(ROOT, 'app', 'favicon.svg'), join(out, 'favicon.svg'));
   cpSync(join(ROOT, 'src', 'shared'), join(out, 'shared'), { recursive: true });
   // The talk's own files (images, components), without session data.
-  cpSync(dir, join(out, 'talk'), {
-    recursive: true,
-    filter: (src) => {
-      const name = basename(src);
-      return !name.startsWith('.') && resolve(src) !== out
-        && !['dist', 'export', 'node_modules', 'variants', '.github'].includes(name);
-    },
-  });
+  copyTalkFiles(dir, join(out, 'talk'), out);
   writeFileSync(join(out, 'talk.json'), JSON.stringify({ ...talk, version: 1 }));
   writeFileSync(join(out, 'static-config.js'),
     `window.QUORUM_STATIC = { talk: 'talk.json', assets: 'talk/', components: 'talk/components/', audience: ${audience} };\n`);
