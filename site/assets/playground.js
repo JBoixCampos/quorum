@@ -9,6 +9,9 @@
 // simulated audience, so voting works. Optional attributes:
 //   data-persist="key"   keep the draft in this browser
 //   data-hash            read a starting draft from #md=... in the address
+//
+// A <button data-try="poll"> anywhere on the page replaces the draft of the
+// first playground with that chip's block and scrolls to it.
 
 const CHIPS = [
   ['Title', 'title', '<!-- layout: center -->\n\n# My talk\n\nA subtitle, or your name.'],
@@ -191,6 +194,19 @@ function setup(root) {
     send();
   });
 
+  // Shows one block on its own, for the buttons outside the playground.
+  const load = (name) => {
+    const chip = CHIPS.find((c) => c[1] === name);
+    if (!chip) return;
+    textarea.value = `${chip[2]}\n`;
+    if (persist) store(persist, textarea.value);
+    send();
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    root.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(0, 0);
+  };
+
   tools.addEventListener('click', (e) => {
     if (e.target.closest('[data-pg-reset]')) {
       textarea.value = initial;
@@ -205,6 +221,15 @@ function setup(root) {
       }, () => {});
     }
   });
+
+  return load;
 }
 
-document.querySelectorAll('[data-playground]').forEach(setup);
+const loaders = [...document.querySelectorAll('[data-playground]')].map(setup);
+
+if (loaders.length) {
+  document.querySelectorAll('[data-try]').forEach((button) => {
+    button.hidden = false;
+    button.addEventListener('click', () => loaders[0](button.dataset.try));
+  });
+}
