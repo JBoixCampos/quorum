@@ -57,7 +57,10 @@ if (root) {
     count();
   }
 
-  // A short fade between steps, so things do not snap.
+  // The scene is hidden while it changes step, and while hidden it jumps to the
+  // new step with every transition and animation switched off. Otherwise the
+  // new step would play its transitions from the old step's layout (panels
+  // sliding back, the slide shrinking) as it fades in, which looks like a blink.
   function go(n, quick = false) {
     clearTimeout(timer);
     if (STILL || quick) {
@@ -65,12 +68,15 @@ if (root) {
     } else {
       view.classList.add('fade');
       setTimeout(() => {
+        scene.classList.add('reset');
         show(n);
+        void scene.offsetWidth; // apply the new step with no transitions
+        scene.classList.remove('reset');
         view.classList.remove('fade');
-      }, 220);
+      }, 260);
     }
     if (!STILL) {
-      timer = setTimeout(() => go(n === 3 ? 1 : n + 1), DURATIONS[n - 1] + 220);
+      timer = setTimeout(() => go(n === 3 ? 1 : n + 1), DURATIONS[n - 1] + 260);
     }
   }
 

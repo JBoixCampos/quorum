@@ -121,7 +121,9 @@ const estimate = {
       const g = Math.sqrt(-2 * Math.log(Math.random() || 1e-9)) * Math.cos(2 * Math.PI * Math.random());
       return Math.min(spec.max, Math.max(spec.min, Math.round(target * Math.exp(g * 1.5 - 0.4))));
     }
-    const spread = Math.max(1, Math.abs(target) * 0.0015);
+    // About a tenth of the answer, but never more than a twelfth of the range, so
+    // the guesses spread out enough to draw but stay believable.
+    const spread = Math.max(1, Math.min(Math.abs(target) * 0.1, (spec.max - spec.min) / 12));
     const v = Math.round(target - spread + (Math.random() + Math.random() + Math.random() - 1.5) * spread * 2);
     return Math.min(spec.max, Math.max(spec.min, v));
   },

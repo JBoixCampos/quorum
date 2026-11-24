@@ -108,6 +108,19 @@ export function countUp(root, { still = false } = {}) {
   });
 }
 
+// How far a count-up is, from 0 to 1. The time of an animation frame can be a
+// few milliseconds earlier than the moment the count started, so it is
+// clamped: without that the first frame shows a negative number (huge, for a
+// target in the millions).
+export function progress(elapsed, ms) {
+  return Math.min(1, Math.max(0, elapsed / ms));
+}
+
+// The number shown a fraction `t` of the way through a count-up.
+export function countValue(to, t) {
+  return to * (1 - (1 - t) ** 3);
+}
+
 // Counts the first number in el's text up to `to`.
 export function animateNumber(el, to, { ms = 1100 } = {}) {
   const html = el.innerHTML;
@@ -119,9 +132,8 @@ export function animateNumber(el, to, { ms = 1100 } = {}) {
   const before = html.slice(0, m.index);
   const after = html.slice(m.index + m[0].length);
   const tick = (now) => {
-    const t = Math.min(1, (now - start) / ms);
-    const eased = 1 - (1 - t) ** 3;
-    const v = to * eased;
+    const t = progress(now - start, ms);
+    const v = countValue(to, t);
     const text = v.toLocaleString('en', { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: grouped });
     el.innerHTML = `${before}${text}${after}`;
     if (t < 1 && el.isConnected) requestAnimationFrame(tick);

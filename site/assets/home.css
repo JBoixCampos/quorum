@@ -68,13 +68,15 @@ body.home { overflow-x: clip; }
 
 /* --- a statement ------------------------------------------------------------------------ */
 .thesis { background: var(--paper); border-top: 1px solid var(--ink); }
-.thesis h2 { max-width: 17ch; font-size: clamp(40px, 6.6vw, 104px); line-height: 0.94; letter-spacing: -0.05em; font-weight: 500; }
+.thesis-grid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: 32px 72px; align-items: end; }
+.thesis h2 { max-width: 14ch; font-size: clamp(40px, 6.2vw, 96px); line-height: 0.94; letter-spacing: -0.05em; font-weight: 500; }
 .thesis h2 em { font-style: normal; color: var(--signal-text); }
-.thesis-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 26em)); gap: 48px; margin-top: 64px; margin-left: auto; margin-right: 0; justify-content: end; }
-.thesis-cols p { margin: 0; font-size: 18px; }
-.facts { display: flex; flex-wrap: wrap; margin: 72px 0 0; border-top: 1px solid var(--rule-2); font: 400 13.5px/1 var(--mono); }
-.facts span { padding: 18px 28px 0 0; margin-right: 28px; color: var(--muted); }
-.facts span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 10px; border-radius: 50%; background: var(--signal); vertical-align: 1px; }
+.thesis-cols { display: grid; gap: 20px; padding-bottom: 8px; }
+.thesis-cols p { margin: 0; font-size: 17px; }
+.facts { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 80px 0 0; padding: 0; border-top: 1px solid var(--ink); font: 400 13.5px/1.4 var(--mono); }
+.facts li { padding: 16px 16px 16px 0; color: var(--muted); }
+.facts li + li { padding-left: 20px; border-left: 1px solid var(--rule-2); }
+.facts li::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 10px; border-radius: 50%; background: var(--signal); vertical-align: 1px; }
 
 /* --- the chapters: agent, Studio, present ------------------------------------------------- */
 .chapter { display: grid; gap: 48px 72px; margin-top: 120px; }
@@ -100,13 +102,12 @@ body.home { overflow-x: clip; }
 .terminal.typing [data-line] { opacity: 0; transform: translateY(4px); transition: opacity 0.35s, transform 0.35s; }
 .terminal.typing [data-line].shown { opacity: 1; transform: none; }
 
-/* 02: a narrow text column, and Studio bleeding off the right edge of the page */
+/* 02: a narrow text column, and Studio beside it */
 .c-studio { grid-template-columns: minmax(0, 3.6fr) minmax(0, 9fr); align-items: start; }
 .c-studio .text { padding-top: 12px; }
 .ticks { list-style: none; margin: 28px 0 0; padding: 0; border-top: 1px solid var(--ink); }
 .ticks li { padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
 .ticks li::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 12px; border-radius: 50%; background: var(--signal); vertical-align: 1px; }
-.shot.bleed { margin-right: calc(50% - 50vw + 0px); margin-right: min(0px, calc((min(var(--w), 100vw - var(--gutter) * 2) - 100vw) / 2)); border-right: 0; }
 
 /* 03: the presenter view, full width, with its text set in columns above it */
 .c-present { grid-template-columns: minmax(0, 1fr); gap: 48px; }
@@ -128,8 +129,12 @@ body.home { overflow-x: clip; }
 .room { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 24px; align-items: start; }
 .room figure { margin: 0; }
 .room img { display: block; width: 100%; height: auto; }
-.room-screen { grid-column: 1 / span 9; grid-row: 1; border: 1px solid var(--dark-rule); }
-.room-phone { grid-column: 9 / span 4; grid-row: 1; margin-top: 18%; z-index: 1; border: 1px solid var(--dark-rule); outline: 12px solid var(--dark); }
+.room-screen { grid-column: 1 / span 9; grid-row: 1; }
+.room-screen img { border: 1px solid var(--dark-rule); }
+.room-phone { grid-column: 9 / span 4; grid-row: 1; margin-top: 18%; z-index: 1; }
+.room-phone img { border: 1px solid var(--dark-rule); outline: 12px solid var(--dark); }
+.room figcaption { margin-top: 14px; font: 400 13px/1.3 var(--mono); color: var(--on-dark-2); }
+.room-phone figcaption { margin-top: 26px; }
 .flow { list-style: none; margin: 96px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; counter-reset: none; }
 .flow li { padding-top: 16px; border-top: 1px solid var(--on-dark-2); }
 .flow .n { display: block; margin-bottom: 36px; font: 400 13px/1 var(--mono); color: var(--q-signal-bright); }
@@ -150,11 +155,12 @@ body.home { overflow-x: clip; }
 .kinds .button { justify-self: end; padding: 8px 14px; font-size: 14px; }
 
 /* --- why: three columns divided by rules --------------------------------------------------------------- */
-.why { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
-.why > div { padding: 28px 32px 8px 0; }
-.why > div + div { padding-left: 32px; border-left: 1px solid var(--rule-2); }
-.why .label { margin: 0 0 18px; font: 500 28px/1.1 var(--display); letter-spacing: -0.03em; }
-.why p:not(.label) { color: var(--prose); font-size: 16.5px; }
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.why > div { padding: 32px 48px 36px 0; border-bottom: 1px solid var(--rule-2); }
+.why > div:nth-child(even) { padding-left: 48px; padding-right: 0; border-left: 1px solid var(--rule-2); }
+.why > div:nth-last-child(-n + 2) { border-bottom: 0; }
+.why .label { margin: 0 0 16px; font: 500 28px/1.1 var(--display); letter-spacing: -0.03em; }
+.why p:not(.label) { margin: 0; color: var(--prose); font-size: 16.5px; max-width: 34em; }
 
 /* --- getting started -------------------------------------------------------------------------------------- */
 .startsteps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); }
@@ -170,10 +176,13 @@ body.home { overflow-x: clip; }
 /* --- narrow screens -------------------------------------------------------------------------------------------- */
 @media (max-width: 1100px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: start; }
+  .thesis-grid { grid-template-columns: minmax(0, 1fr); }
+  .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 8px; }
+  .facts li { padding-bottom: 8px; }
+  .facts li:nth-child(3n + 1) { padding-left: 0; border-left: 0; }
   .tally { max-width: 460px; }
   .c-agent, .c-studio { grid-template-columns: minmax(0, 1fr); }
   .c-agent { align-items: start; }
-  .shot.bleed { margin-right: 0; border-right: 1px solid var(--edge); }
   .c-present .text { display: block; }
   .c-present h3 { margin-bottom: 22px; }
   .c-present .text p { margin: 0 0 16px; }
@@ -186,14 +195,22 @@ body.home { overflow-x: clip; }
   .home section { padding: 80px 0; }
   .section-head { grid-template-columns: minmax(0, 1fr); gap: 24px; margin-bottom: 48px; }
   .hero { padding-top: 40px; }
-  .thesis-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 40px; }
-  .facts span { padding-right: 0; margin-right: 22px; }
+  .facts { margin-top: 48px; }
   .chapter { margin-top: 80px; gap: 32px; }
   .why, .startsteps { grid-template-columns: minmax(0, 1fr); }
-  .why > div, .startsteps li { padding: 24px 0 12px; }
-  .why > div + div, .startsteps li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule-2); }
-  .room-screen { grid-column: 1 / -1; }
-  .room-phone { grid-column: 7 / span 6; margin-top: -14%; outline-width: 8px; }
+  .why > div, .why > div:nth-child(even), .startsteps li { padding: 24px 0 12px; border-left: 0; }
+  .why > div { border-bottom: 1px solid var(--rule-2); }
+  .why > div:last-child { border-bottom: 0; }
+  .startsteps li + li { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule-2); }
+  /* On a phone the screenshot of the big screen is too small to read next to the
+     page, so it goes full width and the phone comes first at a readable size. */
+  .room { display: flex; flex-direction: column; gap: 40px; }
+  .room-phone { order: -1; align-self: center; width: min(78%, 320px); margin-top: 0; }
+  .room-phone img { outline: 0; }
+  .room-screen { margin-inline: calc(var(--gutter) * -1); }
+  .room-screen img { border-inline: 0; }
+  .room-screen figcaption { margin-left: var(--gutter); }
+  .room-phone figcaption { margin-top: 14px; text-align: center; }
   .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 64px; }
   .flow li:last-child { grid-column: 1 / -1; }
 }
@@ -205,7 +222,6 @@ body.home { overflow-x: clip; }
   .kinds li { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 22px 0; }
   .kinds li p, .kinds .button { grid-column: 1; grid-row: auto; justify-self: start; }
   .kinds .i { display: none; }
-  .room-phone { grid-column: 5 / span 8; }
   .flow { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .flow .n { margin-bottom: 14px; }
   .window .cap { font-size: 12px; }
@@ -224,8 +240,9 @@ body.home { overflow-x: clip; }
    Step 3: the talk is presented: the slide fills the screen and phones vote. */
 .scene { --fg: #ececef; --fg-2: #b5b8c0; --muted: #8a8e98; --faint: #7a7e88; --line: #2a2d33; --line-2: #363a42; --raise: #1e2025; --raise-2: #262930; --accent: #f26e4e; --accent-2: #c8401f; --accent-soft: rgba(242, 110, 78, 0.14); --display: 'Space Grotesk', 'Inter', sans-serif; }
 .demo { background: #0b0c0e; }
-.demo-view { position: relative; overflow: hidden; transition: opacity 0.22s; }
-.demo-view.fade { opacity: 0; }
+.demo-view { position: relative; overflow: hidden; transition: opacity 0.34s ease; }
+.demo-view.fade { opacity: 0; transition-duration: 0.26s; }
+.scene.reset, .scene.reset * { transition: none !important; animation: none !important; }
 .scene { position: absolute; left: 0; top: 0; width: 1000px; height: 560px; transform-origin: 0 0; text-align: left; font-size: 14px; line-height: 1.4; color: var(--fg); }
 .scene > * { position: absolute; }
 .scene p, .scene h4 { margin: 0; }

@@ -285,6 +285,8 @@ pre[data-ranges] .q-line.on { opacity: 1; background: color-mix(in srgb, var(--a
 .q-step.fx-highlight.shown { animation: q-highlight 1.2s var(--ease); border-radius: calc(var(--radius) * 0.5); }
 @keyframes q-highlight { 0% { background: color-mix(in srgb, var(--accent) 35%, transparent); } 100% { background: transparent; } }
 .q-step.shown.fx-blur { filter: none; }
+/* The start position of fly, zoom and drop must not outlive the step's arrival. */
+.q-step.shown.fx-fly, .q-step.shown.fx-zoom, .q-step.shown.fx-drop { transform: none; }
 .q-step.fx-highlight:not(.shown) { opacity: 0.25; }
 
 .q-leaving { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
