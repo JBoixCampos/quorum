@@ -274,7 +274,13 @@ prompt: One word
     await screen.evaluate((i) => window.quorum.go(i, 0), slides.findIndex((s) => s.interaction && s.interaction.chart === 'donut'));
     check('showcase: a poll can draw its results as a donut', await until(() => screen.$('[data-slide] .q-donut')));
 
-    // Reactions: a phone sends one, the screen shows it floating.
+    // Reactions: a phone sends one, the screen and the panel show it floating.
+    const showPanel = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+    showPages.push(showPanel);
+    showPanel.on('pageerror', (e) => errors.push(`showcase panel: ${e.message}`));
+    await showPanel.goto(`${showBase}/panel?key=showkey`);
+    const panelPreview = showPanel.frameLocator('[data-preview]');
+    await until(async () => (await panelPreview.locator('[data-slide]').count()) > 0);
     const phone = await browser.newPage({ viewport: { width: 390, height: 700 } });
     showPages.push(phone);
     phone.on('pageerror', (e) => errors.push(`showcase phone: ${e.message}`));
@@ -282,6 +288,7 @@ prompt: One word
     check('showcase: phones show the reactions', await until(async () => (await phone.$$('[data-react]')).length === 4));
     await phone.click('[data-react="👏"]');
     check('showcase: a reaction floats up on the screen', await until(async () => (await screen.textContent('[data-reactions]')).includes('👏')));
+    check('showcase: and in the preview of the presenter\'s panel', await until(async () => (await panelPreview.locator('[data-reactions]').textContent()).includes('👏')));
     check('showcase: phones use the palette for options', await phone.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--series-2').trim() === '#22d3ee'));
   } finally {
     await Promise.all(showPages.map((p) => p.close()));
