@@ -2,13 +2,9 @@
 // docs/*.md uses: headings, paragraphs, lists, tables, fenced code, inline
 // code, images, links, bold and emphasis. It has no dependencies on purpose.
 
-export function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+import { escapeHtml } from '../../src/shared/text.js';
+
+export { escapeHtml };
 
 export function slugify(text) {
   return String(text)

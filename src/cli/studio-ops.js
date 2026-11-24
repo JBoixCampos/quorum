@@ -13,8 +13,9 @@ import {
 import { dirname, join } from 'node:path';
 
 import { CLASSES } from '../shared/design.js';
-import { parseAttrs, parseTalk, slug } from '../shared/markdown.js';
+import { parseAttrs, slug } from '../shared/markdown.js';
 import { assemble, frontMatterOf, readTalk } from './load.js';
+import { cut } from './repo.js';
 
 const LIST_ITEM = /^\s*([-*+]|\d+[.)])\s+/;
 const DIRECTIVE = /^\s*(:{3,})\s*([a-z][\w-]*)?/i;
@@ -336,7 +337,7 @@ const OPS = {
     const slide = this.slideById(talk, op.slide);
     const text = String(op.text || '').replace(/\r\n?/g, '\n').replace(/^\n+|\n+$/g, '');
     if (!text) fail('A slide cannot be empty. Delete it instead.');
-    if (/^\s*---\s*$/m.test(text) && parseTalk(text).slides.length !== 1) fail('A slide cannot contain a line that is only "---": that would be two slides.');
+    if (cut(text).slides.length !== 1) fail('A slide cannot contain a line that is only "---": that would be two slides.');
     if (talk.split) {
       tx.write(slide.file, `${text}\n`);
     } else {
@@ -500,7 +501,7 @@ const OPS = {
   'insert-slide'(tx, op, talk) {
     const text = String(op.text || '').replace(/\r\n?/g, '\n').replace(/^\n+|\n+$/g, '');
     if (!text) fail('A slide cannot be empty.');
-    if (parseTalk(text).slides.length !== 1) fail('That is more than one slide.');
+    if (cut(text).slides.length !== 1) fail('That is more than one slide.');
     const after = op.after ? this.slideById(talk, op.after) : null;
     if (talk.split) {
       this.insertFile(tx, talk, after, text);

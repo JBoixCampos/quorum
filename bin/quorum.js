@@ -53,7 +53,9 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a.startsWith('--')) {
-      const [k, v] = a.slice(2).split('=');
+      const at = a.indexOf('=');
+      const k = at < 0 ? a.slice(2) : a.slice(2, at);
+      const v = at < 0 ? undefined : a.slice(at + 1);
       if (v !== undefined) args[k] = v;
       else if (argv[i + 1] && !argv[i + 1].startsWith('-') && ['port', 'out', 'file', 'to', 'save', 'slide', 'by', 'direction', 'from', 'themes', 'count', 'pick', 'dir', 'note', 'kind', 'base', 'interval', 'minutes'].includes(k)) {
         args[k] = argv[i + 1];
@@ -130,7 +132,6 @@ function printWarnings(talk) {
   talk.warnings.forEach((w) => console.log(`  - ${w}`));
 }
 
-// This computer's address on the local network, for people on the same wifi.
 function cmdNew(args) {
   const name = args._[1];
   if (!name) {

@@ -4,6 +4,7 @@
 // Units: the stage is 1920 x 1080 px; the slide is 13.333 x 7.5 in
 // (12192000 x 6858000 EMU), so one stage pixel is 6350 EMU and 0.5 pt.
 
+import { esc } from './xml.js';
 import { workbook } from './xlsx.js';
 import { zip } from './zip.js';
 
@@ -15,9 +16,6 @@ const NS_C = 'http://schemas.openxmlformats.org/drawingml/2006/chart';
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
-export const esc = (s) => String(s)
-  .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const emu = (v) => Math.round(v * EMU);
 const hex = (c) => [c.r, c.g, c.b].map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0')).join('').toUpperCase();
 const clr = (c) => (c.a !== undefined && c.a < 0.99

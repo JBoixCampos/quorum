@@ -2,9 +2,9 @@
 // PowerPoint ("Edit data"): one sheet, a column of labels and one or more
 // columns of numbers.
 
+import { esc } from './xml.js';
 import { zip } from './zip.js';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const column = (n) => String.fromCharCode(65 + n);
 
 // header: ['', 'Share'], rows: [['Tacos', 12], ...]

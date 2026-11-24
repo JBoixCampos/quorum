@@ -22,35 +22,13 @@ import { assemble, frontMatterOf, reader } from '../cli/load.js';
 import { StudioError, Workspace } from '../cli/studio-ops.js';
 import { schema } from '../shared/design.js';
 import { parseTalk } from '../shared/markdown.js';
+import { readJson } from './http.js';
 import { agentRequest, promptForRequest } from './studio-agent.js';
 import { createControls } from './studio-live.js';
 
 const IMAGE_TYPES = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
 const MAX_UPLOAD = 15 * 1024 * 1024;
 const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
-
-function readJson(req, limit) {
-  return new Promise((done, failed) => {
-    const chunks = [];
-    let size = 0;
-    req.on('data', (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        failed(new StudioError('That is too large.'));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', () => {
-      try {
-        done(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
-      } catch {
-        failed(new StudioError('Not valid JSON.'));
-      }
-    });
-  });
-}
 
 export function createStudio({
   dir, file, key, reload, send,
@@ -250,17 +228,17 @@ export function createStudio({
           res.on('close', () => { clearTimeout(w.timer); waiting.delete(w); });
         }
       } else if (route === 'op' && req.method === 'POST') {
-        const body = await readJson(req, 1_000_000);
+        const body = await readJson(req, 1_000_000, StudioError);
         const list = Array.isArray(body.ops) ? body.ops : [body];
         const results = list.map((op) => workspace.apply(op));
         reload();
-        send(res, 200, { ok: true, results, ...{ canUndo: workspace.canUndo, canRedo: workspace.canRedo } });
+        send(res, 200, { ok: true, results, canUndo: workspace.canUndo, canRedo: workspace.canRedo });
       } else if ((route === 'undo' || route === 'redo') && req.method === 'POST') {
         workspace[route]();
         reload();
         send(res, 200, { ok: true });
       } else if (route === 'preview' && req.method === 'POST') {
-        const body = await readJson(req, 1_000_000);
+        const body = await readJson(req, 1_000_000, StudioError);
         send(res, 200, { ok: true, token: remember(String(body.slide), String(body.text || '')) });
       } else if (route === 'options' && req.method === 'GET') {
         const talk = workspace.talk();
