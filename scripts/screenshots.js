@@ -1,6 +1,6 @@
 // Takes the screenshots in docs/images/: what the room sees (the shared
 // screen), what the speaker sees (the panel) and what a phone sees, all
-// during the same poll of the demo talk, the same kind of poll in a talk
+// during the same poll of the showcase talk, the same kind of poll in a talk
 // with a brand of its own (examples/brand), and one slide of
 // examples/showcase in each theme (themes.png). Needs Playwright:
 //
@@ -21,12 +21,12 @@ const OUT = join(ROOT, 'docs', 'images');
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 
-const POLL = 1; // "Pineapple on pizza?" in examples/demo/talk.md
-const VOTES = { 'Yes, always': 7, 'Only if nobody is watching': 11, Never: 5 };
+const POLL = 5; // "What makes the holes in bread?" in examples/showcase/talk.md
+const VOTES = { 'Air you knead in': 7, 'Gas from the yeast': 11, 'Steam from the water': 5 };
 const wait = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 const dir = mkdtempSync(join(tmpdir(), 'quorum-shots-'));
-cpSync(join(ROOT, 'examples', 'demo'), dir, { recursive: true });
+cpSync(join(ROOT, 'examples', 'showcase'), dir, { recursive: true });
 const server = await startServer({ talkDir: dir, port: 0, key: 'example', log: () => {} });
 const base = `http://localhost:${server.port}`;
 server.setPublicUrl('https://your-talk.trycloudflare.com');
@@ -62,12 +62,12 @@ try {
   await mobile.goto(`${base}/`);
 
   await presenter({ type: 'stage', slide: POLL, step: 0 });
-  await presenter({ type: 'control', id: 'warmup', action: 'phase', phase: 1 });
+  await presenter({ type: 'control', id: 'guess', action: 'phase', phase: 1 });
   let n = 0;
   for (const [option, count] of Object.entries(VOTES)) {
     for (let i = 0; i < count; i += 1) {
       n += 1;
-      await act(phone(n), { type: 'vote', id: 'warmup', value: option });
+      await act(phone(n), { type: 'vote', id: 'guess', value: option });
     }
   }
   await act(phone(1), { type: 'ask', text: 'Does this work without internet?' });
@@ -77,7 +77,7 @@ try {
   await panel.waitForFunction(() => {
     const frame = document.querySelector('[data-thumb="1"] iframe');
     const doc = frame && frame.contentDocument;
-    return doc && doc.querySelector('.q-slide') && doc.querySelector('.q-slide').textContent.includes('One word');
+    return doc && doc.querySelector('.q-slide') && doc.querySelector('.q-slide').textContent.includes('A little history');
   }, null, { timeout: 15000 });
   await wait(500);
 

@@ -4,7 +4,6 @@
 //   docs/ ...              one page per docs/*.md, rendered at build time
 //   examples/              a gallery of the example components
 //   playground/            Markdown next to the live slide
-//   demo/                  a playable static build of examples/demo
 //   showcase/              a playable static build of examples/showcase (themes, layouts, blocks)
 //   llms.txt, llms-full.txt   the docs for AI agents
 //
@@ -44,7 +43,7 @@ const DOCS = [
   { file: 'components.md', slug: 'components', label: 'Components' },
 ];
 
-// Components the playground can render: they are in the demo build.
+// Components the playground can render: they are in the showcase build.
 const BUILT_IN = ['countdown', 'qr'];
 const PLAYABLE = new Set([...BUILT_IN, 'word-cloud', 'counter']);
 
@@ -136,7 +135,6 @@ function footer(path) {
           <h2>Try</h2>
           <ul>
             <li><a href="${to('playground/')}">Playground</a></li>
-            <li><a href="${to('demo/')}">Demo talk</a></li>
             <li><a href="${to('showcase/')}">Showcase</a></li>
             <li><a href="${to('examples/')}">Examples</a></li>
           </ul>
@@ -230,20 +228,20 @@ function tryLink(from, markdown) {
   return `<p class="try"><a href="${href(from, 'playground/')}#md=${encodeURIComponent(markdown)}">Try it in the playground</a></p>`;
 }
 
-// --- the demo talk, slide by slide -----------------------------------------
+// --- the showcase talk, slide by slide -------------------------------------
 
-const DEMO_SOURCE = read('examples', 'demo', 'talk.md');
-const DEMO_SLIDES = DEMO_SOURCE.replace(/^---\n[\s\S]*?\n---\n/, '').split(/^---$/m).map((s) => s.trim()).filter(Boolean);
+const SHOWCASE_SOURCE = read('examples', 'showcase', 'talk.md');
+const SHOWCASE_SLIDES = SHOWCASE_SOURCE.replace(/^---\n[\s\S]*?\n---\n/, '').split(/^---$/m).map((s) => s.trim()).filter(Boolean);
 
-// The Markdown of one demo slide (counted from 1) next to the live slide.
-function demoSlide(from, n) {
-  const source = DEMO_SLIDES[n - 1];
-  if (!source) throw new Error(`The demo talk has no slide ${n}.`);
+// The Markdown of one showcase slide (counted from 1) next to the live slide.
+function showcaseSlide(from, n) {
+  const source = SHOWCASE_SLIDES[n - 1];
+  if (!source) throw new Error(`The showcase talk has no slide ${n}.`);
   const shown = source.replace(/\n*::: notes[\s\S]*?\n:::/g, '').trim();
   return `<div class="side-by-side">
   <pre><code class="language-markdown">${escapeHtml(shown)}</code></pre>
   <figure>
-    <div class="screen"><iframe src="${href(from, 'demo/')}?slide=${n - 1}" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
+    <div class="screen"><iframe src="${href(from, 'showcase/')}?slide=${n - 1}" title="The slide, live, with a simulated audience" loading="lazy"></iframe></div>
   </figure>
 </div>`;
 }
@@ -267,7 +265,7 @@ function buildDocs() {
     });
     const body = result.blocks.map((b) => {
       if (typeof b === 'string') return b;
-      if (b.marker === 'demo-slide') return demoSlide(path, Number(b.value));
+      if (b.marker === 'showcase-slide') return showcaseSlide(path, Number(b.value));
       return '';
     }).join('\n');
     doc.title = result.title;
@@ -528,7 +526,7 @@ The queue is long for a reason.
       <p class="lede">Write Markdown on the left and the real slide appears on the right, with 24 simulated people ready to vote. Your draft stays in this browser. When you like it, copy it into <code>talk.md</code>. <a href="${href(path, 'docs/format/')}">Every block is in the format guide</a>.</p>
     </div>
     <div class="wrap" style="padding-bottom:88px">
-      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'demo/')}?playground=1&theme=midnight">
+      <div class="playground tall" data-playground data-persist="page" data-hash data-frame="${href(path, 'showcase/')}?playground=1&theme=midnight">
         <textarea aria-label="Markdown of the talk">${escapeHtml(start)}</textarea>
       </div>
     </div>`,
@@ -563,7 +561,6 @@ ${DOCS.map((d) => `- [${d.label}](${SITE_URL}${docPath(d)}): ${d.description}`).
 ## Examples
 
 - [Example components](${SITE_URL}examples/): a word cloud, a next-word explorer with a local language model, a counter
-- [Demo talk source](${BLOB}examples/demo/talk.md): seven slides, one feature each
 - [Showcase talk source](${BLOB}examples/showcase/talk.md): a theme, layouts, cards, a timeline, a chart, result looks, morphing titles and reactions
 - [Slide patterns](${BLOB}agents/quorum/patterns.md): proven slides to build a talk from, and how to choose a theme
 - [Starter talk source](${BLOB}templates/starter/talk.md): every feature, as created by quorum new
@@ -604,10 +601,10 @@ cpSync(join(ROOT, 'site'), OUT, { recursive: true });
 cpSync(join(ROOT, 'app', 'favicon.svg'), join(OUT, 'favicon.svg'));
 cpSync(join(ROOT, 'docs', 'images'), join(OUT, 'docs', 'images'), { recursive: true });
 cpSync(join(ROOT, 'app', 'fonts'), join(OUT, 'fonts'), { recursive: true });
-execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'demo'), '--out', join(OUT, 'demo')], { stdio: 'inherit' });
 execFileSync(process.execPath, [join(ROOT, 'bin', 'quorum.js'), 'build', join(ROOT, 'examples', 'showcase'), '--out', join(OUT, 'showcase')], { stdio: 'inherit' });
-// The playground renders through the demo build: give it every example.
-cpSync(join(ROOT, 'templates', 'starter', 'components', 'counter.js'), join(OUT, 'demo', 'talk', 'components', 'counter.js'));
+// The playground renders through the showcase build: give it every example.
+cpSync(join(ROOT, 'templates', 'starter', 'components', 'counter.js'), join(OUT, 'showcase', 'talk', 'components', 'counter.js'));
+cpSync(join(ROOT, 'examples', 'components', 'word-cloud.js'), join(OUT, 'showcase', 'talk', 'components', 'word-cloud.js'));
 
 buildDocs();
 buildExamples();

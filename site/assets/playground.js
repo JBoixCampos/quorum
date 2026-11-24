@@ -1,10 +1,10 @@
 // The playground: Markdown on one side, the real slide on the other.
 //
-//   <div class="playground" data-playground data-frame="demo/?playground=1">
+//   <div class="playground" data-playground data-frame="showcase/?playground=1">
 //     <textarea aria-label="Markdown">::: poll ...</textarea>
 //   </div>
 //
-// The preview is the static build of the demo talk opened with
+// The preview is the static build of the showcase talk opened with
 // ?playground=1: it renders whatever Markdown this page posts to it, with a
 // simulated audience, so voting works. Optional attributes:
 //   data-persist="key"   keep the draft in this browser
