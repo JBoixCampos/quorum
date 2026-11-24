@@ -196,5 +196,6 @@ export function render(source, { link, code } = {}) {
 export function firstParagraph(source) {
   const { blocks } = render(source);
   const p = blocks.find((b) => typeof b === 'string' && b.startsWith('<p>'));
-  return p ? p.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') : '';
+  // Plain text (it goes into llms.txt as it is): &amp; last, so "&amp;lt;" stays "&lt;".
+  return p ? p.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') : '';
 }

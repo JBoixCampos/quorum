@@ -14,8 +14,6 @@ cd my-talk
 npm install
 ```
 
-Prefer GitHub? Use the [quorum-talk template](https://github.com/JBoixCampos/quorum-talk/generate) instead. You get the same folder, as a repository of your own.
-
 ### 2. Ask your agent for the talk
 
 Open your agent in the `my-talk` folder and describe the talk you want, the way you would ask a colleague:
