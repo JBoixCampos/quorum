@@ -171,6 +171,26 @@ body.home { overflow-x: clip; }
 .startsteps pre .p { color: var(--q-signal-bright); user-select: none; }
 #start .more a { font-size: 17px; }
 
+/* --- the name ---------------------------------------------------------------------------------- */
+.name-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 4fr); border-top: 1px solid var(--ink); }
+.name-grid > div { padding: 32px 32px 16px; }
+.name-grid > div + div { border-left: 1px solid var(--rule-2); }
+.name-grid > div:first-child { padding-left: 0; }
+.entry .word { margin: 0; font: 500 clamp(44px, 5vw, 72px)/1 var(--display); letter-spacing: -0.045em; }
+.entry .ipa { font: 400 15px/1 var(--mono); letter-spacing: 0; color: var(--muted); }
+.entry .pos { margin: 12px 0 20px; font: italic 400 15px/1.2 var(--text); color: var(--signal-text); }
+.entry ol { margin: 0 0 20px; padding-left: 1.4em; }
+.entry li { margin-bottom: 10px; }
+.entry .origin { margin: 0; color: var(--muted); font-size: 15px; }
+.sense .label { margin: 0 0 16px; font: 400 13px/1.2 var(--mono); color: var(--signal-text); }
+.sense h3 { margin: 0 0 16px; font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; }
+.sense p:last-child { margin: 0; }
+@media (max-width: 1100px) {
+  .name-grid { grid-template-columns: minmax(0, 1fr); }
+  .name-grid > div, .name-grid > div:first-child { padding: 24px 0 12px; }
+  .name-grid > div + div { border-left: 0; border-top: 1px solid var(--rule-2); }
+}
+
 /* --- narrow screens -------------------------------------------------------------------------------------------- */
 @media (max-width: 1100px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: start; }
