@@ -55,3 +55,11 @@ document.querySelectorAll('.startsteps pre, .prose pre, .ex-text pre').forEach((
     }, () => {});
   });
 });
+
+// "What does Quorum mean?": the i button in the first screen opens a small dialog.
+document.querySelectorAll('[data-name-open]').forEach((button) => {
+  const dialog = document.getElementById('name-dialog');
+  if (!dialog || typeof dialog.showModal !== 'function') { button.hidden = true; return; }
+  button.addEventListener('click', () => dialog.showModal());
+  dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+});

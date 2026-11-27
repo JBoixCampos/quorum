@@ -171,26 +171,6 @@ body.home { overflow-x: clip; }
 .startsteps pre .p { color: var(--q-signal-bright); user-select: none; }
 #start .more a { font-size: 17px; }
 
-/* --- the name ---------------------------------------------------------------------------------- */
-.name-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) minmax(0, 4fr); border-top: 1px solid var(--ink); }
-.name-grid > div { padding: 32px 32px 16px; }
-.name-grid > div + div { border-left: 1px solid var(--rule-2); }
-.name-grid > div:first-child { padding-left: 0; }
-.entry .word { margin: 0; font: 500 clamp(44px, 5vw, 72px)/1 var(--display); letter-spacing: -0.045em; }
-.entry .ipa { font: 400 15px/1 var(--mono); letter-spacing: 0; color: var(--muted); }
-.entry .pos { margin: 12px 0 20px; font: italic 400 15px/1.2 var(--text); color: var(--signal-text); }
-.entry ol { margin: 0 0 20px; padding-left: 1.4em; }
-.entry li { margin-bottom: 10px; }
-.entry .origin { margin: 0; color: var(--muted); font-size: 15px; }
-.sense .label { margin: 0 0 16px; font: 400 13px/1.2 var(--mono); color: var(--signal-text); }
-.sense h3 { margin: 0 0 16px; font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; }
-.sense p:last-child { margin: 0; }
-@media (max-width: 1100px) {
-  .name-grid { grid-template-columns: minmax(0, 1fr); }
-  .name-grid > div, .name-grid > div:first-child { padding: 24px 0 12px; }
-  .name-grid > div + div { border-left: 0; border-top: 1px solid var(--rule-2); }
-}
-
 /* --- narrow screens -------------------------------------------------------------------------------------------- */
 @media (max-width: 1100px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: start; }
@@ -345,3 +325,22 @@ body.home { overflow-x: clip; }
 .scene .term .you span { width: 0; border-right: 2px solid var(--accent); }
 .scene .opt b { opacity: 0; }
 .scene .bar i { width: 0; }
+
+/* --- what the name means: the "i" in the first screen opens a small dialog ------------------- */
+.hero .kicker { align-items: center; }
+.hero .wordmark { color: var(--ink); font-weight: 500; }
+.hero .tagline::before { content: '/'; margin-right: 10px; color: var(--rule); }
+.name-info { width: 22px; height: 22px; padding: 0; border: 1px solid var(--ink); border-radius: 50%; background: transparent; color: var(--ink); font: italic 500 13px/1 var(--text); cursor: pointer; }
+.name-info:hover { background: var(--ink); color: var(--paper); }
+.name-info:focus-visible, .name-close:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.name-dialog { width: min(420px, calc(100vw - 32px)); padding: 28px 28px 24px; border: 1px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.5); }
+.name-dialog::backdrop { background: rgba(20, 22, 20, 0.5); }
+.name-dialog p { margin: 0 0 14px; font-size: 15.5px; }
+.name-dialog .word { font: 500 36px/1 var(--display); letter-spacing: -0.04em; }
+.name-dialog .ipa { font: 400 14px/1 var(--mono); letter-spacing: 0; color: var(--muted); }
+.name-dialog .pos { color: var(--signal-text); font-size: 14px; }
+.name-dialog .sense { padding-top: 12px; border-top: 1px solid var(--rule-2); }
+.name-dialog .sense:last-child { margin-bottom: 0; }
+.name-close { position: absolute; top: 14px; right: 14px; padding: 4px 8px; border: 0; background: transparent; color: var(--muted); font: 400 13px/1 var(--mono); cursor: pointer; }
+.name-close:hover { color: var(--ink); }
+@media (max-width: 480px) { .hero .tagline { flex-basis: 100%; } .hero .tagline::before { content: none; } }

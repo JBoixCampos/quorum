@@ -15,11 +15,22 @@
   <a class="skip" href="#main">Skip to content</a>
   {{header}}
 
+  <dialog class="name-dialog" id="name-dialog" aria-labelledby="name-title">
+    <form method="dialog"><button class="name-close" aria-label="Close">Close</button></form>
+    <p class="word" id="name-title">quorum <span class="ipa">/ˈkwɔː.rəm/</span></p>
+    <p class="pos">noun, from Latin <i>quorum</i>, “of whom”</p>
+    <p>The number of people who have to be present for a decision to count.</p>
+    <p class="sense"><b>In the room.</b> The people watching your slides are the quorum: they vote, guess and ask from their phones, so the talk is decided together.</p>
+    <p class="sense"><b>At the desk.</b> You also form one with your coding agents and colleagues, deciding the talk together through a request queue and a decision log before it reaches the room.</p>
+  </dialog>
+
   <main id="main">
     <div class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="kicker"><b>00</b> Open source. Agent ready.</p>
+          <p class="kicker"><b>00</b> <span class="wordmark">Quorum</span>
+            <button type="button" class="name-info" data-name-open aria-haspopup="dialog" aria-label="What does Quorum mean?">i</button>
+            <span class="tagline">Open source. Agent ready.</span></p>
           <h1>Make a talk with your <span class="ai">AI agent.</span> <span class="sig">The room joins in.</span></h1>
           <p class="lede">Describe the talk. Your agent builds it, you fine-tune it in Studio, and the audience answers from their phones. No accounts, no app, all on your laptop.</p>
           <div class="actions">
@@ -249,44 +260,11 @@ The queue is long for a reason.
       </div>
     </section>
 
-    <section id="name" aria-labelledby="name-h">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker"><b>06</b> The name</p>
-            <h2 id="name-h">Why “Quorum”</h2>
-          </div>
-          <p class="intro">An old word for the moment enough people are present for a decision to count. It describes both halves of how Quorum works.</p>
-        </div>
-        <div class="name-grid">
-          <div class="entry">
-            <p class="word">quorum <span class="ipa">/ˈkwɔː.rəm/</span></p>
-            <p class="pos">noun</p>
-            <ol>
-              <li>The smallest number of people who must be present for a meeting to act and for its decisions to count.</li>
-              <li>A group gathered to decide together.</li>
-            </ol>
-            <p class="origin">From Latin <i>quorum</i>, “of whom”: the words that named who had to be there.</p>
-          </div>
-          <div class="sense">
-            <p class="label">In the room</p>
-            <h3>Everyone present has a voice</h3>
-            <p>A talk where nobody can answer is a broadcast. In Quorum, the people watching the slides vote, guess, ask and write on the screen from their own phones. The room stops being a crowd and becomes a group that takes part in the talk.</p>
-          </div>
-          <div class="sense">
-            <p class="label">At the desk</p>
-            <h3>You decide with your agents</h3>
-            <p>A talk is not written alone either. You, your coding agent and your colleagues talk it through: a request queue, a decision log and a briefing for each new agent. Every voice is heard, and the result is one Markdown file you own.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section id="start">
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="kicker"><b>07</b> Get started</p>
+            <p class="kicker"><b>06</b> Get started</p>
             <h2>Your first talk</h2>
           </div>
           <p class="intro">You need <a href="https://nodejs.org">Node.js</a> 18 or newer and a coding agent. It takes a couple of minutes.</p>
